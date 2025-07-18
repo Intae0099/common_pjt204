@@ -9,9 +9,9 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.B204</groupId>
-	<artifactId>lawvatar-backend</artifactId>
+	<artifactId>backend</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>Lawvatar Backend</name>
+	<name>Backend</name>
 	<description>Backend Server for Lawvatar</description>
 	<url/>
 	<licenses>
