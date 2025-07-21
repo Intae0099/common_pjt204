@@ -1,0 +1,101 @@
+# VSCode 설정
+.vscode/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+*.egg
+.eggs/
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+
+# PyBuilder
+target/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints
+
+# Virtualenv / Conda
+.env
+.venv/
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# VSCode Python extension
+.python-version
+
+# mypy
+.mypy_cache/
+.dmypy.json
+
+# pyre
+.pyre/
+
+# Pyre type checker
+.pytype/
+
+# IDEs
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# macOS
+.DS_Store
+
+# Logs and databases
+*.log
+logs/
+*.sqlite3
+
+# AI-specific artifacts
+# 모델 가중치, 토크나이저 등 (필요 시 제외)
+*.pt
+*.pth
+*.bin
+tokenizer_config.json
+*.ckpt
+
+# Data files (raw/processed)
+data/raw/
+data/processed/
+data/Training/
+data/Validation/
+
+# Temporary files
+*.tmp
+*.swp
+
+# dotenv
+.env.local
+.env.*.local
+
+# Coverage
+.coverage
+coverage.xml
