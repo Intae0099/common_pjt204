@@ -1,5 +1,6 @@
-package com.B204.lawvatar_backend.common.entity;
+package com.B204.lawvatar_backend.application.entity;
 
+import com.B204.lawvatar_backend.common.entity.Tag;
 import jakarta.persistence.*;
 
 @Entity
@@ -7,6 +8,7 @@ public class ApplicationTag {
 
     // Field
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "application_tag_id")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
