@@ -53,7 +53,7 @@ pipeline {
                 // Jenkins가 EC2 호스트에서 직접 스크립트를 실행합니다.
                 sh """
                     echo "배포 스크립트를 직접 실행합니다..."
-                    /home/ubuntu/deploy.sh ${env.BUILD_ID}
+                    /app/deploy.sh ${env.BUILD_ID}
                 """
             }
         }
