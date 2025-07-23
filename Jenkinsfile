@@ -47,17 +47,14 @@ pipeline {
             }
         }
 
-        stage('Deploy to EC2') {
+        sstage('Deploy on Local Host') { 
             steps {
-                // sshagent를 사용하여 EC2에 접속
-                sshagent(credentials: [EC2_SSH_CREDENTIALS_ID]) {
-                    sh """
-                        ssh -o StrictHostKeyChecking=no ubuntu@<YOUR_EC2_PUBLIC_IP> '
-                            # 배포 스크립트 실행 (전달 인자로 이미지 태그 전달)
-                            /home/ubuntu/deploy.sh ${env.BUILD_ID}
-                        '
-                    """
-                }
+            
+                // Jenkins가 EC2 호스트에서 직접 스크립트를 실행합니다.
+                sh """
+                    echo "배포 스크립트를 직접 실행합니다..."
+                    /home/ubuntu/deploy.sh ${env.BUILD_ID}
+                """
             }
         }
     }
