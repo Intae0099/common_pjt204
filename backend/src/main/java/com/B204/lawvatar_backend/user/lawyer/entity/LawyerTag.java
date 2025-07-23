@@ -1,26 +1,27 @@
 package com.B204.lawvatar_backend.user.lawyer.entity;
 
+import com.B204.lawvatar_backend.common.entity.Tag;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-
-import java.time.LocalDateTime;
+import lombok.Setter;
 
 @Entity
 @Getter
 @NoArgsConstructor
-public class UnavailabilitySlot {
+public class LawyerTag {
 
     // Field
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "unavalability_slot_id")
+    @Column(name = "lawyer_tag_id")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "lawyer_id")
     private Lawyer lawyer;
 
-    private LocalDateTime startTime;
-    private LocalDateTime endTime;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "tag_id")
+    private Tag tag;
 
 }
