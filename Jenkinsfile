@@ -1,6 +1,6 @@
 // 파이프라인 변수 설정
-def springImageName = "lab.ssafy.com/s13-webmobile1-sub1/S13P11B204/backend-app"
-def vueImageName = "lab.ssafy.com/s13-webmobile1-sub1/S13P11B204/frontend-app"
+def springImageName = "lab.ssafy.com/s13-webmobile1-sub1/s13p11b204/backend-app"
+def vueImageName = "lab.ssafy.com/s13-webmobile1-sub1/s13p11b204/frontend-app"
 
 pipeline {
     agent any
