@@ -1,0 +1,15 @@
+name: legal-ai-platform
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.11
+  - pip
+  - pip:
+    - fastapi==0.116.1
+    - pydantic>=2.7.4,<3.0.0
+    - sqlalchemy>=2.0.0,<3.0.0
+    - langchain>=0.3.26
+    - openai==1.97.1
+    - chromadb==1.0.15
+    - faiss-cpu==1.7.4
