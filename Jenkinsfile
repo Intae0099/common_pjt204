@@ -11,12 +11,12 @@ pipeline {
     }
 
     stages {
-        stage('Clean Workspace') {
-            steps {
-                // 이전 빌드 아티팩트 정리
-                cleanWs()
-            }
-        }
+        // stage('Clean Workspace') {
+        //     steps {
+        //         // 이전 빌드 아티팩트 정리
+        //         cleanWs()
+        //     }
+        // }
 
         stage('Build Backend & Frontend') {
             // 백엔드와 프론트엔드 빌드를 병렬로 실행하여 시간 단축
