@@ -1,6 +1,6 @@
 // 파이프라인 변수 설정
-def springImageName = "lab.ssafy.com/s13-webmobile1-sub1/s13p11b204/backend-app"
-def vueImageName = "lab.ssafy.com/s13-webmobile1-sub1/s13p11b204/frontend-app"
+def springImageName = "localhost:5000/backend-app"
+def vueImageName = "localhost:5000/frontend-app"
 
 pipeline {
     agent any
@@ -39,18 +39,11 @@ pipeline {
             }
         }
 
-        stage('Push Docker Images to GitLab Registry') {
+        stage('Push Docker Images to Local Registry') { // 스테이지 이름 변경 (권장)
             steps {
-                script {
-                    // GitLab Registry에 로그인
-                    withCredentials([usernamePassword(credentialsId: GITLAB_REGISTRY_CREDENTIALS_ID, passwordVariable: 'GITLAB_PASSWORD', usernameVariable: 'GITLAB_USERNAME')]) {
-                        sh "docker login lab.ssafy.com -u ${GITLAB_USERNAME} -p ${GITLAB_PASSWORD}"
-                    }
-
-                    // 빌드된 이미지에 태그 추가 및 푸시
-                    sh "docker push ${springImageName}:${env.BUILD_ID}"
-                    sh "docker push ${vueImageName}:${env.BUILD_ID}"
-                }
+                // 로그인 과정 없이 바로 푸시
+                sh "docker push ${springImageName}:${env.BUILD_ID}"
+                sh "docker push ${vueImageName}:${env.BUILD_ID}"
             }
         }
 
@@ -72,8 +65,6 @@ pipeline {
     post {
         always {
             script {
-                // GitLab Registry 로그아웃
-                sh "docker logout lab.ssafy.com"
                 
                 // 빌드에 사용된 로컬 Docker 이미지 정리 (선택사항, Jenkins 서버 용량 관리)
                 sh "docker rmi ${springImageName}:${env.BUILD_ID} || true"
