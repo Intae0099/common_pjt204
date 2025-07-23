@@ -3,9 +3,9 @@ import { createRouter, createWebHistory } from 'vue-router'
 //회원가입 및 로그인
 import SocialLogin from '@/features/auth/user/SocialLogin.vue'
 import OAuthCallback from '@/features/auth/user/OAuthCallback.vue'
-import SignUpFirst from '@/pages/SignUpFirst.vue';
-import SignUpSecond from '@/pages/SignUpSecond.vue';
-import SignUpThird from '@/pages/SignUpThird.vue';
+import SignUpFirst from '@/features/auth/lawyer/SignUpFirst.vue';
+import SignUpSecond from '@/features/auth/lawyer/SignUpSecond.vue';
+import SignUpThird from '@/features/auth/lawyer/SignUpThird.vue';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
