@@ -47,7 +47,7 @@ pipeline {
             }
         }
 
-        sstage('Deploy on Local Host') { 
+        stage('Deploy on Local Host') { 
             steps {
             
                 // Jenkins가 EC2 호스트에서 직접 스크립트를 실행합니다.
