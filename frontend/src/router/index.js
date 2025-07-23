@@ -6,6 +6,9 @@ import OAuthCallback from '@/features/auth/user/OAuthCallback.vue'
 import SignUpFirst from '@/features/auth/lawyer/SignUpFirst.vue';
 import SignUpSecond from '@/features/auth/lawyer/SignUpSecond.vue';
 import SignUpThird from '@/features/auth/lawyer/SignUpThird.vue';
+import LawyerLogin from '@/features/auth/lawyer/LawyerLogin.vue';
+import FindPassword from '@/features/auth/lawyer/FindPassword.vue';
+
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -34,15 +37,17 @@ const router = createRouter({
       name: 'SignUpThird',
       component: SignUpThird
     },
-    // 루트 → 회원가입 시작 단계로
+
     {
-      path: '/',
-      redirect: '/signup/step1'
+      path: '/login/lawyer',
+      name: 'LawyerLogin',
+      component: LawyerLogin
     },
     {
-      path: '/:catchAll(.*)',
-      redirect: '/signup/step1'
-    },
+      path: '/login/lawyer/find-password',
+      name: 'FindPassword',
+      component: FindPassword
+    }
   ],
 })
 

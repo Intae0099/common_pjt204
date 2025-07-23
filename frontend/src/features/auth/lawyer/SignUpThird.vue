@@ -40,11 +40,6 @@
       <button type="submit">가입하기</button>
     </form>
 
-    <!-- 건너뛰기 링크 -->
-    <div>
-      <button type="button" @click="handleSkip">건너뛰기</button>
-    </div>
-
     <!-- 가입 완료 모달 -->
     <BaseModal
       :visible="showModal"
@@ -57,6 +52,8 @@
 
 <script>
 import BaseModal from '@/components/BaseModal.vue';
+import { useAuthStore } from '@/stores/auth';
+import axios from 'axios';
 
 export default {
   name: 'SignUpThird',
@@ -77,6 +74,11 @@ export default {
       showModal: false
     };
   },
+  computed: {
+    authStore() {
+      return useAuthStore();
+    }
+  },
   methods: {
     toggleTag(tag) {
       const tags = this.form.tags;
@@ -86,17 +88,27 @@ export default {
         this.form.tags.push(tag);
       }
     },
-    handleSubmit() {
-      console.log('3단계 입력 정보:', this.form);
-      this.showModal = true; // 모달 표시
+    async handleSubmit() {
+      // 현재 단계 값 저장
+      this.authStore.updateSignup({
+        introduction: this.form.introduction,
+        tags: this.form.tags
+      });
+
+      try {
+        await axios.post('/api/auth/lawyers/sign-up', this.authStore.signupData);
+        this.showModal = true;
+      } catch (error) {
+        console.error('회원가입 실패:', error);
+        alert('회원가입에 실패했습니다. 다시 시도해주세요.');
+      }
     },
     confirmModal() {
       this.showModal = false;
-      this.$router.push('/signup/complete'); // 최종 이동
+      this.authStore.resetSignup();
+      this.$router.push('/');
     },
-    handleSkip() {
-      this.$router.push('/signup/complete');
-    }
+
   }
 };
 </script>

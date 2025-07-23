@@ -56,8 +56,10 @@
 </template>
 
 <script>
+import { useAuthStore } from '@/stores/auth';
+
 export default {
-  name: 'LawyerSignup',
+  name: 'SignUpFirst',
   data() {
     return {
       form: {
@@ -76,7 +78,17 @@ export default {
         alert('비밀번호가 일치하지 않습니다.');
         return;
       }
-      console.log('회원가입 정보:', this.form);
+
+      const authStore = useAuthStore();
+
+      authStore.updateSignup({
+        name: this.form.name,
+        email: this.form.email,
+        password: this.form.password,
+        phone: this.form.phone,
+        officeNumber: this.form.officeNumber
+      });
+
       this.$router.push('/signup/step2');
     }
   }

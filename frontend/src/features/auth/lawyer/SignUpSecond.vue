@@ -17,7 +17,7 @@
     <form @submit.prevent="handleSubmit">
       <div>
         <label>출신시험</label>
-        <select v-model="form.exam">
+        <select v-model="form.exam" required>
           <option disabled value="">시험선택</option>
           <option value="사법시험">사법시험</option>
           <option value="로스쿨">로스쿨</option>
@@ -26,7 +26,7 @@
 
       <div>
         <label>회차</label>
-        <select v-model="form.examRound">
+        <select v-model="form.examRound" required>
           <option disabled value="">회차선택</option>
           <option v-for="n in 30" :key="n" :value="n">{{ n }}회</option>
         </select>
@@ -39,6 +39,7 @@
           placeholder="숫자만 입력해주세요"
           v-model.number="form.careerYears"
           min="0"
+          required
         />
       </div>
 
@@ -53,6 +54,8 @@
 </template>
 
 <script>
+import { useAuthStore } from '@/stores/auth';
+
 export default {
   name: 'SignUpSecond',
   data() {
@@ -66,8 +69,14 @@ export default {
   },
   methods: {
     handleSubmit() {
-      // TODO: 유효성 검증 또는 API 연결 후 다음 단계 이동
-      console.log('2단계 입력값:', this.form);
+      const authStore = useAuthStore();
+
+      authStore.updateSignup({
+        exam: this.form.exam,
+        examRound: this.form.examRound,
+        careerYears: this.form.careerYears
+      });
+
       this.$router.push('/signup/step3');
     }
   }
