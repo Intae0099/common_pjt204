@@ -1,22 +1,48 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
+//회원가입 및 로그인
+import SocialLogin from '@/features/auth/user/SocialLogin.vue'
+import OAuthCallback from '@/features/auth/user/OAuthCallback.vue'
+import SignUpFirst from '@/pages/SignUpFirst.vue';
+import SignUpSecond from '@/pages/SignUpSecond.vue';
+import SignUpThird from '@/pages/SignUpThird.vue';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
-    // {
-    //   path: '/',
-    //   name: 'home',
-    //   component: HomeView,
-    // },
-    // {
-    //   path: '/about',
-    //   name: 'about',
-    //   // route level code-splitting
-    //   // this generates a separate chunk (About.[hash].js) for this route
-    //   // which is lazy-loaded when the route is visited.
-    //   component: () => import('../views/AboutView.vue'),
-    // },
+    //회원가입 및 로그인
+    {
+      path: '/login',
+      component: SocialLogin
+    },
+    {
+      path: '/oauth/callback/:provider',
+      component: OAuthCallback
+    },
+    {
+      path: '/signup/step1',
+      name: 'SignUpFirst',
+      component: SignUpFirst
+    },
+    {
+      path: '/signup/step2',
+      name: 'SignUpSecond',
+      component: SignUpSecond
+    },
+    {
+      path: '/signup/step3',
+      name: 'SignUpThird',
+      component: SignUpThird
+    },
+    // 루트 → 회원가입 시작 단계로
+    {
+      path: '/',
+      redirect: '/signup/step1'
+    },
+    {
+      path: '/:catchAll(.*)',
+      redirect: '/signup/step1'
+    },
   ],
 })
 
