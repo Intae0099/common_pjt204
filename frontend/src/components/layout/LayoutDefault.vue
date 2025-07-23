@@ -1,12 +1,12 @@
 <template>
   <div class="container">
-    <Navbar />
+    <BaseNavbar />
     <slot />
   </div>
 </template>
 
 <script setup>
-import Navbar from '@/components/Navbar.vue'
+import BaseNavbar from '@/components/BaseNavbar.vue'
 </script>
 
 <style scoped>
