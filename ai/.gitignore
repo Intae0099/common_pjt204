@@ -87,6 +87,8 @@ data/raw/
 data/processed/
 data/Training/
 data/Validation/
+data/preprocessed/
+data/data/
 
 # Temporary files
 *.tmp
