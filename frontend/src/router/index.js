@@ -9,6 +9,10 @@ import SignUpThird from '@/features/auth/lawyer/SignUpThird.vue';
 import LawyerLogin from '@/features/auth/lawyer/LawyerLogin.vue';
 import FindPassword from '@/features/auth/lawyer/FindPassword.vue';
 
+//AI상담
+
+//판례검색
+import CaseSearchPage from '@/features/cases/CaseSearchPage.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -47,7 +51,13 @@ const router = createRouter({
       path: '/login/lawyer/find-password',
       name: 'FindPassword',
       component: FindPassword
-    }
+    },
+
+    //판례검색
+    {
+      path: '/cases/search',
+      component: CaseSearchPage,
+    },
   ],
 })
 
