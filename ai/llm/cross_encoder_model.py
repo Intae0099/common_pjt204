@@ -17,7 +17,7 @@ def load_cross_encoder_model():
     logger.info(f"Cross‑encoder 모델 로드 중: {CROSS_ENCODER_MODEL_NAME}")
     model = CrossEncoder(
         model_name_or_path=CROSS_ENCODER_MODEL_NAME,
-        device=os.getenv("DEVICE", "gpu" if os.environ.get("CUDA_VISIBLE_DEVICES") else "cpu"),  # GPU가 설정되어 있으면 GPU 사용
+        device=os.getenv("DEVICE", "cuda" if os.environ.get("CUDA_VISIBLE_DEVICES") else "cpu"),  # GPU가 설정되어 있으면 GPU 사용
         trust_remote_code=True    # 커스텀 코드 허용
     )
     logger.info("Cross‑encoder 모델 로드 완료.")
