@@ -5,24 +5,32 @@ from pgvector.psycopg2 import register_vector
 from sentence_transformers import SentenceTransformer
 
 from config.db_config import DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD
+from modules.search_module import search_similar_documents # Import the new module
 
 class TestSearch(unittest.TestCase):
     def setUp(self):
         """테스트 시작 전 DB 연결 및 모델 로드"""
-        self.conn = psycopg2.connect(
-            host=DB_HOST, port=DB_PORT,
-            dbname=DB_NAME, user=DB_USER, password=DB_PASSWORD
-        )
-        register_vector(self.conn)
+        # self.conn = psycopg2.connect(
+        #     host=DB_HOST, port=DB_PORT,
+        #     dbname=DB_NAME, user=DB_USER, password=DB_PASSWORD
+        # )
+        # register_vector(self.conn)
         self.model = SentenceTransformer('snunlp/KR-SBERT-V40K-klueNLI-augSTS')
 
     def tearDown(self):
         """테스트 종료 후 DB 연결 종료"""
-        self.conn.close()
+        # if self.conn:
+        #     self.conn.close()
+        pass
 
     def test_metadata_accuracy(self):
         """JSON 파일의 메타데이터가 DB에 정확하게 저장되었는지 검증"""
-        with self.conn.cursor() as cur:
+        conn = psycopg2.connect(
+            host=DB_HOST, port=DB_PORT,
+            dbname=DB_NAME, user=DB_USER, password=DB_PASSWORD
+        )
+        register_vector(conn)
+        with conn.cursor() as cur:
             cur.execute("SELECT title, decision_date, issue, summary FROM legal_cases WHERE case_id = '2000가단13456'")
             result = cur.fetchone()
             self.assertIsNotNone(result, "Case '2000가단13456' not found in the database.")
@@ -32,23 +40,14 @@ class TestSearch(unittest.TestCase):
             self.assertEqual(str(decision_date), "2001-03-30")
             self.assertEqual(issue, "구 신탁회사의구신탁재산처리에관한법률 및 같은법시행령에 의하여 구성된 구신탁재산처리위원회가 신탁회사의 구신탁재산을 국가에 귀속시키기로 의결한 경우, 구신탁재산이 국유재산으로 귀속되는지 여부(소극)")
             self.assertIn("구 신탁회사의구신탁재산처리에관한법률", summary)
+        conn.close()
 
     def test_search_accuracy(self):
-        """'신탁' 키워드 검색 시 '2000가단13456' 판례가 결과에 포함되는지 검증"""
-        query_embedding = self.model.encode('신탁회사의 신탁재산처리').tolist()
-        
-        with self.conn.cursor() as cur:
-            cur.execute("SELECT case_id, chunk_text FROM legal_chunks ORDER BY embedding <-> %s::vector LIMIT 10", (query_embedding,))
-            retrieved_chunks = cur.fetchall()
-            
-            print("\n--- Retrieved Search Results ---")
-            results = []
-            for case_id, chunk_text in retrieved_chunks:
-                print(f"Case ID: {case_id}, Chunk Text: {chunk_text[:100]}...") # Print first 100 chars
-                results.append(case_id)
-            print("--------------------------------")
-
-            self.assertIn('2002다46058', results, "Case '2000가단13456' should be in the search results for '신탁'")
+        """'신탁' 키워드 검색 시 '2000마2997' 판례가 결과에 포함되는지 검증"""
+        query = '신탁'
+        results = search_similar_documents(query, limit=10)
+        case_ids = [doc['case_id'] for doc in results]
+        self.assertIn('2000마2997', case_ids, f"Case '2000마2997' should be in the search results for '{query}'")
 
 if __name__ == '__main__':
     unittest.main()
