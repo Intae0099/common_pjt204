@@ -17,6 +17,9 @@ import CaseSearchPage from '@/features/cases/CaseSearchPage.vue'
 import PreviewUserView from '@/features/videoconference/PreviewUserView.vue';
 import PreviewLawyerView from '@/features/videoconference/PreviewLawyerView.vue';
 import CaseDetail from '@/features/cases/CaseDetail.vue';
+import LawyerMyPage from '@/features/profile/lawyer/LawyerMyPage.vue';
+import UserMyPage from '@/features/profile/user/UserMyPage.vue';
+import LawyerProfileUpdate from '@/features/profile/lawyer/LawyerProfileUpdate.vue';
 
 
 const router = createRouter({
@@ -58,6 +61,22 @@ const router = createRouter({
       component: FindPassword
     },
 
+    // 마이페이지
+    {
+      path: '/lawyer/mypage',
+      name: 'Lawyermypage',
+      component: LawyerMyPage
+    },
+    {
+      path: '/user/mypage',
+      name: 'Usermypage',
+      component: UserMyPage
+    },
+    {
+      path: '/lawyer/update',
+      name: 'LawyerUpdatepage',
+      component: LawyerProfileUpdate
+    },
     //판례검색
     {
       path: '/cases/search',
