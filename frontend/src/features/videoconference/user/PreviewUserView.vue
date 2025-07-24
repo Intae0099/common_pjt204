@@ -19,7 +19,7 @@
             <p>{{ appointment.lawyerName }} 변호사</p>
             <button>상담신청서 확인하기</button>
           </div>
-          <button>화상상담 입장하기</button>
+          <button @click="enterMeeting">화상상담 입장하기</button>
         </div>
         <div v-else>
           <p>앗! 상담 일정이 없어요</p>
@@ -34,9 +34,11 @@
 <script setup>
 import PreviewCamera from '../PreviewCamera.vue'
 import { ref, onMounted } from 'vue'
-// import axios from '@/lib/axios'
+import { useRouter } from 'vue-router'
+import axios from '@/lib/axios'
 
 const appointments = ref([])
+const router = useRouter()
 
 onMounted(async () => {
 
@@ -60,6 +62,17 @@ onMounted(async () => {
   //   console.error('상담 일정 불러오기 실패:', e)
   // }
 })
+
+const enterMeeting = async () => {
+  try {
+    const res = await axios.post('/api/rooms/create') // 회의방 생성 요청
+    const sessionId = res.data.sessionId               // 받아온 sessionId로
+    router.push({ name: 'MeetingRoom', query: { sessionId } }) // 회의방 입장
+  } catch (error) {
+    console.error('회의방 생성 실패:', error)
+    alert('회의방을 생성할 수 없습니다.')
+  }
+}
 </script>
 
 <style scoped>
