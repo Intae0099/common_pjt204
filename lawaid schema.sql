@@ -15,6 +15,7 @@ create table lawyer (
     login_password_hash varchar(100) not null, -- 비밀번호가 30byte 제한이라면, 단방향 암호화하고 Base64로 저장했을때 100byte를 절대 넘지 않을 것
     name varchar(30) not null,
     introduction text,
+    registration_number varchar(50),
     certification_status enum('PENDING', 'APPROVED', 'REJECTED') not null default 'PENDING',
     consultation_count int unsigned not null default 0
 );
