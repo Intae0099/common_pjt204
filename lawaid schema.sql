@@ -69,7 +69,7 @@ create table application (
 
 create table tag (
 	id int unsigned auto_increment primary key,
-    name varchar(50) not null
+    name varchar(50) unique not null
 );
 
 create table lawyer_tag (
