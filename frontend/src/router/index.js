@@ -9,6 +9,7 @@ import SignUpThird from '@/features/auth/lawyer/SignUpThird.vue';
 import LawyerLogin from '@/features/auth/lawyer/LawyerLogin.vue';
 import FindPassword from '@/features/auth/lawyer/FindPassword.vue';
 //AI상담
+import AiStep from '@/features/ai_consult/AIStep.vue'
 
 //판례검색
 import CaseSearchPage from '@/features/cases/CaseSearchPage.vue'
@@ -46,7 +47,6 @@ const router = createRouter({
       name: 'SignUpThird',
       component: SignUpThird
     },
-
     {
       path: '/login/lawyer',
       name: 'LawyerLogin',
@@ -57,6 +57,14 @@ const router = createRouter({
       name: 'FindPassword',
       component: FindPassword
     },
+
+    //AI상담
+    {
+      path: '/ai-consult',
+      name: 'AiConsult',
+      component: AiStep
+    },
+
 
     //판례검색
     {
@@ -69,6 +77,7 @@ const router = createRouter({
       name: 'CaseDetail',
       component: CaseDetail,
     },
+
     //화상회의
     {
       path: '/videocall/preview/client',
