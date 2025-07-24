@@ -68,7 +68,7 @@ const userInfo = ref(null);
 const reservationList = ref([]);
 
 // 3. 변호사 상담 내역 목록을 담을 배열 (기존 lawyers 데이터)
-const lawyers = ref([]);
+// const lawyers = ref([]);
 
 
 // --- 데이터 로딩 (onMounted 훅 사용) ---
