@@ -2,11 +2,13 @@
 import os, json, glob
 import psycopg2
 from psycopg2.extras import execute_batch
-from sentence_transformers import SentenceTransformer
 from tqdm import tqdm
 from pgvector.psycopg2 import register_vector
-from config.db_config import DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD
+from dotenv import load_dotenv
 from utils.logger import setup_logger, get_logger
+from llm.embedding_model import load_model as load_embedding_model
+
+load_dotenv()
 
 setup_logger()
 logger = get_logger(__name__)
@@ -20,8 +22,8 @@ HNSW_M, HNSW_EF_CONSTRUCTION = 12, 150
 
 def get_db_connection():
     conn = psycopg2.connect(
-        host=DB_HOST, port=DB_PORT,
-        dbname=DB_NAME, user=DB_USER, password=DB_PASSWORD
+        host=os.getenv("POSTGRES_HOST"), port=os.getenv("POSTGRES_PORT"),
+        dbname=os.getenv("POSTGRES_DB"), user=os.getenv("POSTGRES_USER"), password=os.getenv("POSTGRES_PASSWORD")
     )
     register_vector(conn)
     return conn
@@ -51,7 +53,7 @@ def main():
     conn, cur = get_db_connection(), None
     try:
         cur = conn.cursor()
-        model = SentenceTransformer(EMBEDDING_MODEL)
+        model = load_embedding_model()
 
         files = glob.glob(os.path.join(DATA_DIR, '**', '*.json'), recursive=True)
         logger.info(f"{len(files)}개 파일 처리")
