@@ -1,4 +1,5 @@
 
+import psycopg2
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
@@ -20,6 +21,15 @@ def get_db():
         yield db
     finally:
         db.close()
+
+def get_psycopg2_connection():
+    """
+    Returns a raw psycopg2 connection.
+    """
+    return psycopg2.connect(
+        host=DB_HOST, port=DB_PORT,
+        dbname=DB_NAME, user=DB_USER, password=DB_PASSWORD
+    )
 
 if __name__ == "__main__":
     logger.debug(f"Database URL: {SQLALCHEMY_DATABASE_URL}")
