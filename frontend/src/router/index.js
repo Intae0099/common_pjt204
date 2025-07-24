@@ -16,6 +16,7 @@ import CaseSearchPage from '@/features/cases/CaseSearchPage.vue'
 //화상회의
 import PreviewUserView from '@/features/videoconference/PreviewUserView.vue';
 import PreviewLawyerView from '@/features/videoconference/PreviewLawyerView.vue';
+import CaseDetail from '@/features/cases/CaseDetail.vue';
 
 
 const router = createRouter({
@@ -62,6 +63,12 @@ const router = createRouter({
       path: '/cases/search',
       component: CaseSearchPage,
     },
+    // 판례 상세 조회
+    {
+      path: '/cases/detail/:id',
+      name: 'CaseDetail',
+      component: CaseDetail,
+    },
     //화상회의
     {
       path: '/videocall/preview/client',
@@ -73,6 +80,7 @@ const router = createRouter({
       name: 'PreviewLawyer',
       component: PreviewLawyerView,
     },
+
   ],
 })
 
