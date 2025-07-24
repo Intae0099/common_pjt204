@@ -44,50 +44,10 @@ const text = ref('')
 const submit = () => {
   if (text.value.trim()) {
     emit('submit', text.value.trim())
-    text.value = ''
   }
 }
 </script>
 
 <style scoped>
-.chat-input-box {
-  width: 100%;
-  max-width: 400px;
-  margin: 0 auto;
-}
 
-.avatar {
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  object-fit: cover;
-  margin-bottom: 16px;
-}
-
-.input {
-  width: 100%;
-  height: 120px;
-  padding: 12px;
-  font-size: 14px;
-  color: #333;
-  border: 2px solid #d9e3ec;
-  border-radius: 10px;
-  resize: none;
-  margin-bottom: 12px;
-  font-family: inherit;
-}
-
-.submit-button {
-  font-size: 24px;
-  background: none;
-  border: none;
-  color: #aaa;
-  cursor: pointer;
-  transition: 0.2s ease;
-}
-
-.submit-button:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
 </style>
