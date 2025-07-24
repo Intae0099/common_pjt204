@@ -13,7 +13,7 @@ def setup_logger():
     log_file = f"{datetime.now().strftime('%Y-%m-%d')}.log"
 
     logging.basicConfig(
-        level=logging.DEBUG,
+        level=logging.INFO,
         format=log_format,
         handlers=[
             logging.FileHandler(os.path.join(LOG_DIR, log_file), encoding='utf-8'),
