@@ -11,9 +11,8 @@ create table client (
 
 create table lawyer (
 	id int unsigned auto_increment primary key,
-    login_id varchar(30) not null,
+	login_email varchar(100) unique,
     login_password_hash varchar(100) not null, -- 비밀번호가 30byte 제한이라면, 단방향 암호화하고 Base64로 저장했을때 100byte를 절대 넘지 않을 것
-    email varchar(100),
     introduction text,
     cirtification_status enum('PENDING', 'APPROVED', 'REJECTED') not null default 'PENDING',
     consultation_count int unsigned not null default 0
