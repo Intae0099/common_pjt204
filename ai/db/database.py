@@ -3,11 +3,20 @@ import psycopg2
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
-from config.db_config import DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME
+from dotenv import load_dotenv
+import os
 from utils.logger import setup_logger, get_logger
+
+load_dotenv(dotenv_path=os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'config', '.env')) # Load environment variables from .env file
 
 setup_logger()
 logger = get_logger(__name__)
+
+DB_USER = os.getenv("POSTGRES_USER")
+DB_PASSWORD = os.getenv("POSTGRES_PASSWORD")
+DB_HOST = os.getenv("POSTGRES_HOST")
+DB_PORT = os.getenv("POSTGRES_PORT")
+DB_NAME = os.getenv("POSTGRES_DB")
 
 SQLALCHEMY_DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
@@ -27,8 +36,8 @@ def get_psycopg2_connection():
     Returns a raw psycopg2 connection.
     """
     return psycopg2.connect(
-        host=DB_HOST, port=DB_PORT,
-        dbname=DB_NAME, user=DB_USER, password=DB_PASSWORD
+        host=os.getenv("POSTGRES_HOST"), port=os.getenv("POSTGRES_PORT"),
+        dbname=os.getenv("POSTGRES_DB"), user=os.getenv("POSTGRES_USER"), password=os.getenv("POSTGRES_PASSWORD")
     )
 
 if __name__ == "__main__":
