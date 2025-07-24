@@ -14,8 +14,8 @@ import FindPassword from '@/features/auth/lawyer/FindPassword.vue';
 import CaseSearchPage from '@/features/cases/CaseSearchPage.vue'
 
 //화상회의
-import PreviewUserView from '@/features/videoconference/PreviewUserView.vue';
-import PreviewLawyerView from '@/features/videoconference/PreviewLawyerView.vue';
+import PreviewUserView from '@/features/videoconference/user/PreviewUserView.vue';
+import PreviewLawyerView from '@/features/videoconference/lawyer/PreviewLawyerView.vue';
 
 
 const router = createRouter({

@@ -32,7 +32,7 @@
 </template>
 
 <script setup>
-import PreviewCamera from './PreviewCamera.vue'
+import PreviewCamera from '../PreviewCamera.vue'
 import { ref, onMounted } from 'vue'
 // import axios from '@/lib/axios'
 
