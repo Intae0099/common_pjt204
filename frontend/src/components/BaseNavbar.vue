@@ -5,7 +5,7 @@
       <RouterLink to="/" class="logo">LOGO</RouterLink>
     </div>
     <div class="nav-center">
-      <RouterLink to="/ai-preconsult">AI사전상담</RouterLink>
+      <RouterLink to="/ai-consult">AI사전상담</RouterLink>
       <RouterLink to="/cases/search">판례 검색</RouterLink>
       <RouterLink to="/lawyers">변호사조회</RouterLink>
       <RouterLink to="/ai-application">AI상담신청서</RouterLink>
