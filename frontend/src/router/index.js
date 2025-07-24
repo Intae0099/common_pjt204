@@ -8,11 +8,15 @@ import SignUpSecond from '@/features/auth/lawyer/SignUpSecond.vue';
 import SignUpThird from '@/features/auth/lawyer/SignUpThird.vue';
 import LawyerLogin from '@/features/auth/lawyer/LawyerLogin.vue';
 import FindPassword from '@/features/auth/lawyer/FindPassword.vue';
-
 //AI상담
 
 //판례검색
 import CaseSearchPage from '@/features/cases/CaseSearchPage.vue'
+
+//화상회의
+import PreviewUserView from '@/features/videoconference/PreviewUserView.vue';
+import PreviewLawyerView from '@/features/videoconference/PreviewLawyerView.vue';
+
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -57,6 +61,17 @@ const router = createRouter({
     {
       path: '/cases/search',
       component: CaseSearchPage,
+    },
+    //화상회의
+    {
+      path: '/videocall/preview/client',
+      name: 'PreviewUser',
+      component: PreviewUserView,
+    },
+    {
+      path: '/videocall/preview/lawyer',
+      name: 'PreviewLawyer',
+      component: PreviewLawyerView,
     },
   ],
 })
