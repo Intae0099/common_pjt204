@@ -45,7 +45,7 @@ def call_gpt4o(messages, temperature=0, max_tokens=2048):
     """
     try:
         response = client.chat.completions.create(
-            model="gpt-4o-mini",  # GMS에서 사용하는 모델명이 다를 경우 수정 필요
+            model=os.getenv("MODEL_NAME", "gpt-4o-mini"),  # GMS에서 사용하는 모델명이 다를 경우 수정 필요
             messages=messages,
             temperature=temperature,
             max_tokens=max_tokens,

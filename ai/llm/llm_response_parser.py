@@ -1,23 +1,110 @@
 import re
-from typing import Dict, Any
+import json
+from typing import Dict, Any, List
 from langchain.schema import BaseOutputParser
+from pydantic import BaseModel, Field
+
+class CaseAnalysisResult(BaseModel):
+    issues: List[str] = Field(default_factory=list)
+    opinion: str = ""
+    expected_sentence: str = ""
+    confidence: float = Field(default=0.0, ge=0.0, le=1.0)
+    references: Dict[str, Any] = Field(default_factory=dict)
+    tags: List[str] = Field(default_factory=list)
+    recommendedLawyers: List[str] = Field(default_factory=list)
 
 class CotOutputParser(BaseOutputParser):
-    """CoT(Chain-of-Thought) 응답을 파싱하여 중간 추론 과정과 최종 결론을 분리합니다."""
-
     def parse(self, text: str) -> Dict[str, Any]:
-        """정규표현식을 사용하여 LLM의 응답에서 추론 과정과 결론을 추출합니다."""
-        # "결론:" 부분을 기준으로 텍스트를 분리합니다.
-        match = re.search(r"결론: (.*)", text, re.DOTALL)
+        text = text.strip()
+        # JSON 블록이면 그대로 thought/conclusion 모두 raw로 남김
+        if text.startswith("{"):
+            return {"thought_process": text, "conclusion": text}
+
+        # "결론:" 헤더 기준 분리
+        match = re.search(r"결론:\s*(.*)", text, re.DOTALL)
         if match:
             conclusion = match.group(1).strip()
-            thought_process = text[:match.start()].strip()
+            thought    = text[:match.start()].strip()
         else:
-            # "결론:"이 없는 경우, 전체를 추론 과정으로 간주하고 결론은 비워둡니다.
             conclusion = ""
-            thought_process = text.strip()
+            thought    = text
 
-        return {
-            "thought_process": thought_process,
-            "conclusion": conclusion,
-        }
+        return {"thought_process": thought, "conclusion": conclusion}
+
+
+def parse_case_analysis_output(raw: str) -> CaseAnalysisResult:
+    raw = raw.strip()
+
+    # 1) JSON 형태 처리 우선
+    if raw.startswith("{"):
+        payload = json.loads(raw)
+        report  = payload.get("data", {}).get("report", {})
+
+        return CaseAnalysisResult(
+            issues             = report.get("issues", []),
+            opinion            = report.get("opinion", ""),
+            expected_sentence  = report.get("sentencePrediction", ""),
+            confidence         = report.get("confidence", 0.0),
+            references         = report.get("references", {}),
+            tags               = payload.get("tags", []),
+            recommendedLawyers = payload.get("recommendedLawyers", [])
+        )
+
+    # 2) 텍스트 포맷 파싱
+    issues            = []
+    opinion           = ""
+    expected_sentence = ""
+    confidence        = 0.0
+
+    # ———— 쟁점 추출 ————
+    # "쟁점:" 이후 빈 줄(또는 다음 헤더) 전까지 모두 가져오기
+    issues_block = re.search(
+        r"쟁점:\s*([\s\S]*?)(?=\n\s*\n|소견:|예상 형량:|신뢰도:|\Z)",
+        raw
+    )
+    if issues_block:
+        lines = issues_block.group(1).splitlines()
+        cleaned = []
+        for line in lines:
+            line = line.strip()
+            if not line:
+                continue
+            # "1. ", "- ", "* " 등 제거
+            item = re.sub(r"^(?:\d+\.\s*|[\-\*]\s*)", "", line).strip()
+            if item:
+                cleaned.append(item)
+        issues = cleaned
+
+    # ———— 소견 추출 ————
+    opinion_match = re.search(
+        r"소견:\s*([\s\S]*?)(?=\n\s*\n|쟁점:|예상 형량:|신뢰도:|\Z)",
+        raw
+    )
+    if opinion_match:
+        opinion = opinion_match.group(1).strip()
+
+    # ———— 예상 형량 추출 ————
+    sent_match = re.search(
+        r"예상 형량:\s*([\s\S]*?)(?=\n\s*\n|쟁점:|소견:|신뢰도:|\Z)",
+        raw
+    )
+    if sent_match:
+        expected_sentence = sent_match.group(1).strip()
+
+    # ———— 신뢰도 추출 ————
+    conf_match = re.search(r"신뢰도:\s*([0-9.]+)", raw)
+    if conf_match:
+        try:
+            confidence = float(conf_match.group(1))
+        except ValueError:
+            confidence = 0.0
+
+    return CaseAnalysisResult(
+        issues             = issues,
+        opinion            = opinion,
+        expected_sentence  = expected_sentence,
+        confidence         = confidence,
+        references         = {},
+        tags               = [],
+        recommendedLawyers = []
+    )
