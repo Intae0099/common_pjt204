@@ -4,7 +4,12 @@
 
 /* === 1) Fonts === */
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR&display=swap');
-
+body {
+  font-family: 'Noto Sans KR', sans-serif;
+}
+:root {
+  --vc-font-family: 'Noto Sans KR', sans-serif;
+}
 
 /* === 2) Color & UI variables (override BEFORE Bootstrap import) === */
 $primary:   #33A5EB;   /* 브랜드 보라 */

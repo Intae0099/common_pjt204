@@ -18,6 +18,13 @@ import LawyerMyPage from '@/features/profile/lawyer/LawyerMyPage.vue';
 import UserMyPage from '@/features/profile/user/UserMyPage.vue';
 import LawyerProfileUpdate from '@/features/profile/lawyer/LawyerProfileUpdate.vue';
 
+// 상담예약
+import LawyerSearch from '@/features/reservation/LawyerSearch.vue'
+import DetailReservation from '@/features/reservation/DetailReservation.vue'
+
+// AI 상담 신청서
+
+
 //화상회의
 import PreviewUserView from '@/features/videoconference/user/PreviewUserView.vue';
 import PreviewLawyerView from '@/features/videoconference/lawyer/PreviewLawyerView.vue';
@@ -96,6 +103,20 @@ const router = createRouter({
       name: 'CaseDetail',
       component: CaseDetail,
     },
+    // 상담예약
+    {
+      path: '/lawyers',
+      name: 'LawyerSearch',
+      component: LawyerSearch
+    },
+    {
+      path: '/lawyers/:id/reservation',
+      name: 'DetailReservation',
+      component: DetailReservation,
+      props: true
+    },
+    // AI 상담 신청서
+
 
     //화상회의
     {

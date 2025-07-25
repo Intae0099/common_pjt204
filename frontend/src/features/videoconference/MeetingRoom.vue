@@ -21,7 +21,7 @@
 import { ref, onMounted } from 'vue'
 import { io } from 'socket.io-client'
 import { useRoute, useRouter } from 'vue-router'
-import axios from '@/lib/axios'
+// import axios from '@/lib/axios'
 
 const localVideo = ref(null)
 const remoteVideo = ref(null)
@@ -114,11 +114,11 @@ socket.on('ice-candidate', async ({ candidate }) => {
 })
 
 const leaveMeeting = async () => {
-  try {
-    await axios.delete('/api/participants/me')
-  } catch (e) {
-    console.error('회의방 나가기 실패:', e)
-  }
+  // try {
+  //   await axios.delete('/api/participants/me')
+  // } catch (e) {
+  //   console.error('회의방 나가기 실패:', e)
+  // }
   socket.disconnect()
   router.push('/')
 }
