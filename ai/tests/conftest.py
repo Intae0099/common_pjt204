@@ -1,8 +1,8 @@
 # ai/tests/conftest.py
 import sys
-import os
+from pathlib import Path
 
-# 이 파일(ai/tests/conftest.py) 기준으로 두 단계 위가 프로젝트 루트라고 가정
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-if PROJECT_ROOT not in sys.path:
-    sys.path.insert(0, PROJECT_ROOT)
+# 현재 파일 위치(ai/tests/conftest.py)의 부모(=ai) 폴더를 루트로 잡는다
+AI_ROOT = str(Path(__file__).resolve().parent.parent)
+if AI_ROOT not in sys.path:
+    sys.path.insert(0, AI_ROOT)
