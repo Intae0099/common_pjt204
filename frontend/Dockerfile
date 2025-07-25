@@ -1,5 +1,5 @@
 # 1. Build Stage
-FROM node:18-alpine as builder
+FROM node:18-slim As builder
 WORKDIR /app
 
 # Best Practice 적용 (캐싱 최적화)
