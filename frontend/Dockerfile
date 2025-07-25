@@ -4,7 +4,7 @@ WORKDIR /app
 
 # Best Practice 적용 (캐싱 최적화)
 COPY package.json package-lock.json* ./
-RUN npm ci --ignore-scripts
+RUN npm install
 
 COPY . .
 RUN npm run build
