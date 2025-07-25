@@ -1,0 +1,18 @@
+/* --------------------------------------------------------------------------
+   GLOBAL THEME STYLES  (custom variables → Bootstrap import → base styles)
+   -------------------------------------------------------------------------- */
+
+/* === 1) Fonts === */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR&display=swap');
+
+
+/* === 2) Color & UI variables (override BEFORE Bootstrap import) === */
+$primary:   #33A5EB;   /* 브랜드 보라 */
+$secondary: #ffdf5d;   /* 더 진한 회색 ─ 기존 #F1F3F5 보다 대비 ↑ */
+
+/* === 3) IMPORT BOOTSTRAP (after our variable overrides) === */
+@import "bootstrap/scss/bootstrap";
+
+/* --------------------------------------------------------------------------
+   4) Base element styles
+   -------------------------------------------------------------------------- */
