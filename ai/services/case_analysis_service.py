@@ -3,7 +3,10 @@ from langchain.llms.base import LLM
 from typing import List, Dict
 import json
 
-from ai.llm.llm_response_parser import CotOutputParser
+
+
+
+from ai.llm.llm_response_parser import CotOutputParser, parse_case_analysis_output, CaseAnalysisResult
 from ai.llm.prompt_templates import get_cot_prompt
 
 class CaseAnalysisService:
@@ -17,11 +20,8 @@ class CaseAnalysisService:
         self.llm = llm
         self.prompt_template = get_cot_prompt()
         self.parser = CotOutputParser()
-        self.chain = LLMChain(
-            llm=self.llm,
-            prompt=self.prompt_template,
-            output_parser=self.parser
-        )
+        # `prompt | llm` 로 RunnableSequence를 만듭니다. (LangChain 0.1.17 이상 권장 방식) :contentReference[oaicite:0]{index=0}
+        self.chain = self.prompt_template | self.llm
 
     def analyze_case(
             self,
@@ -36,14 +36,25 @@ class CaseAnalysisService:
             # case_docs를 JSON 문자열로 직렬화
             docs_json = json.dumps(case_docs, ensure_ascii=False)
 
-            # 실제 플레이스홀더 이름과 맞춰서 딕셔너리로 넘김
-            result = self.chain.invoke({
+            invoked = self.chain.invoke({
                 "user_query": user_query,
                 "case_docs": docs_json,
             })
+            # RunnableSequence.invoke()는 마지막 LLM의 출력(보통 string 또는 {"text":…} 형태)을 그대로 돌려줍니다.  
+            raw_llm_response = invoked["text"] if isinstance(invoked, dict) and "text" in invoked else invoked
 
-            # CotOutputParser가 파싱한 dict가 result["text"]에 담겨 있음
-            return result["text"]
+            # CotOutputParser를 사용하여 추론 과정과 결론을 분리합니다.
+            cot_parsed_result = self.parser.parse(raw_llm_response)
+            thought_process = cot_parsed_result["thought_process"]
+            conclusion_text = cot_parsed_result["conclusion"]
+
+            # parse_case_analysis_output을 사용하여 결론 텍스트를 구조화합니다.
+            case_analysis_result = parse_case_analysis_output(conclusion_text)
+
+            return {
+                "thought_process": thought_process,
+                "case_analysis": case_analysis_result
+            }
 
 # 사용 예시 (기존 analyze_case 함수와 호환성을 위해)
 def analyze_case(case_text: str) -> dict:
@@ -74,4 +85,4 @@ if __name__ == "__main__":
     print("== Thought Process ==")
     print(analysis["thought_process"])
     print("\n== Conclusion ==")
-    print(analysis["conclusion"])
+    print(analysis["case_analysis"])

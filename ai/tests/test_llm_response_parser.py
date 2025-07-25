@@ -1,7 +1,7 @@
 import unittest
 
-# 'ai.' 접두사를 제거하여 임포트 경로 수정
-from llm.llm_response_parser import CotOutputParser
+# 실제 코드가 있는 경로로 수정
+from ai.llm.llm_response_parser import CotOutputParser, parse_case_analysis_output, CaseAnalysisResult
 
 class TestCotOutputParser(unittest.TestCase):
 
@@ -54,6 +54,85 @@ class TestCotOutputParser(unittest.TestCase):
             "conclusion": "최종 판결 요지입니다."
         }
         self.assertEqual(self.parser.parse(text), expected)
+
+
+class TestCaseAnalysisParser(unittest.TestCase):
+
+    def test_parse_full_output(self):
+        raw_text = """
+            쟁점:
+            1. 첫 번째 쟁점입니다.
+            2. 두 번째 쟁점입니다.
+
+            소견: 이 사건에 대한 저의 소견입니다.
+
+            예상 형량: 징역 2년, 집행유예 3년
+
+            신뢰도: 0.95
+        """
+        result = parse_case_analysis_output(raw_text)
+        self.assertIsInstance(result, CaseAnalysisResult)
+        self.assertEqual(result.issues, ["첫 번째 쟁점입니다.", "두 번째 쟁점입니다."])
+        self.assertEqual(result.opinion, "이 사건에 대한 저의 소견입니다.")
+        self.assertEqual(result.expected_sentence, "징역 2년, 집행유예 3년")
+        self.assertEqual(result.confidence, 0.95)
+
+    def test_parse_missing_fields(self):
+        raw_text = """
+            쟁점:
+            1. 쟁점만 있습니다.
+
+            소견: 소견만 있습니다.
+        """
+        result = parse_case_analysis_output(raw_text)
+        self.assertIsInstance(result, CaseAnalysisResult)
+        self.assertEqual(result.issues, ["쟁점만 있습니다."])
+        self.assertEqual(result.opinion, "소견만 있습니다.")
+        self.assertEqual(result.expected_sentence, "")  # 기본값
+        self.assertEqual(result.confidence, 0.0)        # 기본값
+
+    def test_parse_invalid_confidence(self):
+        raw_text = """
+            신뢰도: abc
+        """
+        result = parse_case_analysis_output(raw_text)
+        self.assertIsInstance(result, CaseAnalysisResult)
+        self.assertEqual(result.confidence, 0.0)
+
+    def test_parse_empty_string(self):
+        raw_text = ""
+        result = parse_case_analysis_output(raw_text)
+        self.assertIsInstance(result, CaseAnalysisResult)
+        self.assertEqual(result.issues, [])
+        self.assertEqual(result.opinion, "")
+        self.assertEqual(result.expected_sentence, "")
+        self.assertEqual(result.confidence, 0.0)
+
+    def test_parse_issues_bullet_points(self):
+        raw_text = """
+            쟁점:
+            - 첫 번째 쟁점
+            * 두 번째 쟁점
+
+            소견: (없음)
+        """
+        result = parse_case_analysis_output(raw_text)
+        self.assertIsInstance(result, CaseAnalysisResult)
+        self.assertEqual(result.issues, ["첫 번째 쟁점", "두 번째 쟁점"])
+
+    def test_parse_issues_no_prefix(self):
+        raw_text = """
+            쟁점:
+            첫 번째 쟁점
+            두 번째 쟁점
+
+            소견: (없음)
+        """
+        result = parse_case_analysis_output(raw_text)
+        self.assertIsInstance(result, CaseAnalysisResult)
+        self.assertEqual(result.issues, ["첫 번째 쟁점", "두 번째 쟁점"])
+
+
 
 if __name__ == '__main__':
     unittest.main()
