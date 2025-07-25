@@ -1,7 +1,7 @@
 <template>
-  <div class="verdict-finding-box">
-    <p class="loading-text">AI가 실제 판례를 찾고 있습니다...</p>
-    <div class="typing-indicator">
+  <div>
+    <p>AI가 실제 판례를 찾고 있습니다...</p>
+    <div>
       <span></span><span></span><span></span>
     </div>
   </div>

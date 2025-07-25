@@ -1,6 +1,6 @@
 <template>
-  <div class="ai-step-wrapper">
-    <div class="main-content">
+  <div>
+    <div>
       <!-- 왼쪽: 사용자 입력창 -->
       <ChatInputBox
         :disabled="isLoading || isFindingVerdict"
@@ -34,7 +34,7 @@
 
     <!-- 판례 찾는 중 표시 -->
     <VerdictFindingBox v-if="isFindingVerdict" />
-    <div v-if="verdictResult" class="verdict-result-box">
+    <div v-if="verdictResult">
       <p>{{ verdictResult }}</p>
       <button
         v-if="canShowRecommendBtn && !showRecommendList"
@@ -50,6 +50,8 @@
 
 <script setup>
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+
 import ChatInputBox from './components/ChatInputBox.vue'
 import AiBox from './components/AiBox.vue'
 import BottomActionBar from './components/BottomActionBar.vue'
@@ -107,11 +109,12 @@ const showLawyers = () => {
 }
 
 
+const router = useRouter()
+
 const handleModalRoute = (target) => {
   showModal.value = false
   if (target === 'lawyer') {
-    // 예: 라우팅 이동
-    window.location.href = '/lawyers'
+    router.push({ name: 'LawyerSearch' }) // ✅ SPA 방식 라우팅
   }
 }
 </script>

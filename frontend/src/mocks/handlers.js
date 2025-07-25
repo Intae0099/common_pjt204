@@ -43,5 +43,64 @@ export const handlers = [
       rating: 4.8,
     })
   }),
+  // 변호사 목록 조회
+  http.get('/api/admin/lawyers/list', () => {
+    return HttpResponse.json([
+      {
+        id: 1,
+        name: '이정연',
+        tags: ['교통사고', '합의'],
+        profile_image: 'https://via.placeholder.com/150',
+        introduction: '교통사고 전문 변호사입니다.'
+      },
+      {
+        id: 2,
+        name: '윤규성',
+        tags: ['이혼', '합의'],
+        profile_image: 'https://via.placeholder.com/150',
+        introduction: '합의 경험이 풍부한 변호사입니다.'
+      },
+      {
+        id: 3,
+        name: '전해지',
+        tags: ['교통사고', '합의'],
+        profile_image: 'https://via.placeholder.com/150',
+        introduction: '의뢰인의 입장에서 최선을 다하겠습니다.'
+      }
+    ])
+  }),
 
+  // 특정 날짜에 변호사 예약 불가 시간 조회
+  http.get('/api/lawyers/:lawyerId/unavailable-slot', ({ request }) => {
+    const date = request.url.searchParams.get('date')
+    const unavailable = {
+      '2025-07-16': ['10:00', '14:30'],
+      '2025-07-17': ['09:00', '11:00', '13:00']
+    }
+    return HttpResponse.json(unavailable[date] || [])
+  }),
+
+  // 나의 상담신청서 목록
+  http.get('/api/applications/me', () => {
+    return HttpResponse.json([
+      {
+        id: 101,
+        title: '7월 교통사고 사건 신청서'
+      },
+      {
+        id: 102,
+        title: '합의 관련 상담 신청서'
+      }
+    ])
+  }),
+
+  // 상담 예약 요청
+  http.post('/api/appointments', async ({ request }) => {
+    const body = await request.json()
+    console.log('예약 요청 데이터:', body)
+    return HttpResponse.json({
+      message: '예약이 완료되었습니다',
+      appointmentId: 9999
+    }, { status: 201 })
+  }),
 ]

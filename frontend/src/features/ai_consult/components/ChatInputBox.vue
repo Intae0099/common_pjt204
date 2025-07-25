@@ -1,19 +1,18 @@
 <template>
-  <div class="chat-input-box">
+  <div>
     <!-- 프로필 이미지 -->
-    <img class="avatar" :src="userAvatarUrl" alt="user" />
+    <img :src="userAvatarUrl" alt="user" />
 
     <!-- 입력창 -->
     <textarea
       v-model="text"
-      class="input"
       :placeholder="placeholder"
       :disabled="disabled"
       @keydown.enter.prevent="submit"
     />
 
     <!-- 제출 버튼 (아이콘 대체 가능) -->
-    <button class="submit-button" @click="submit" :disabled="!text.trim() || disabled">
+    <button @click="submit" :disabled="!text.trim() || disabled">
       ⬇️
     </button>
   </div>
