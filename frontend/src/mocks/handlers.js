@@ -72,13 +72,17 @@ export const handlers = [
 
   // 특정 날짜에 변호사 예약 불가 시간 조회
   http.get('/api/lawyers/:lawyerId/unavailable-slot', ({ request }) => {
-    const date = request.url.searchParams.get('date')
+    const url = new URL(request.url)
+    const date = url.searchParams.get('date')
+
     const unavailable = {
-      '2025-07-16': ['10:00', '14:30'],
-      '2025-07-17': ['09:00', '11:00', '13:00']
+      '2025-07-25': ['10:00', '14:30'],
+      '2025-07-26': ['09:00', '11:00']
     }
+
     return HttpResponse.json(unavailable[date] || [])
   }),
+
 
   // 나의 상담신청서 목록
   http.get('/api/applications/me', () => {

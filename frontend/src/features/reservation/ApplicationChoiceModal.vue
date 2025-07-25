@@ -1,7 +1,7 @@
 <template>
   <div class="modal">
     <div class="modal-content">
-      <h3>{{ selectedDate }} {{ selectedTime }} 예약</h3>
+      <h3>{{ selectedDate }} {{ selectedTime }} 상담 예약</h3>
 
       <select v-model="selectedApplicationId">
         <option value="">상담신청서 선택</option>
@@ -10,13 +10,26 @@
         </option>
       </select>
 
+      <!-- 기존 신청서가 없는 경우 메시지 -->
       <p v-if="applications.length === 0">
         상담신청서가 없나요?
-        <button @click="goToAiApplication">작성하러가기</button>
       </p>
 
-      <button :disabled="!selectedApplicationId" @click="submitReservation">예약하기</button>
-      <button @click="$emit('close')">닫기</button>
+      <!-- 항상 보이는 새 신청서 작성 버튼 -->
+      <button class="new-form-btn" @click="goToAiApplication">
+        새 상담신청서 작성하기
+      </button>
+
+      <div class="btn-group">
+        <button
+          class="btn"
+          :disabled="!selectedApplicationId"
+          @click="submitReservation"
+        >
+          예약하기
+        </button>
+        <button class="btn cancel" @click="$emit('close')">닫기</button>
+      </div>
     </div>
   </div>
 </template>
@@ -44,26 +57,31 @@ const fetchApplications = async () => {
 }
 
 const submitReservation = async () => {
-  await axios.post('/api/appointments', {
-    lawyer_id: props.lawyerId,
-    date: props.selectedDate,
-    time: props.selectedTime,
-    application_id: selectedApplicationId.value
-  })
-  alert('예약이 완료되었습니다!')
-  emit('close')
-  router.push('/user/mypage')
+  try {
+    await axios.post('/api/appointments', {
+      lawyer_id: props.lawyerId,
+      date: props.selectedDate,
+      time: props.selectedTime,
+      application_id: selectedApplicationId.value
+    })
+    alert('예약이 완료되었습니다!')
+    emit('close')
+    router.push('/user/mypage')
+  } catch (err) {
+    alert('예약 중 오류가 발생했습니다.')
+    console.error(err)
+  }
 }
 
 const goToAiApplication = () => {
-  emit('close')  // 모달 닫기
-  router.push('/ai-application')  // 경로 이동
+  emit('close')
+  router.push('/ai-application')
 }
 
 onMounted(fetchApplications)
 </script>
 
-<style>
+<style scoped>
 .modal {
   position: fixed;
   top: 0;
@@ -71,7 +89,7 @@ onMounted(fetchApplications)
   z-index: 999;
   width: 100%;
   height: 100%;
-  background: rgba(0,0,0,0.4); /* 반투명 배경 */
+  background: rgba(0,0,0,0.4);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -80,6 +98,27 @@ onMounted(fetchApplications)
   background: white;
   padding: 2rem;
   border-radius: 10px;
-  min-width: 300px;
+  min-width: 320px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+.btn-group {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 1.5rem;
+}
+.btn {
+  padding: 8px 14px;
+  border: none;
+  border-radius: 6px;
+  background-color: #5A45FF;
+  color: white;
+  cursor: pointer;
+}
+.btn.cancel {
+  background-color: #888;
+}
+.btn:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
 }
 </style>
