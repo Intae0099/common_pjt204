@@ -48,7 +48,7 @@ def search_cases(query: str, top_k: int = 5, use_rerank: bool = True) -> list[di
         with conn.cursor() as cur:
             cur.execute(
                 """
-                SELECT lc.case_id, lc.summary, lc.full_text
+                SELECT lc.case_id,lc.title,lc.decision_date,lc.category, lc.full_text, lch.chunk_text
                 FROM legal_chunks lch
                 JOIN legal_cases lc ON lch.case_id = lc.case_id
                 ORDER BY lch.embedding <-> %s::vector
@@ -57,13 +57,20 @@ def search_cases(query: str, top_k: int = 5, use_rerank: bool = True) -> list[di
                 (query_embedding, top_k)
             )
             initial_results = [
-                {"case_id": cid, "summary": summary, "full_text": full_text}
-                for cid, summary, full_text in cur.fetchall()
+                {"case_id": cid, "title": title, "decision_date": decision_date, "category": category, "full_text": full_text, "chunk_text": chunk_text}
+                for cid, title, decision_date, category, full_text, chunk_text in cur.fetchall()
             ]
+
+        # 벡터 검색 결과 개수 로그
+        logger.info(f"Vector search 결과 개수: {len(initial_results)}")
 
         if use_rerank:
             logger.info("Applying reranking to search results...")
-            return rerank_cases(query, initial_results)
+            reranked = rerank_cases(query, initial_results)
+            # 재정렬 후 상위 3개만 추출
+            reranked_top3 = reranked[:3]
+            logger.info(f"Reranked 결과 개수(상위 3개): {len(reranked_top3)}")
+            return reranked_top3
         else:
             logger.info("Reranking skipped.")
             return initial_results
@@ -136,11 +143,7 @@ if __name__ == '__main__':
     else:
         for idx, doc in enumerate(results_reranked, start=1):
             logger.info(f"{idx}. Case ID: {doc['case_id']}")
-            logger.info(f"   Summary : {doc['summary'] or '[요약 없음]'}")
-            # preview = doc['full_text'][:100].replace("\n", " ")
-            # logger.info(f"   Preview : {preview}...")
-            # logger.info(f"   Score   : {doc.get('score', 0):.4f}")
-            # logger.info("-" * 80)
+            logger.info(f"   Issue : {doc['issue'] or '[이슈 없음]'}")
 
     # 2) 재정렬 미적용 결과
     logger.info("\n▶ 재정렬 미적용 결과")

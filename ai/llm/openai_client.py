@@ -39,7 +39,7 @@ client = OpenAI(
 )
 
 @retry(wait=wait_random_exponential(min=1, max=60), stop=stop_after_attempt(3))
-def call_gpt4o(messages, temperature=0, max_tokens=2048):
+def call_gpt4o(messages, temperature=0.3, max_tokens=2048):
     """
     GMS를 통해 GPT-4o-mini 모델을 호출하는 함수입니다.
     """

@@ -6,6 +6,7 @@ import json
 from ai.config.tags import SPECIALTY_TAGS
 from ai.llm.llm_response_parser import CotOutputParser, parse_case_analysis_output, CaseAnalysisResult
 from ai.llm.prompt_templates import get_cot_prompt
+from ai.modules.search_module import search_cases
 
 class CaseAnalysisService:
     def __init__(self, llm: LLM):
@@ -21,18 +22,48 @@ class CaseAnalysisService:
         # `prompt | llm` 로 RunnableSequence를 만듭니다. (LangChain 0.1.17 이상 권장 방식) :contentReference[oaicite:0]{index=0}
         self.chain = self.prompt_template | self.llm
 
+    from ai.modules.search_module import search_cases
+
+class CaseAnalysisService:
+    def __init__(self, llm: LLM):
+        """
+        LLM 객체를 주입받아 초기화합니다.
+
+        Args:
+            llm (LLM): LangChain의 LLM 인터페이스를 구현한 객체
+        """
+        self.llm = llm
+        self.prompt_template = get_cot_prompt()
+        self.parser = CotOutputParser()
+        # `prompt | llm` 로 RunnableSequence를 만듭니다. (LangChain 0.1.17 이상 권장 방식)
+        self.chain = self.prompt_template | self.llm
+
     def analyze_case(
             self,
             user_query: str,
-            case_docs: List[Dict[str, str]],  # 예: [{"id": "2019다1234", "text": "…"}]
+            top_k_docs: int = 5, # RAG를 위한 top_k 인자 추가
         ) -> dict:
             """
             Args:
                 user_query: 사용자가 물어본 질문
-                case_docs: 관련 판례 목록 (id, name, text 등)
+                top_k_docs: 검색할 관련 판례의 개수
             """
+            # 1. 관련 판례 검색 (RAG)
+            retrieved_docs = search_cases(user_query, top_k=top_k_docs)
+
+            # 2. 검색된 판례를 LLM 입력 형식에 맞게 변환
+            # search_cases의 결과는 {'case_id': str, 'summary': str, 'full_text': str}
+            # LLM은 {"id": "...", "text": "..."} 형태를 기대
+            formatted_case_docs = []
+            for doc in retrieved_docs:
+                formatted_case_docs.append({
+                    "id": doc.get("case_id", ""),
+                    "name": doc.get("summary", ""), # summary를 name으로 사용
+                    "text": doc.get("chunk_text", "")
+                })
+
             # case_docs를 JSON 문자열로 직렬화
-            docs_json = json.dumps(case_docs, ensure_ascii=False)
+            docs_json = json.dumps(formatted_case_docs, ensure_ascii=False)
 
             # SPECIALTY_TAGS를 쉼표로 구분된 문자열로 변환
             tag_list_str = ", ".join(SPECIALTY_TAGS)
@@ -42,7 +73,7 @@ class CaseAnalysisService:
                 "case_docs": docs_json,
                 "tag_list": tag_list_str,
             })
-            # RunnableSequence.invoke()는 마지막 LLM의 출력(보통 string 또는 {"text":…} 형태)을 그대로 돌려줍니다.  
+            # RunnableSequence.invoke()는 마지막 LLM의 출력(보통 string 또는 {"text":…} 형태)을 그대로 돌려줍니다.
             raw_llm_response = invoked["text"] if isinstance(invoked, dict) and "text" in invoked else invoked
 
             # CotOutputParser를 사용하여 추론 과정과 결론을 분리합니다.
@@ -55,7 +86,8 @@ class CaseAnalysisService:
 
             return {
                 "thought_process": thought_process,
-                "case_analysis": case_analysis_result
+                "case_analysis": case_analysis_result,
+                "retrieved_docs": formatted_case_docs # 검색된 문서 추가
             }
 
 # 사용 예시 (기존 analyze_case 함수와 호환성을 위해)
@@ -67,23 +99,20 @@ def analyze_case(case_text: str) -> dict:
 
 if __name__ == "__main__":
     sample_query = """
-    {
-    "case": {
-        "title": "회사 볼펜 무단 반출 분쟁",
-        "summary": "회사에서 볼펜 2개를 무단으로 가져간 뒤 반납을 두고 회사와 언쟁이 발생함",
-        "fullText": "사용자가 회사에서 볼펜 2개를 무단으로 가져나왔고, 회사가 이를 다시 가져다 놓으라고 요구하자 양측 간에 언쟁이 발생했습니다. 자존심이 상한 사용자는 이 문제를 어떻게 해결해야 할지 고민하고 있습니다."
-    }
+        {
+        "case": {
+            "title": "SSAFY 보안 서약서 위반 및 교육 자료 무단 게시 사건",
+            "summary": "SSAFY 입과 시 보안 서약서에 서명한 후 교육용 프로젝트 화면 캡쳐를 블로그에 무단 공개함",
+            "fullText": "SSAFY 과정에 참여한 사용자는 입과 시 보안 서약서를 작성하여 교육 자료나 코드, 화면을 외부에 공개하지 않을 것을 약속했습니다. 그러나 중간 프로젝트 발표를 준비하던 중 프로젝트 실행 화면과 소스 코드 일부를 캡쳐하여 개인 블로그에 게시했고, 안내된 가이드라인과 서약서 조항을 명백히 위반했습니다. 이로 인해 교육 기관과 동료 학습자의 권리가 침해될 수 있다는 우려가 제기되었으며, 이를 문제 삼을 경우 즉 본보기가 되어 고소 당하는 것을 걱정하고 있다"
+        }
+        }
     }"""
-    sample_docs = [
-        {"id": "2019다1234", "name": "대법원 2019다1234", "text": "…판례 전문…"},
-        {"id": "2020다5678", "name": "대법원 2020다5678", "text": "…판례 전문…"},
-    ]
 
     from ai.llm import Gpt4oMini
     llm = Gpt4oMini()
     service = CaseAnalysisService(llm)
 
-    analysis = service.analyze_case(sample_query, sample_docs)
+    analysis = service.analyze_case(sample_query)
     print("== Thought Process ==")
     print(analysis["thought_process"])
     print("\n== Conclusion ==")
