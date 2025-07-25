@@ -21,7 +21,12 @@ public class RefreshToken {
 
     // 리프레시 토큰의 소유자 (의뢰인 또는 변호사)
     // nullable로 해야함ㅠㅠ
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "client_id")
     private Client client;
+
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "lawyer_id")
     private Lawyer lawyer;
 
     @Column(length = 1024)
