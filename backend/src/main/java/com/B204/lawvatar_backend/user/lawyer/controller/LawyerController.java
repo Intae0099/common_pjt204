@@ -2,6 +2,7 @@ package com.B204.lawvatar_backend.user.lawyer.controller;
 
 import com.B204.lawvatar_backend.common.entity.Tag;
 import com.B204.lawvatar_backend.common.util.JwtUtil;
+import com.B204.lawvatar_backend.user.auth.service.RefreshTokenService;
 import com.B204.lawvatar_backend.user.lawyer.dto.LawyerLoginDto;
 import com.B204.lawvatar_backend.user.lawyer.dto.LawyerSignupDto;
 import com.B204.lawvatar_backend.user.lawyer.entity.CertificationStatus;
@@ -10,7 +11,9 @@ import com.B204.lawvatar_backend.user.lawyer.entity.LawyerTag;
 import com.B204.lawvatar_backend.user.lawyer.repository.LawyerRepository;
 import com.B204.lawvatar_backend.user.lawyer.repository.LawyerTagRepository;
 import com.B204.lawvatar_backend.user.lawyer.repository.TagRepository;
+import com.B204.lawvatar_backend.user.lawyer.service.LawyerService;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -36,19 +39,24 @@ public class LawyerController {
   private final LawyerTagRepository lawyerTagRepo;
   private final TagRepository tagRepo;
 
+  private final LawyerService lawyerService;
+  private final RefreshTokenService refreshTokenService;
+
   private final PasswordEncoder pwEncoder;
   private final JwtUtil jwtUtil;
   private final AuthenticationManager authManager;
 
   public LawyerController(LawyerRepository lawyerRepo,
       LawyerTagRepository lawyerTagRepo,
-      TagRepository tagRepo,
+      TagRepository tagRepo, LawyerService lawyerService, RefreshTokenService refreshTokenService,
       PasswordEncoder pwEncoder,
       AuthenticationManager authManager,
       JwtUtil jwtUtil) {
     this.lawyerRepo = lawyerRepo;
     this.lawyerTagRepo = lawyerTagRepo;
     this.tagRepo = tagRepo;
+    this.lawyerService = lawyerService;
+    this.refreshTokenService = refreshTokenService;
 
     this.pwEncoder = pwEncoder;
     this.jwtUtil = jwtUtil;
@@ -106,25 +114,29 @@ public class LawyerController {
           new UsernamePasswordAuthenticationToken(dto.getLoginEmail(), dto.getPassword())
       );
 
-      String raw = dto.getPassword();
-      String encoded = lawyerRepo.findByLoginEmail(dto.getLoginEmail())
-          .get().getPasswordHash();
-      boolean matches = pwEncoder.matches(raw, encoded);
-//      System.out.println("Password matches? " + matches);
-
-      // 2. 성공 시 JWT 발급
-      String token = jwtUtil.generateToken(
+      // 2. Access Token 생성 (userType은 "LAWYER")
+      String accessToken = jwtUtil.generateAccessToken(
           authentication.getName(),
           authentication.getAuthorities().stream()
               .map(GrantedAuthority::getAuthority)
-              .toList(), "CLIENT"
+              .toList(),
+          "LAWYER"
       );
 
-      // 3. 응답 반환
-      return ResponseEntity.ok(Map.of(
-          "token", token,
-          "username", authentication.getName()
-      ));
+      // 3. Refresh Token 생성 및 DB 저장
+      String refreshToken = jwtUtil.generateRefreshToken(authentication.getName());
+      // LawyerService를 통해 엔티티 조회
+      Lawyer lawyer = lawyerService.findByLoginEmail(authentication.getName());
+      // 기존 토큰 삭제 후 새로 저장
+      refreshTokenService.createForLawyer(lawyer, refreshToken);
+
+      // 4. 응답에 두 토큰 모두 포함
+      Map<String, String> body = new LinkedHashMap<>();
+      body.put("accessToken",  accessToken);
+      body.put("refreshToken", refreshToken);
+      body.put("username",     authentication.getName());
+
+      return ResponseEntity.ok(body);
 
     } catch (BadCredentialsException e) {
       return ResponseEntity.status(HttpStatus.UNAUTHORIZED)

@@ -1,31 +1,43 @@
 package com.B204.lawvatar_backend.user.auth.controller;
 
 import com.B204.lawvatar_backend.common.util.JwtUtil;
+import com.B204.lawvatar_backend.user.auth.entity.RefreshToken;
+import com.B204.lawvatar_backend.user.auth.repository.RefreshTokenRepository;
+import com.B204.lawvatar_backend.user.auth.service.RefreshTokenService;
+import io.jsonwebtoken.Claims;
 import java.util.List;
 import java.util.Map;
-import org.springframework.web.bind.annotation.GetMapping;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestController
-@RequestMapping("/oauth2/callback")
+@RequestMapping("/auth")
+@RequiredArgsConstructor
 public class AuthController {
-
+  private final RefreshTokenService rtService;
   private final JwtUtil jwtUtil;
-  public AuthController(JwtUtil j) { this.jwtUtil = j; }
+  private final RefreshTokenRepository rtRepo;
 
-  @GetMapping("/kakao")
-  public Map<String, String> kakaoCallback(
-      @RequestParam String code) {
-    // 1) code → 카카오 access_token 교환 (HTTP call)
-    // 2) 카카오 /v2/user/me 호출 → 사용자 정보 획득
-    // 3) 사용자 DB 저장/조회 (repo)
-    // 4) jwtUtil.generateToken(...) 호출
-    String jwt = jwtUtil.generateToken("사용자ID", List.of("ROLE_USER"), "CLIENT");
-    return Map.of("accessToken", jwt);
+  @PostMapping("/refresh")
+  public ResponseEntity<Map<String,String>> refresh(@RequestBody Map<String,String> req) {
+    String raw = req.get("refreshToken");
+    Claims claims = jwtUtil.validateAndGetClaims(raw);
+    String username = claims.getSubject();
+
+    // DB에서 토큰 검증
+    RefreshToken rt = rtRepo.findByRefreshToken(raw)
+        .filter(r->r.getRevokedAt()==null)
+        .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+
+    // 새 Access Token
+    String newAccess = jwtUtil.generateAccessToken(username, List.of(/*roles 재조회 or 클레임*/), claims.get("userType", String.class));
+
+    return ResponseEntity.ok(Map.of("accessToken", newAccess));
   }
-
-
-
 }

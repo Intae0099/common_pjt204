@@ -1,12 +1,18 @@
 package com.B204.lawvatar_backend.common.config;
 
 import com.B204.lawvatar_backend.common.util.JwtUtil;
+import com.B204.lawvatar_backend.user.auth.service.RefreshTokenService;
+import com.B204.lawvatar_backend.user.client.entity.Client;
+import com.B204.lawvatar_backend.user.client.repository.ClientRepository;
 import com.B204.lawvatar_backend.user.client.service.ClientService;
+import com.B204.lawvatar_backend.user.lawyer.entity.Lawyer;
 import com.B204.lawvatar_backend.user.lawyer.service.LawyerService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -24,7 +30,9 @@ import org.springframework.security.oauth2.client.InMemoryOAuth2AuthorizedClient
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
@@ -35,54 +43,97 @@ import org.springframework.stereotype.Component;
 public class SecurityConfig {
 
   private final ClientService clientService;
+  private final LawyerService lawyerService;
   private final JwtUtil jwtUtil;
+  private final RefreshTokenService refreshTokenService;
 
   public SecurityConfig(ClientService clientService,
-      JwtUtil jwtUtil
+      LawyerService lawyerService,
+      JwtUtil jwtUtil,
+      RefreshTokenService refreshTokenService
   ) {
     this.clientService = clientService;
+    this.lawyerService = lawyerService;
     this.jwtUtil = jwtUtil;
+    this.refreshTokenService = refreshTokenService;
   }
 
   @Component
   public static class OAuth2JwtSuccessHandler implements AuthenticationSuccessHandler {
-    private final OAuth2AuthorizedClientService clientService;
-    private final JwtUtil jwtUtil;
 
-    public OAuth2JwtSuccessHandler(OAuth2AuthorizedClientService clientService,
-        JwtUtil jwtUtil) {
-      this.clientService = clientService;
+    private final OAuth2AuthorizedClientService authorizedClientService;
+    private final ClientRepository clientRepository;
+    private final JwtUtil jwtUtil;
+    private final RefreshTokenService refreshTokenService;
+    private final ClientRegistrationRepository clientRegRepo; // UserNameAttributeName 조회용
+
+    public OAuth2JwtSuccessHandler(
+        OAuth2AuthorizedClientService authorizedClientService,
+        ClientRepository clientRepository,
+        JwtUtil jwtUtil,
+        RefreshTokenService refreshTokenService, ClientRegistrationRepository clientRegRepo
+    ) {
+      this.authorizedClientService = authorizedClientService;
+      this.clientRepository = clientRepository;
       this.jwtUtil = jwtUtil;
+      this.refreshTokenService = refreshTokenService;
+      this.clientRegRepo = clientRegRepo;
     }
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest req,
         HttpServletResponse res,
         Authentication authentication) throws IOException {
+
       OAuth2AuthenticationToken oauthToken = (OAuth2AuthenticationToken) authentication;
       String regId = oauthToken.getAuthorizedClientRegistrationId();
       String principal = oauthToken.getName();
 
       // 여기서 소셜 토큰 꺼내기
-      OAuth2AuthorizedClient client = clientService.loadAuthorizedClient(regId, principal);
-      String socialAccessToken  = client.getAccessToken().getTokenValue();
-      String socialRefreshToken = client.getRefreshToken().getTokenValue();
+      OAuth2AuthorizedClient authorizedClient = authorizedClientService.loadAuthorizedClient(regId, principal);
+      String socialAccessToken  = authorizedClient.getAccessToken().getTokenValue();
+      String socialRefreshToken = authorizedClient.getRefreshToken().getTokenValue();
 
-      // 내부 JWT 발급
-      String jwt = jwtUtil.generateToken(principal,
-          oauthToken.getAuthorities().stream()
-              .map(a -> a.getAuthority()).toList(), "CLIENT");
+      OAuth2User oauthUser = oauthToken.getPrincipal();
+      ClientRegistration reg = clientRegRepo.findByRegistrationId(regId);
+      String userNameAttr = reg
+          .getProviderDetails()
+          .getUserInfoEndpoint()
+          .getUserNameAttributeName();
 
-      // JSON 응답
+      Object rawId = oauthUser.getAttribute(userNameAttr);
+      @SuppressWarnings("unchecked")
+      Map<String,Object> kakaoAccount = oauthUser.getAttribute("kakao_account");
+      Map<String,Object> profile      = (Map<String,Object>) kakaoAccount.get("profile");
+      String nickname                = (String) profile.get("nickname");
+
+      // 3) ClientService.loadUser 와 동일한 조회/생성 로직
+      Client client = clientRepository.findByOauthIdentifier(rawId.toString())
+          .orElseGet(() -> clientRepository.save(
+              new Client(rawId.toString(), nickname, regId)
+          ));
+
+      // 4) 서버용 JWT Access Token 생성
+      String accessToken = jwtUtil.generateAccessToken(
+          client.getOauthIdentifier(),
+          List.of("ROLE_USER"),
+          "CLIENT"
+      );
+      // 5) 서버용 Refresh Token 생성·저장
+      String refreshToken = jwtUtil.generateRefreshToken(client.getOauthIdentifier());
+      refreshTokenService.createForClient(client, refreshToken);
+
+      Map<String, String> responseBody = new LinkedHashMap<>();
+      responseBody.put("accessToken", accessToken);
+      responseBody.put("refreshToken", refreshToken);
+      responseBody.put("socialAccessToken", socialAccessToken);
+      if (socialRefreshToken != null) {
+        responseBody.put("socialRefreshToken", socialRefreshToken);
+      }
+
       res.setStatus(HttpServletResponse.SC_OK);
       res.setContentType(MediaType.APPLICATION_JSON_VALUE);
-      res.getWriter().write(
-          new ObjectMapper().writeValueAsString(Map.of(
-              "accessToken", jwt,
-              "socialAccessToken", socialAccessToken,
-              "socialRefreshToken", socialRefreshToken
-          ))
-      );
+      res.getWriter().write(new ObjectMapper().writeValueAsString(responseBody));
     }
   }
 
@@ -97,10 +148,25 @@ public class SecurityConfig {
 
     // 로컬 로그인 성공 핸들러 → JWT 발급
     AuthenticationSuccessHandler lawyerLoginSuccessHandler = (req, res, auth) -> {
-      String token = jwtUtil.generateToken(auth.getName(), auth.getAuthorities().stream()
-          .map(a -> a.getAuthority()).toList(), "LAWYER");
-      res.setContentType("application/json");
-      res.getWriter().write("{\"token\": \"" + token + "\"}");
+      String username = auth.getName();
+      List<String> roles = auth.getAuthorities().stream()
+          .map(a -> a.getAuthority())
+          .toList();
+
+      String accessToken = jwtUtil.generateAccessToken(username, roles, "LAWYER");
+      String refreshToken = jwtUtil.generateRefreshToken(username);
+
+      Lawyer lawyer = lawyerService.findByLoginEmail(username);
+      refreshTokenService.createForLawyer(lawyer, refreshToken);
+
+      Map<String,String> body = new LinkedHashMap<>();
+      body.put("accessToken",  accessToken);
+      body.put("refreshToken", refreshToken);
+
+      res.setStatus(HttpServletResponse.SC_OK);
+      res.setContentType(MediaType.APPLICATION_JSON_VALUE);
+      res.getWriter()
+          .write(new ObjectMapper().writeValueAsString(body));
     };
 
     // 로컬 로그인 실패 핸들러

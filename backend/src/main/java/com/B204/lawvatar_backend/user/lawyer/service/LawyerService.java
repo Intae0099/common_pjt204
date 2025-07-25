@@ -34,6 +34,10 @@ public class LawyerService implements UserDetailsService {
     );
   }
 
+  public Lawyer findByLoginEmail(String loginEmail) {
+    return repo.findByLoginEmail(loginEmail)
+        .orElseThrow(() -> new UsernameNotFoundException("Lawyer not found: " + loginEmail));
+  }
 
 }
 
