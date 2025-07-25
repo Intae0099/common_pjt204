@@ -1,5 +1,2 @@
-import sys
-import os
-
-sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
-from . import embedding_model
+from .langchain_client import Gpt4oMini
+from .openai_client import call_gpt4o
