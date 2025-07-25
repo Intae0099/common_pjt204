@@ -39,13 +39,16 @@
 
     <button :disabled="!selectedDate || !selectedTime" @click="openModal">상담 예약하기</button>
 
-    <ApplicationChoiceModal
-      v-if="showModal"
-      :lawyerId="lawyerId"
-      :selectedDate="selectedDate"
-      :selectedTime="selectedTime"
-      @close="showModal = false"
-    />
+    <div v-if="showModal">
+      <ApplicationChoiceModal
+        :lawyerId="lawyerId"
+        :selectedDate="selectedDate"
+        :selectedTime="selectedTime"
+        @close="showModal = false"
+      />
+    </div>
+
+    <p v-if="!lawyer">변호사 정보를 불러오는 중...</p>
   </div>
 </template>
 
@@ -53,7 +56,8 @@
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
 import { useRoute } from 'vue-router'
-import ApplicationChoiceModal from './ApplicationChoiceModal.vue'
+import ApplicationChoiceModal from '@/features/reservation/ApplicationChoiceModal.vue'
+
 
 const route = useRoute()
 const lawyerId = route.params.id
