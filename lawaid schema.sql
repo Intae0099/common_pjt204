@@ -1,3 +1,5 @@
+drop database if exists lawaid;
+
 create database lawaid;
 use lawaid;
 
