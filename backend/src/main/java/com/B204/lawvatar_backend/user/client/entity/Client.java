@@ -1,6 +1,8 @@
 package com.B204.lawvatar_backend.user.client.entity;
 
+import jakarta.annotation.Nullable;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -8,6 +10,7 @@ import lombok.Setter;
 @Entity
 @Getter
 @NoArgsConstructor
+@AllArgsConstructor
 public class Client {
 
     // Field
@@ -16,7 +19,7 @@ public class Client {
     private Long id;
 
     @Column(length = 20)
-    private String name;
+    private String oauthName;
 
     @Column(length = 30)
     private String email;
@@ -24,7 +27,18 @@ public class Client {
     @Column(length = 20)
     private String oauthProvider;
 
-    @Column(length = 30)
+    @Column(length = 20)
     private String oauthIdentifier;
+
+    public Client(String oauthName, String oauthProvider){
+        this.oauthName = oauthName;
+        this.oauthProvider = oauthProvider;
+    }
+
+    public Client(String oauthIdentifier, String oauthName, String oauthProvider){
+        this.oauthIdentifier = oauthIdentifier;
+        this.oauthName = oauthName;
+        this.oauthProvider = oauthProvider;
+    }
 
 }

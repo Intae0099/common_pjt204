@@ -21,10 +21,17 @@ public class RefreshToken {
 
     // 리프레시 토큰의 소유자 (의뢰인 또는 변호사)
     // nullable로 해야함ㅠㅠ
+    // 의뢰인용 foreign key
+    @ManyToOne(fetch = FetchType.LAZY, optional = true)
+    @JoinColumn(name = "client_id")
     private Client client;
+
+    // 변호사용 foreign key
+    @ManyToOne(fetch = FetchType.LAZY, optional = true)
+    @JoinColumn(name = "lawyer_id")
     private Lawyer lawyer;
 
-    @Column(length = 1024)
+    @Column(length = 1024, nullable = false)
     // JWT는 보통 200~500자 정도이므로, JWT를 저장할 컬럼의 길이를 512 or 1024 바이트로 두는 것이 일반적. (2의 배수로 두는 것이 관례)
     private String refreshToken;
 
