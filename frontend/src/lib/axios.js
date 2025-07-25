@@ -1,9 +1,7 @@
-// src/lib/axios.js
 import axios from 'axios'
 
 const instance = axios.create({
   baseURL: '/',
-  withCredentials: true
 })
 
 instance.interceptors.request.use(
