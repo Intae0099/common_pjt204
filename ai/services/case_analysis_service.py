@@ -3,9 +3,7 @@ from langchain.llms.base import LLM
 from typing import List, Dict
 import json
 
-
-
-
+from ai.config.tags import SPECIALTY_TAGS
 from ai.llm.llm_response_parser import CotOutputParser, parse_case_analysis_output, CaseAnalysisResult
 from ai.llm.prompt_templates import get_cot_prompt
 
@@ -36,9 +34,13 @@ class CaseAnalysisService:
             # case_docs를 JSON 문자열로 직렬화
             docs_json = json.dumps(case_docs, ensure_ascii=False)
 
+            # SPECIALTY_TAGS를 쉼표로 구분된 문자열로 변환
+            tag_list_str = ", ".join(SPECIALTY_TAGS)
+
             invoked = self.chain.invoke({
                 "user_query": user_query,
                 "case_docs": docs_json,
+                "tag_list": tag_list_str,
             })
             # RunnableSequence.invoke()는 마지막 LLM의 출력(보통 string 또는 {"text":…} 형태)을 그대로 돌려줍니다.  
             raw_llm_response = invoked["text"] if isinstance(invoked, dict) and "text" in invoked else invoked
