@@ -3,10 +3,11 @@
   <div>
     <!-- 배너 영역 -->
     <div class="banner">
-      <h2>
-        빠르고 정확한 <span class="highlight">판례 조회</span>,<br />
-        지금 바로 확인하세요!
-      </h2>
+      <img src="@/assets/banner-bg.png" alt="배경" class="banner-bg" />
+      <img src="@/assets/banner-character.png" alt="캐릭터" class="banner-character" />
+      <div class="banner-text">
+        <p>빠르고 정확한 <span class="highlight">판례 조회</span>,<br />지금 바로 확인하세요!</p>
+      </div>
     </div>
 
     <!-- 하위 콘텐츠 슬롯 -->
@@ -22,15 +23,36 @@
 
 <style scoped>
 .banner {
-  background: linear-gradient(135deg, #1f3c88, #2a5298);
+  position: relative;
+  width: 100vw;
+  height: 250px;
+  margin-left: calc(-50vw + 50%);
+  overflow: hidden;
+}
+
+.banner-bg,
+.banner-character {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.banner-text {
+  position: absolute;
+  top: 55%;
+  left: 35%;
+  transform: translateY(-50%);
   color: white;
-  text-align: center;
-  padding: 60px 0;
+  font-size: 35px;
+  font-weight: 350;
+  line-height: 1.4;
 }
 
 .highlight {
   font-weight: bold;
-  color: #ffe600;
 }
 
 .content-wrapper {
