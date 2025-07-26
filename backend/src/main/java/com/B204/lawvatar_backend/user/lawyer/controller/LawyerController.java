@@ -30,6 +30,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -100,6 +101,15 @@ public class LawyerController {
 
 
     return ResponseEntity.ok("가입 신청이 완료되었습니다.");
+  }
+
+  @PostMapping("/emails/check")
+  public ResponseEntity<?> isEmailAvailable(@RequestParam String email){
+    Optional l = lawyerRepo.findByLoginEmail(email);
+    boolean isAvailable = l.isEmpty();
+
+    Map<String, String> response = Map.of("isAvailable", String.valueOf(isAvailable));
+    return ResponseEntity.ok(response);
   }
 
   @PostMapping("/login/json")
