@@ -3,9 +3,9 @@ from langchain.llms.base import LLM
 from typing import List, Dict
 import json
 
-from ai.config.tags import SPECIALTY_TAGS
+from config.tags import SPECIALTY_TAGS
 from llm.llm_response_parser import CotOutputParser, parse_case_analysis_output, CaseAnalysisResult
-from ai.llm.prompt_templates import get_cot_prompt
+from llm.prompt_templates import get_cot_prompt
 from services.search_service import search_cases
 
 class CaseAnalysisService:

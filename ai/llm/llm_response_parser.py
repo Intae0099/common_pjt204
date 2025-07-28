@@ -2,22 +2,15 @@ import re
 import json
 from typing import Dict, Any, List
 from langchain.schema import BaseOutputParser
-from pydantic import BaseModel, Field
+# from pydantic import BaseModel, Field # CaseAnalysisResult 이동으로 더 이상 필요 없음
 
-class CaseAnalysisResult(BaseModel):
-    issues: List[str] = Field(default_factory=list)
-    opinion: str = ""
-    expected_sentence: str = ""
-    confidence: float = Field(default=0.0, ge=0.0, le=1.0)
-    references: Dict[str, Any] = Field(default_factory=dict)
-    tags: List[str] = Field(default_factory=list)
-    recommendedLawyers: List[str] = Field(default_factory=list)
+from app.api.schemas.analysis import CaseAnalysisResult # 새 위치에서 임포트
 
 class CotOutputParser(BaseOutputParser):
     def parse(self, text: str) -> Dict[str, Any]:
         text = text.strip()
         # JSON 블록이면 그대로 thought/conclusion 모두 raw로 남김
-        if text.startswith("{"):
+        if text.startswith("{\n"):
             return {"thought_process": text, "conclusion": text}
 
         # "결론:" 헤더 기준 분리
@@ -36,7 +29,7 @@ def parse_case_analysis_output(raw: str) -> CaseAnalysisResult:
     raw = raw.strip()
 
     # 1) JSON 형태 처리 우선
-    if raw.startswith("{"):
+    if raw.startswith("{\n"):
         payload = json.loads(raw)
         report  = payload.get("data", {}).get("report", {})
 
