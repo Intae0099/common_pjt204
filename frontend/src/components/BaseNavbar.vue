@@ -61,13 +61,16 @@
           <li class="nav-item"><RouterLink to="/videocall/preview/client" class="nav-link">화상상담</RouterLink></li>
         </ul>
 
-        <!-- 하단 마이페이지 / Logout -->
+        <!-- 하단 마이페이지 / Login, Logout -->
         <ul class="nav flex-column px-3 pb-4 text-start menu-footer">
           <li class="nav-item">
-            <RouterLink to="/user/mypage" class="nav-link text-dark fw-medium text-decoration-none">마이페이지</RouterLink>
+            <RouterLink :to="mypagePath" class="nav-link text-dark fw-medium text-decoration-none">마이페이지</RouterLink>
           </li>
-          <li class="nav-item">
+          <li class="nav-item" v-if="isLoggedIn">
             <a href="#" class="nav-link text-dark fw-medium text-decoration-none" @click.prevent="logout">Logout</a>
+          </li>
+          <li class="nav-item" v-else>
+            <RouterLink to="/login" class="nav-link text-dark fw-medium text-decoration-none">Login</RouterLink>
           </li>
         </ul>
       </div>
@@ -86,9 +89,14 @@ const isMenuOpen = ref(false)
 const authStore = useAuthStore()
 const router = useRouter()
 const route = useRoute()
+const isLoggedIn = computed(() => !!authStore.accessToken)
+
+const mypagePath = computed(() =>
+  authStore.userType === 'LAWYER' ? '/lawyer/mypage' : '/user/mypage'
+)
 
 const logout = () => {
-  authStore.clearToken()
+  authStore.clearAuth()
   router.push('/login')
 }
 

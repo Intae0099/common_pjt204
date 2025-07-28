@@ -38,9 +38,6 @@
         <div class="text-wrapper-9">상담내역</div>
         <hr>
 
-        <!-- 결제내역 섹션 (기존 코드 유지) -->
-        <div class="text-wrapper-10">결제내역</div>
-        <hr>
         <div class="text-wrapper-10">회원탈퇴</div>
         </div>
     </div>

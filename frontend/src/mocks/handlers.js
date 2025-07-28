@@ -1,6 +1,17 @@
 import { http, HttpResponse } from 'msw'
+// import { rest } from 'msw'
+
 
 export const handlers = [
+  // rest.get('/oauth2/authorization/kakao', (req, res, ctx) => {
+  //   return res(
+  //     ctx.status(200),
+  //     ctx.json({
+  //       access_token: 'mock-access-token-user-1234',
+  //     })
+  //   )
+  // }),
+
   http.post('/api/auth/lawyers/login', async ({ request }) => {
     const body = await request.json()
     const { loginId, loginPwd } = body
@@ -105,27 +116,30 @@ export const handlers = [
   http.get('/api/admin/lawyers/list', () => {
     return HttpResponse.json([
       {
-        id: 1,
-        name: '이정연',
-        tags: ['교통사고', '합의'],
+        lawyerId: '1203',
+        loginEmail: 'taein4225@naver.com',
+        name: '김태인',
+        introduction: '최선을 다하겠습니다!!',
+        exam: '로스쿨',
+        registrationNumber: '2020-12345',
+        certificationStatus: 'APROVED',
+        consultationCount: '8',
         profile_image: 'https://via.placeholder.com/150',
-        introduction: '교통사고 전문 변호사입니다.'
+        tags: [3, 5, 6, 7]
       },
       {
-        id: 2,
-        name: '윤규성',
-        tags: ['이혼', '합의'],
+        lawyerId: '5223',
+        loginEmail: 'woo4225@naver.com',
+        name: '우영우',
+        introduction: '돌고래가 보여요! 천재변호사 우영우입니다.',
+        exam: '사법시험',
+        registrationNumber: '2022-95126',
+        certificationStatus: 'APROVED',
+        consultationCount: '100',
         profile_image: 'https://via.placeholder.com/150',
-        introduction: '합의 경험이 풍부한 변호사입니다.'
-      },
-      {
-        id: 3,
-        name: '전해지',
-        tags: ['교통사고', '합의'],
-        profile_image: 'https://via.placeholder.com/150',
-        introduction: '의뢰인의 입장에서 최선을 다하겠습니다.'
+        tags: [1, 2]
       }
-    ])
+    ]);
   }),
 
   // 특정 날짜에 변호사 예약 불가 시간 조회

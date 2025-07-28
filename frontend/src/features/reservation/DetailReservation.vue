@@ -3,9 +3,11 @@
     <button @click="$router.back()">← 이전</button>
     <h2>{{ lawyer?.name }} 변호사</h2>
     <p>{{ lawyer?.introduction }}</p>
+    <!-- 태그 이름 표시 -->
     <div>
-      <span v-for="tag in lawyer?.tags" :key="tag">#{{ tag }}</span>
+      <span v-for="tag in lawyer?.tags" :key="tag">#{{ getTagName(tag) }}</span>
     </div>
+
 
     <!-- 날짜 선택 -->
     <input
@@ -34,9 +36,6 @@
       </button>
     </div>
 
-
-
-
     <button :disabled="!selectedDate || !selectedTime" @click="openModal">상담 예약하기</button>
 
     <div v-if="showModal">
@@ -58,7 +57,6 @@ import axios from 'axios'
 import { useRoute } from 'vue-router'
 import ApplicationChoiceModal from '@/features/reservation/ApplicationChoiceModal.vue'
 
-
 const route = useRoute()
 const lawyerId = route.params.id
 const lawyer = ref(null)
@@ -66,12 +64,33 @@ const unavailableSlots = ref([])
 const selectedDate = ref('')
 const selectedTime = ref('')
 const showModal = ref(false)
-const today = new Date().toISOString().split('T')[0]  // YYYY-MM-DD 형식
+const today = new Date().toISOString().split('T')[0]
 const allTimeSlots = [
   '08:00', '08:30', '09:00', '09:30', '10:00', '10:30',
   '11:00', '11:30', '13:00', '13:30', '14:00', '14:30',
   '15:00', '15:30', '16:00', '16:30'
 ]
+
+// ✅ 태그 ID ↔ 이름 매핑
+const tagMap = [
+  { id: 1, name: '형사 분야' },
+  { id: 2, name: '교통·사고·보험' },
+  { id: 3, name: '가사·가족' },
+  { id: 4, name: '민사·계약·채권' },
+  { id: 5, name: '파산·회생·채무조정' },
+  { id: 6, name: '상속·증여' },
+  { id: 7, name: '지식재산권' },
+  { id: 8, name: '노동·고용' },
+  { id: 9, name: '행정·조세' },
+  { id: 10, name: '환경·공공' },
+  { id: 11, name: '의료·생명·개인정보' },
+  { id: 12, name: '금융·증권·기업' }
+]
+
+const getTagName = (id) => {
+  const tag = tagMap.find(t => t.id === Number(id))
+  return tag ? tag.name : '알 수 없음'
+}
 
 onMounted(async () => {
   selectedDate.value = today
@@ -79,10 +98,9 @@ onMounted(async () => {
   await fetchUnavailableSlots()
 })
 
-
 const fetchLawyerInfo = async () => {
   const res = await axios.get(`/api/admin/lawyers/list`)
-  lawyer.value = res.data.find(l => l.id == lawyerId)
+  lawyer.value = res.data.find(l => l.lawyerId == lawyerId)
 }
 
 const fetchUnavailableSlots = async () => {
@@ -98,8 +116,8 @@ const openModal = () => {
   console.log('✅ 모달 열림 시도', selectedDate.value, selectedTime.value)
   showModal.value = true
 }
-
 </script>
+
 
 <style>
 .btn {
