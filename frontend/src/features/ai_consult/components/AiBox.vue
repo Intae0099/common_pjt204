@@ -17,6 +17,7 @@
     <!-- 아무 입력도 없을 때 -->
     <div v-else>
       <p>왼쪽에 질문을 입력해주세요.</p>
+      <img class="guide-bot" src="@/assets/ai-consult-bot.png" alt="AI 봇" />
     </div>
   </div>
 </template>
