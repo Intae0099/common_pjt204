@@ -2,7 +2,6 @@ import { createRouter, createWebHistory } from 'vue-router'
 
 //회원가입 및 로그인
 import SocialLogin from '@/features/auth/user/SocialLogin.vue'
-import OAuthCallback from '@/features/auth/user/OAuthCallback.vue'
 import SignUpFirst from '@/features/auth/lawyer/SignUpFirst.vue';
 import SignUpSecond from '@/features/auth/lawyer/SignUpSecond.vue';
 import SignUpThird from '@/features/auth/lawyer/SignUpThird.vue';
@@ -37,10 +36,6 @@ const router = createRouter({
     {
       path: '/login',
       component: SocialLogin
-    },
-    {
-      path: '/oauth/callback/:provider',
-      component: OAuthCallback
     },
     {
       path: '/signup/step1',
