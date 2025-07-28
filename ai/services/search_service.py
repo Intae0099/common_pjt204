@@ -5,8 +5,8 @@ from dotenv import load_dotenv
 
 from db.database import get_psycopg2_connection
 from utils.logger import setup_logger, get_logger
-from llm.embedding_model import get_embedding
-from llm.cross_encoder_model import get_cross_encoder_scores
+from llm.models.embedding_model import get_embedding
+from llm.models.cross_encoder_model import get_cross_encoder_scores
 
 load_dotenv()
 

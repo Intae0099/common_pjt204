@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from ai.app.api.routers import analysis
+from app.api.routers import analysis
 
 app = FastAPI()
 

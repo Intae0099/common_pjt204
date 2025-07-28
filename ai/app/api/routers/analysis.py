@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
 from typing import List, Dict, Any
 
-from ai.app.api.schemas.analysis import AnalysisRequest, AnalysisResponse
-from ai.app.api.dependencies import get_case_analysis_service
-from ai.services.case_analysis_service import CaseAnalysisService
+from app.api.schemas.analysis import AnalysisRequest, AnalysisResponse
+from app.api.dependencies import get_case_analysis_service
+from services.case_analysis_service import CaseAnalysisService
 
 router = APIRouter()
 

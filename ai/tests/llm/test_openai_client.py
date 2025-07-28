@@ -4,11 +4,11 @@ import tenacity
 
 # ai/config/.env에서 GMS_KEY와 GMS_BASE_URL을 로드하므로,
 # client 객체는 이미 초기화된 상태입니다.
-from llm.openai_client import call_gpt4o
+from llm.clients.openai_client import call_gpt4o
 
 class TestOpenAIClient(unittest.TestCase):
 
-    @patch('llm.openai_client.client.chat.completions.create')
+    @patch('llm.clients.openai_client.client.chat.completions.create')
     def test_call_gpt4o_success(self, mock_create):
         """call_gpt4o 함수가 성공적으로 API 응답을 처리하는지 테스트"""
         # Mock response 설정
@@ -31,7 +31,7 @@ class TestOpenAIClient(unittest.TestCase):
             max_tokens=2048
         )
 
-    @patch('llm.openai_client.client.chat.completions.create')
+    @patch('llm.clients.openai_client.client.chat.completions.create')
     def test_call_gpt4o_api_error(self, mock_create):
         """재시도 후 최종적으로 tenacity.RetryError를 발생시키는지 테스트"""
         # API 호출 시 예외를 발생시키도록 설정

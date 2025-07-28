@@ -7,7 +7,7 @@ from pathlib import Path
 # .env 파일 로드를 애플리케이션 시작점(run_analysis.py)에서 처리하므로,
 # 여기서는 로드된 환경 변수를 사용하기만 합니다.
 from dotenv import load_dotenv
-dotenv_path = Path(__file__).resolve().parent.parent / "config" / ".env"
+dotenv_path = Path(__file__).resolve().parents[2] / "config" / ".env"
 # print(f"[Config] Loading .env from: {dotenv_path}")
 load_dotenv(dotenv_path)
 

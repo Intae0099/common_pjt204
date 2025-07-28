@@ -4,9 +4,9 @@ from typing import List, Dict
 import json
 
 from ai.config.tags import SPECIALTY_TAGS
-from ai.llm.llm_response_parser import CotOutputParser, parse_case_analysis_output, CaseAnalysisResult
+from llm.llm_response_parser import CotOutputParser, parse_case_analysis_output, CaseAnalysisResult
 from ai.llm.prompt_templates import get_cot_prompt
-from ai.services.search_service import search_cases
+from services.search_service import search_cases
 
 class CaseAnalysisService:
     def __init__(self, llm: LLM):
@@ -74,7 +74,7 @@ class CaseAnalysisService:
 
 # 사용 예시 (기존 analyze_case 함수와 호환성을 위해)
 def analyze_case(case_text: str) -> dict:
-    from ai.llm import Gpt4oMini
+    from llm.clients.langchain_client import Gpt4oMini
     llm = Gpt4oMini()
     service = CaseAnalysisService(llm)
     return service.analyze_case(case_text)
@@ -90,7 +90,7 @@ if __name__ == "__main__":
         }
     """
 
-    from ai.llm import Gpt4oMini
+    from llm.clients.langchain_client import Gpt4oMini
     llm = Gpt4oMini()
     service = CaseAnalysisService(llm)
 

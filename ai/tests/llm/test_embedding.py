@@ -1,5 +1,5 @@
 import pytest
-from llm.embedding_model import load_model, get_embedding
+from llm.models.embedding_model import load_model, get_embedding
 
 def test_load_model():
     model = load_model()

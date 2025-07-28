@@ -2,8 +2,8 @@ import unittest
 from unittest.mock import MagicMock, patch
 import json
 from langchain.llms.base import LLM
-from ai.config.tags import SPECIALTY_TAGS
-from ai.services.case_analysis_service import CaseAnalysisService
+from config.tags import SPECIALTY_TAGS
+from services.case_analysis_service import CaseAnalysisService
 
 class TestCaseAnalysisService(unittest.TestCase):
 
@@ -14,7 +14,7 @@ class TestCaseAnalysisService(unittest.TestCase):
         # 내부 chain을 Mock 으로 교체
         self.service.chain = MagicMock()
 
-    @patch('ai.services.case_analysis_service.search_cases')
+    @patch('services.case_analysis_service.search_cases')
     def test_analyze_case_invokes_chain_correctly(self, mock_search_cases):
         """analyze_case가 chain.invoke에 올바른 파라미터로 호출되는지 검증"""
         # 1) search_cases가 반환할 원본 문서들

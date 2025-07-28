@@ -2,25 +2,25 @@ from fastapi.testclient import TestClient
 from unittest.mock import patch, MagicMock
 import pytest
 
-from ai.app.main import app
-from ai.services.case_analysis_service import CaseAnalysisService
-from ai.llm import Gpt4oMini
-from ai.llm.llm_response_parser import CaseAnalysisResult # CaseAnalysisResult 임포트
+from app.main import app
+from services.case_analysis_service import CaseAnalysisService
+from llm import Gpt4oMini
+from llm.llm_response_parser import CaseAnalysisResult # CaseAnalysisResult 임포트
 
-from ai.app.api.dependencies import get_case_analysis_service
+from app.api.dependencies import get_case_analysis_service
 
 client = TestClient(app)
 
 @pytest.fixture
 def mock_case_analysis_service():
-    with patch('ai.app.api.dependencies.get_case_analysis_service') as mock_get_service:
+    with patch('app.api.dependencies.get_case_analysis_service') as mock_get_service:
         mock_service_instance = MagicMock(spec=CaseAnalysisService)
         mock_get_service.return_value = mock_service_instance
         yield mock_service_instance
 
 @pytest.fixture
 def mock_llm():
-    with patch('ai.app.api.dependencies.get_llm') as mock_get_llm:
+    with patch('app.api.dependencies.get_llm') as mock_get_llm:
         mock_llm_instance = MagicMock(spec=Gpt4oMini)
         mock_get_llm.return_value = mock_llm_instance
         yield mock_llm_instance

@@ -2,13 +2,13 @@ import pytest
 from unittest.mock import patch, MagicMock
 import os
 
-from llm.cross_encoder_model import load_cross_encoder_model, get_cross_encoder_scores, CROSS_ENCODER_MODEL_NAME
+from llm.models.cross_encoder_model import load_cross_encoder_model, get_cross_encoder_scores, CROSS_ENCODER_MODEL_NAME
 from services.search_service import rerank_cases
 
 # Mock the CrossEncoder to prevent actual model loading during tests
 @pytest.fixture(autouse=True)
 def mock_cross_encoder():
-    with patch('llm.cross_encoder_model.CrossEncoder') as MockCrossEncoder:
+    with patch('llm.models.cross_encoder_model.CrossEncoder') as MockCrossEncoder:
         mock_instance = MockCrossEncoder.return_value
         mock_instance.predict.return_value = MagicMock(tolist=lambda: [0.1, 0.9, 0.5]) # Default mock scores
         yield MockCrossEncoder # Yield the mock object itself

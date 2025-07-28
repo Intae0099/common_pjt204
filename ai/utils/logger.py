@@ -5,7 +5,7 @@ import os
 from datetime import datetime
 
 def setup_logger():
-    LOG_DIR = "ai/logs"
+    LOG_DIR = "logs"
     if not os.path.exists(LOG_DIR):
         os.makedirs(LOG_DIR)
 
