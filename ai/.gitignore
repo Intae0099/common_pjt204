@@ -1,13 +1,15 @@
-# VSCode 설정
+# IDE and Editor settings
 .vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
 
-# Byte-compiled / optimized / DLL files
+# Python artifacts
 __pycache__/
 *.py[cod]
 *$py.class
-
-# C extensions
 *.so
+.python-version
 
 # Distribution / packaging
 build/
@@ -16,30 +18,7 @@ dist/
 *.egg
 .eggs/
 
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
-
-# Unit test / coverage reports
-htmlcov/
-.tox/
-.nox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-*.py,cover
-.hypothesis/
-
-# PyBuilder
-target/
-
-# Jupyter Notebook checkpoints
-.ipynb_checkpoints
-
-# Virtualenv / Conda
+# Virtual environments
 .env
 .venv/
 env/
@@ -47,26 +26,35 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+.env.local
+.env.*.local
 
-# VSCode Python extension
-.python-version
+# Testing and coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.cache
+.pytest_cache/
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
 
-# mypy
+# Type checker caches
 .mypy_cache/
 .dmypy.json
-
-# pyre
 .pyre/
-
-# Pyre type checker
 .pytype/
 
-# IDEs
-.idea/
-*.sublime-project
-*.sublime-workspace
+# PyBuilder
+target/
 
-# macOS
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints
+
+# OS-specific files
 .DS_Store
 
 # Logs and databases
@@ -74,32 +62,21 @@ venv.bak/
 logs/
 *.sqlite3
 
-
-# AI-specific artifacts
-# 모델 가중치, 토크나이저 등 (필요 시 제외)
+# AI/ML artifacts
+# Model weights, tokenizers, etc.
 *.pt
 *.pth
 *.bin
 tokenizer_config.json
 *.ckpt
 
-# Data files (raw/processed)
-data/raw/
-data/processed/
-data/Training/
-data/Validation/
-data/preprocessed/
-data/data/
+# Data files
+data/
 
 # Temporary files
 *.tmp
 *.swp
 
-# dotenv
-.env.local
-.env.*.local
-.env
-
-# Coverage
-.coverage
-coverage.xml
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt

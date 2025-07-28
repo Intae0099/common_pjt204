@@ -25,9 +25,9 @@ class TestOpenAIClient(unittest.TestCase):
 
         self.assertEqual(response, "테스트 응답")
         mock_create.assert_called_once_with(
-            model="gpt-4.1-nano",
+            model="gpt-4o-mini",
             messages=messages,
-            temperature=0,
+            temperature=0.3,
             max_tokens=2048
         )
 

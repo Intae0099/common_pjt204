@@ -5,7 +5,7 @@ import os
 from dotenv import load_dotenv
 from pgvector.psycopg2 import register_vector
 
-from modules.search_module import search_cases
+from services.search_service import search_cases
 
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'config', '.env'))
 
@@ -21,8 +21,8 @@ class TestSearch(unittest.TestCase):
     def test_metadata_accuracy(self):
         """JSON 파일의 메타데이터가 DB에 정확하게 저장되었는지 검증"""
         conn = psycopg2.connect(
-            host=os.getenv("POSTGRES_HOST"), port=os.getenv("POSTGRES_PORT"),
-            dbname=os.getenv("POSTGRES_DB"), user=os.getenv("POSTGRES_USER"), password=os.getenv("POSTGRES_PASSWORD")
+            host=os.getenv("DB_HOST"), port=os.getenv("DB_PORT"),
+            dbname=os.getenv("DB_NAME"), user=os.getenv("DB_USER"), password=os.getenv("DB_PASSWORD")
         )
         register_vector(conn)
         with conn.cursor() as cur:

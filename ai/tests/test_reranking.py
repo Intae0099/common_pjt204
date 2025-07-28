@@ -3,7 +3,7 @@ from unittest.mock import patch, MagicMock
 import os
 
 from llm.cross_encoder_model import load_cross_encoder_model, get_cross_encoder_scores, CROSS_ENCODER_MODEL_NAME
-from modules.search_module import rerank_cases
+from services.search_service import rerank_cases
 
 # Mock the CrossEncoder to prevent actual model loading during tests
 @pytest.fixture(autouse=True)
@@ -60,7 +60,7 @@ def test_rerank_cases_accuracy():
     ]
 
     # get_cross_encoder_scores가 특정 스코어를 반환하도록 모의
-    with patch('modules.search_module.get_cross_encoder_scores', return_value=[0.1, 0.9, 0.5]) as mock_get_scores:
+    with patch('services.search_service.get_cross_encoder_scores', return_value=[0.1, 0.9, 0.5]) as mock_get_scores:
         reranked_docs = rerank_cases(query, initial_results)
 
         mock_get_scores.assert_called_once() # get_cross_encoder_scores가 호출되었는지 확인
@@ -95,7 +95,7 @@ def test_rerank_cases_with_none_summary():
 
     # get_cross_encoder_scores가 특정 스코어를 반환하도록 모의
     # None이 빈 문자열로 변환되므로, 해당 위치의 스코어도 예상해야 함
-    with patch('modules.search_module.get_cross_encoder_scores', return_value=[0.8, 0.2, 0.6]) as mock_get_scores:
+    with patch('services.search_service.get_cross_encoder_scores', return_value=[0.8, 0.2, 0.6]) as mock_get_scores:
         reranked_docs = rerank_cases(query, initial_results)
 
         mock_get_scores.assert_called_once()

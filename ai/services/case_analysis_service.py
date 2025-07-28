@@ -6,23 +6,7 @@ import json
 from ai.config.tags import SPECIALTY_TAGS
 from ai.llm.llm_response_parser import CotOutputParser, parse_case_analysis_output, CaseAnalysisResult
 from ai.llm.prompt_templates import get_cot_prompt
-from ai.modules.search_module import search_cases
-
-class CaseAnalysisService:
-    def __init__(self, llm: LLM):
-        """
-        LLM 객체를 주입받아 초기화합니다.
-
-        Args:
-            llm (LLM): LangChain의 LLM 인터페이스를 구현한 객체
-        """
-        self.llm = llm
-        self.prompt_template = get_cot_prompt()
-        self.parser = CotOutputParser()
-        # `prompt | llm` 로 RunnableSequence를 만듭니다. (LangChain 0.1.17 이상 권장 방식) :contentReference[oaicite:0]{index=0}
-        self.chain = self.prompt_template | self.llm
-
-    from ai.modules.search_module import search_cases
+from ai.services.search_service import search_cases
 
 class CaseAnalysisService:
     def __init__(self, llm: LLM):
@@ -106,7 +90,7 @@ if __name__ == "__main__":
             "fullText": "SSAFY 과정에 참여한 사용자는 입과 시 보안 서약서를 작성하여 교육 자료나 코드, 화면을 외부에 공개하지 않을 것을 약속했습니다. 그러나 중간 프로젝트 발표를 준비하던 중 프로젝트 실행 화면과 소스 코드 일부를 캡쳐하여 개인 블로그에 게시했고, 안내된 가이드라인과 서약서 조항을 명백히 위반했습니다. 이로 인해 교육 기관과 동료 학습자의 권리가 침해될 수 있다는 우려가 제기되었으며, 이를 문제 삼을 경우 즉 본보기가 되어 고소 당하는 것을 걱정하고 있다"
         }
         }
-    }"""
+    """
 
     from ai.llm import Gpt4oMini
     llm = Gpt4oMini()
