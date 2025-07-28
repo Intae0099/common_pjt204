@@ -1,22 +1,30 @@
 package com.B204.lawvatar_backend.user.lawyer.service;
 
+import com.B204.lawvatar_backend.user.lawyer.dto.LawyerUpdateDto;
 import com.B204.lawvatar_backend.user.lawyer.entity.CertificationStatus;
 import com.B204.lawvatar_backend.user.lawyer.entity.Lawyer;
+import com.B204.lawvatar_backend.user.lawyer.entity.LawyerTag;
 import com.B204.lawvatar_backend.user.lawyer.repository.LawyerRepository;
+import com.B204.lawvatar_backend.user.lawyer.repository.TagRepository;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.validation.Valid;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class LawyerService implements UserDetailsService {
 
   private final LawyerRepository repo;
-  public LawyerService(LawyerRepository repo) {
+  private final TagRepository tagRepo;
+
+  public LawyerService(LawyerRepository repo, TagRepository tagRepo) {
     this.repo = repo;
+    this.tagRepo = tagRepo;
   }
 
   @Override
@@ -50,6 +58,41 @@ public class LawyerService implements UserDetailsService {
 
     l.setCertificationStatus(CertificationStatus.APPROVED);
     return repo.save(l);
+  }
+
+  @Transactional
+  public void updateLawyerInfo(Long lawyerId, LawyerUpdateDto dto) {
+    Lawyer lawyer = repo.findById(lawyerId)
+        .orElseThrow(() -> new EntityNotFoundException("Lawyer not found"));
+
+    // **null 체크 후에만 setter 호출**
+    if (dto.getName() != null) {
+      lawyer.setName(dto.getName());
+    }
+    if (dto.getIntroduction() != null) {
+      lawyer.setIntroduction(dto.getIntroduction());
+    }
+    if (dto.getExam() != null) {
+      lawyer.setExam(dto.getExam());
+    }
+    if (dto.getRegistrationNumber() != null) {
+      lawyer.setRegistrationNumber(dto.getRegistrationNumber());
+    }
+
+    if (dto.getTags() != null) {
+      // 기존 태그 클리어
+      lawyer.getTags().clear();
+      // 새 태그 매핑
+      for (Long tagId : dto.getTags()) {
+        tagRepo.findById(tagId).ifPresent(tag -> {
+          LawyerTag lt = new LawyerTag();
+          lt.setLawyer(lawyer);
+          lt.setTag(tag);
+          lawyer.getTags().add(lt);
+        });
+      }
+    }
+
   }
 }
 

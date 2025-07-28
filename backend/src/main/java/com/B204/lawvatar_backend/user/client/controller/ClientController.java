@@ -3,13 +3,19 @@ package com.B204.lawvatar_backend.user.client.controller;
 
 import com.B204.lawvatar_backend.common.principal.ClientPrincipal;
 import com.B204.lawvatar_backend.common.util.JwtUtil;
+import com.B204.lawvatar_backend.user.client.dto.ClientUpdateDto;
+import com.B204.lawvatar_backend.user.client.service.ClientService;
+import jakarta.validation.Valid;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -17,6 +23,12 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/clients")
 public class ClientController {
+
+  private final ClientService clientService;
+
+  public ClientController(ClientService clientService) {
+    this.clientService = clientService;
+  }
 
   @GetMapping("/me")
   public ResponseEntity<Map<String, Object>> getMyInfo(Authentication authentication){
@@ -35,6 +47,16 @@ public class ClientController {
     response.put("oauthIdentifier", client.getOauthIndentifier());
 
     return ResponseEntity.ok(response);
+  }
+
+
+  @PatchMapping("/me/edit")
+  public ResponseEntity<Void> updateMyInfo(
+      @Valid @RequestBody ClientUpdateDto dto,
+      @AuthenticationPrincipal ClientPrincipal principal) {
+
+    clientService.updateClientInfo(principal.getId(), dto);
+    return ResponseEntity.ok().build();
   }
 
 }

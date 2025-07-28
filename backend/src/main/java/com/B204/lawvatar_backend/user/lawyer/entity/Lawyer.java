@@ -23,6 +23,10 @@ public class Lawyer {
     @Column(name = "password_hash", nullable = false, length = 255)
     private String passwordHash;
 
+    @Lob
+    @Column(name = "photo", columnDefinition = "LONGBLOB")
+    private byte[] photo;
+
     @Column(nullable = false, length = 10)
     private String name;
 

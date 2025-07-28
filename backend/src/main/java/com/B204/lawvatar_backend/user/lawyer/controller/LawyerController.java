@@ -7,6 +7,7 @@ import com.B204.lawvatar_backend.user.auth.service.RefreshTokenService;
 import com.B204.lawvatar_backend.user.lawyer.dto.LawyerInfoDto;
 import com.B204.lawvatar_backend.user.lawyer.dto.LawyerLoginDto;
 import com.B204.lawvatar_backend.user.lawyer.dto.LawyerSignupDto;
+import com.B204.lawvatar_backend.user.lawyer.dto.LawyerUpdateDto;
 import com.B204.lawvatar_backend.user.lawyer.entity.CertificationStatus;
 import com.B204.lawvatar_backend.user.lawyer.entity.Lawyer;
 import com.B204.lawvatar_backend.user.lawyer.entity.LawyerTag;
@@ -14,6 +15,7 @@ import com.B204.lawvatar_backend.user.lawyer.repository.LawyerRepository;
 import com.B204.lawvatar_backend.user.lawyer.repository.LawyerTagRepository;
 import com.B204.lawvatar_backend.user.lawyer.repository.TagRepository;
 import com.B204.lawvatar_backend.user.lawyer.service.LawyerService;
+import jakarta.validation.Valid;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -30,9 +32,11 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -68,17 +72,6 @@ public class LawyerController {
     this.pwEncoder = pwEncoder;
     this.jwtUtil = jwtUtil;
     this.authManager = authManager;
-  }
-
-  @GetMapping("/me")
-  public ResponseEntity<?> getMyInfo(Authentication authentication) {
-    if (!(authentication.getPrincipal() instanceof LawyerPrincipal principal)) {
-      return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-    }
-
-    Lawyer fullLawyer = lawyerRepo.findById(principal.getId())
-        .orElseThrow(() -> new UsernameNotFoundException("해당 변호사를 찾을 수 없습니다."));
-    return ResponseEntity.ok(LawyerInfoDto.from(fullLawyer));
   }
 
   @PostMapping("/signup")
@@ -185,5 +178,26 @@ public class LawyerController {
           .body(Map.of("error", "아무튼 실패"));
     }
   }
+
+  @GetMapping("/me")
+  public ResponseEntity<?> getMyInfo(Authentication authentication) {
+    if (!(authentication.getPrincipal() instanceof LawyerPrincipal principal)) {
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    }
+
+    Lawyer fullLawyer = lawyerRepo.findById(principal.getId())
+        .orElseThrow(() -> new UsernameNotFoundException("해당 변호사를 찾을 수 없습니다."));
+    return ResponseEntity.ok(LawyerInfoDto.from(fullLawyer));
+  }
+
+  @PatchMapping("/me/edit")
+  public ResponseEntity<Void> updateMyInfo(
+      @Valid @RequestBody LawyerUpdateDto dto,
+      @AuthenticationPrincipal LawyerPrincipal principal) {
+    lawyerService.updateLawyerInfo(principal.getId(), dto);
+    return ResponseEntity.ok().build();
+  }
+
+
 
 }

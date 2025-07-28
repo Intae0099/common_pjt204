@@ -1,7 +1,10 @@
 package com.B204.lawvatar_backend.user.client.service;
 
+import com.B204.lawvatar_backend.user.client.dto.ClientUpdateDto;
 import com.B204.lawvatar_backend.user.client.entity.Client;
 import com.B204.lawvatar_backend.user.client.repository.ClientRepository;
+import jakarta.persistence.EntityNotFoundException;
+import jakarta.transaction.Transactional;
 import java.util.List;
 import java.util.Map;
 import org.slf4j.Logger;
@@ -61,5 +64,18 @@ public class ClientService implements OAuth2UserService<OAuth2UserRequest, OAuth
         oauth.getAttributes(),
         userNameAttr  // "id"
     );
+  }
+
+  @Transactional
+  public void updateClientInfo(Long clientId, ClientUpdateDto dto) {
+    Client client = repo.findById(clientId)
+        .orElseThrow(() -> new EntityNotFoundException("Client not found"));
+
+    if (dto.getOauthName() != null) {
+      client.setOauthName(dto.getOauthName());
+    }
+    if (dto.getEmail() != null) {
+      client.setEmail(dto.getEmail());
+    }
   }
 }
