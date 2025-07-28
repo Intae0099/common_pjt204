@@ -1,50 +1,54 @@
 <template>
-  <div>
-    <div>
-      <!-- 왼쪽: 사용자 입력창 -->
-      <ChatInputBox
-        :disabled="isLoading || isFindingVerdict"
-        @submit="handleUserInput"
-      />
+  <div class="layout-background">
+    <div class="container">
+      <div>
+        <div class="wrapper">
+          <!-- 왼쪽: 사용자 입력창 -->
+          <ChatInputBox
+            :disabled="isLoading || isFindingVerdict"
+            @submit="handleUserInput"
+          />
 
-      <!-- 오른쪽: AiBox는 작성중 / 결과 표시 -->
-      <AiBox
-        :isLoading="isLoading"
-        :response="aiResponse"
-        :userText="userInput"
-        :showPredictButton="!verdictResult"
-        @open-modal="showModal = true"
-        @predict="handlePredictVerdict"
-      />
+          <!-- 오른쪽: AiBox는 작성중 / 결과 표시 -->
+          <AiBox
+            :isLoading="isLoading"
+            :response="aiResponse"
+            :userText="userInput"
+            :showPredictButton="!verdictResult"
+            @open-modal="showModal = true"
+            @predict="handlePredictVerdict"
+          />
+        </div>
+
+        <!-- 하단 버튼 영역 -->
+        <BottomActionBar
+          v-if="aiResponse && !isFindingVerdict && !verdictResult && !showRecommendList"
+          @predict="handlePredictVerdict"
+          @quick-consult="showModal = true"
+        />
+
+        <!-- '바로 상담하기' 모달 -->
+        <SuggestModal
+          v-if="showModal"
+          @close="showModal = false"
+          @route="handleModalRoute"
+        />
+
+        <!-- 판례 찾는 중 표시 -->
+        <VerdictFindingBox v-if="isFindingVerdict" />
+        <div v-if="verdictResult">
+          <p>{{ verdictResult }}</p>
+          <button
+            v-if="canShowRecommendBtn && !showRecommendList"
+            @click="showLawyers"
+          >
+            변호사 추천받기
+          </button>
+        </div>
+        <!-- 변호사 추천 리스트 -->
+        <LawyerRecommendList v-if="showRecommendList" :lawyers="lawyers" />
+      </div>
     </div>
-
-    <!-- 하단 버튼 영역 -->
-    <BottomActionBar
-      v-if="aiResponse && !isFindingVerdict && !verdictResult && !showRecommendList"
-      @predict="handlePredictVerdict"
-      @quick-consult="showModal = true"
-    />
-
-    <!-- '바로 상담하기' 모달 -->
-    <SuggestModal
-      v-if="showModal"
-      @close="showModal = false"
-      @route="handleModalRoute"
-    />
-
-    <!-- 판례 찾는 중 표시 -->
-    <VerdictFindingBox v-if="isFindingVerdict" />
-    <div v-if="verdictResult">
-      <p>{{ verdictResult }}</p>
-      <button
-        v-if="canShowRecommendBtn && !showRecommendList"
-        @click="showLawyers"
-      >
-        변호사 추천받기
-      </button>
-    </div>
-    <!-- 변호사 추천 리스트 -->
-    <LawyerRecommendList v-if="showRecommendList" :lawyers="lawyers" />
   </div>
 </template>
 
@@ -120,5 +124,35 @@ const handleModalRoute = (target) => {
 </script>
 
 <style scoped>
-
+.layout-background {
+  position: relative;
+  width: 100vw;
+  left: 50%;
+  right: 50%;
+  margin-left: -50vw;
+  margin-right: -50vw;
+  background-image: url('@/assets/ai-consult-bg.png');
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center;
+  min-height: 100vh;
+  background-color: #F7FCFF;
+}
+.container{
+  padding: 40px 16px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh; /* 화면 전체 가운데 정렬을 위한 높이 */
+}
+.wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 60px;
+  flex-wrap: wrap;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding-top: 40px;
+}
 </style>
