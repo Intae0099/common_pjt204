@@ -1,22 +1,29 @@
 package com.B204.lawvatar_backend.common.config;
 
+import com.B204.lawvatar_backend.common.filter.JwtAuthenticationFilter;
 import com.B204.lawvatar_backend.common.util.JwtUtil;
 import com.B204.lawvatar_backend.user.auth.service.RefreshTokenService;
 import com.B204.lawvatar_backend.user.client.entity.Client;
 import com.B204.lawvatar_backend.user.client.repository.ClientRepository;
 import com.B204.lawvatar_backend.user.client.service.ClientService;
 import com.B204.lawvatar_backend.user.lawyer.entity.Lawyer;
+import com.B204.lawvatar_backend.user.lawyer.repository.LawyerRepository;
 import com.B204.lawvatar_backend.user.lawyer.service.LawyerService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.Filter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import org.springframework.boot.autoconfigure.graphql.GraphQlProperties.Http;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseCookie;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
@@ -32,6 +39,7 @@ import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
+import org.springframework.security.oauth2.client.web.OAuth2LoginAuthenticationFilter;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
@@ -46,16 +54,20 @@ public class SecurityConfig {
   private final LawyerService lawyerService;
   private final JwtUtil jwtUtil;
   private final RefreshTokenService refreshTokenService;
+  private LawyerRepository lawyerRepository;
+  private ClientRepository clientRepository;
+  private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
   public SecurityConfig(ClientService clientService,
       LawyerService lawyerService,
       JwtUtil jwtUtil,
-      RefreshTokenService refreshTokenService
+      RefreshTokenService refreshTokenService, JwtAuthenticationFilter jwtAuthenticationFilter
   ) {
     this.clientService = clientService;
     this.lawyerService = lawyerService;
     this.jwtUtil = jwtUtil;
     this.refreshTokenService = refreshTokenService;
+    this.jwtAuthenticationFilter = jwtAuthenticationFilter;
   }
 
   @Component
@@ -123,13 +135,17 @@ public class SecurityConfig {
       String refreshToken = jwtUtil.generateRefreshToken(client.getOauthIdentifier());
       refreshTokenService.createForClient(client, refreshToken);
 
-      Map<String, String> responseBody = new LinkedHashMap<>();
-      responseBody.put("accessToken", accessToken);
-      responseBody.put("refreshToken", refreshToken);
-      responseBody.put("socialAccessToken", socialAccessToken);
-      if (socialRefreshToken != null) {
-        responseBody.put("socialRefreshToken", socialRefreshToken);
-      }
+      // RefreshToken to Response Cookie
+      ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", refreshToken)
+          .httpOnly(true)
+          .secure(true)
+          .sameSite("Strict")
+          .path("/")
+          .maxAge(Duration.ofDays(7))
+          .build();
+      res.setHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
+
+      Map<String, String> responseBody = Map.of("accessToken", accessToken);
 
       res.setStatus(HttpServletResponse.SC_OK);
       res.setContentType(MediaType.APPLICATION_JSON_VALUE);
@@ -153,15 +169,25 @@ public class SecurityConfig {
           .map(a -> a.getAuthority())
           .toList();
 
-      String accessToken = jwtUtil.generateAccessToken(username, roles, "LAWYER");
-      String refreshToken = jwtUtil.generateRefreshToken(username);
+      Lawyer lawyer = lawyerService.findByLoginEmail(auth.getName());
 
-      Lawyer lawyer = lawyerService.findByLoginEmail(username);
+      String accessToken = jwtUtil.generateAccessToken(String.valueOf(lawyer.getId()), roles, "LAWYER");
+      String refreshToken = jwtUtil.generateRefreshToken(String.valueOf(lawyer.getId()));
+
       refreshTokenService.createForLawyer(lawyer, refreshToken);
+
+      ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", refreshToken)
+          .httpOnly(true)
+          .secure(true)
+          .sameSite("Strict")
+          .path("/")
+          .maxAge(Duration.ofDays(7))
+          .build();
+      res.setHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
 
       Map<String,String> body = new LinkedHashMap<>();
       body.put("accessToken",  accessToken);
-      body.put("refreshToken", refreshToken);
+      // body.put("refreshToken", refreshToken);
 
       res.setStatus(HttpServletResponse.SC_OK);
       res.setContentType(MediaType.APPLICATION_JSON_VALUE);
@@ -210,14 +236,15 @@ public class SecurityConfig {
 
 
         // JWT 필터: OAuth2 로그인 이후에 추가
-        // .addFilterAfter(new JwtAuthenticationFilter(jwtUtil), OAuth2LoginAuthenticationFilter.class)
+        .addFilterAfter(jwtAuthenticationFilter, OAuth2LoginAuthenticationFilter.class)
 
         // URL 접근 제한
         .authorizeHttpRequests(auth -> auth
             .requestMatchers( "/login/oauth2/**").permitAll()
             .requestMatchers("/.well-known/**").permitAll()
+            .requestMatchers("/api/lawyers/signup", "/api/lawyers/login").permitAll()
             .requestMatchers("/api/protected/**").authenticated()
-            .requestMatchers("/auth/**", "/oauth2/**").permitAll()
+            .requestMatchers("/clients/**").authenticated()
             .anyRequest().permitAll()
         );
 

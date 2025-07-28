@@ -31,7 +31,7 @@ public class LawyerService implements UserDetailsService {
     return new org.springframework.security.core.userdetails.User(
         lawyer.getLoginEmail(),
         lawyer.getPasswordHash(),
-        AuthorityUtils.createAuthorityList("ROLE_LAYWER")
+        AuthorityUtils.createAuthorityList("ROLE_LAWYER")
     );
   }
 

@@ -34,6 +34,18 @@ public class ClientPrincipal implements UserDetails {
     return client.getId().toString();
   }
 
+  public String getOauthtName() {
+    return client.getOauthName();
+  }
+
+  public String getOauthProvider(){
+    return client.getOauthProvider();
+  }
+
+  public String getOauthIndentifier(){
+    return client.getOauthIdentifier();
+  }
+
   @Override
   public boolean isAccountNonExpired() {
     return true;

@@ -1,8 +1,10 @@
 package com.B204.lawvatar_backend.user.lawyer.controller;
 
 import com.B204.lawvatar_backend.common.entity.Tag;
+import com.B204.lawvatar_backend.common.principal.LawyerPrincipal;
 import com.B204.lawvatar_backend.common.util.JwtUtil;
 import com.B204.lawvatar_backend.user.auth.service.RefreshTokenService;
+import com.B204.lawvatar_backend.user.lawyer.dto.LawyerInfoDto;
 import com.B204.lawvatar_backend.user.lawyer.dto.LawyerLoginDto;
 import com.B204.lawvatar_backend.user.lawyer.dto.LawyerSignupDto;
 import com.B204.lawvatar_backend.user.lawyer.entity.CertificationStatus;
@@ -12,13 +14,16 @@ import com.B204.lawvatar_backend.user.lawyer.repository.LawyerRepository;
 import com.B204.lawvatar_backend.user.lawyer.repository.LawyerTagRepository;
 import com.B204.lawvatar_backend.user.lawyer.repository.TagRepository;
 import com.B204.lawvatar_backend.user.lawyer.service.LawyerService;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -27,6 +32,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -34,7 +40,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/lawyer")
+@RequestMapping("/api/lawyers")
 public class LawyerController {
   private final LawyerRepository lawyerRepo;
   private final LawyerTagRepository lawyerTagRepo;
@@ -62,6 +68,17 @@ public class LawyerController {
     this.pwEncoder = pwEncoder;
     this.jwtUtil = jwtUtil;
     this.authManager = authManager;
+  }
+
+  @GetMapping("/me")
+  public ResponseEntity<?> getMyInfo(Authentication authentication) {
+    if (!(authentication.getPrincipal() instanceof LawyerPrincipal principal)) {
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    }
+
+    Lawyer fullLawyer = lawyerRepo.findById(principal.getId())
+        .orElseThrow(() -> new UsernameNotFoundException("해당 변호사를 찾을 수 없습니다."));
+    return ResponseEntity.ok(LawyerInfoDto.from(fullLawyer));
   }
 
   @PostMapping("/signup")
@@ -112,7 +129,7 @@ public class LawyerController {
     return ResponseEntity.ok(response);
   }
 
-  @PostMapping("/login/json")
+  @PostMapping("/login")
   public ResponseEntity<?> loginJson(@RequestBody LawyerLoginDto dto) {
     if (dto.getLoginEmail() == null || dto.getPassword() == null) {
       return ResponseEntity.badRequest().body(Map.of("error", "이메일 또는 비밀번호 누락"));
@@ -124,9 +141,11 @@ public class LawyerController {
           new UsernamePasswordAuthenticationToken(dto.getLoginEmail(), dto.getPassword())
       );
 
+      Lawyer lawyer = lawyerService.findByLoginEmail(authentication.getName());
+
       // 2. Access Token 생성 (userType은 "LAWYER")
       String accessToken = jwtUtil.generateAccessToken(
-          authentication.getName(),
+          String.valueOf(lawyer.getId()),
           authentication.getAuthorities().stream()
               .map(GrantedAuthority::getAuthority)
               .toList(),
@@ -135,18 +154,25 @@ public class LawyerController {
 
       // 3. Refresh Token 생성 및 DB 저장
       String refreshToken = jwtUtil.generateRefreshToken(authentication.getName());
-      // LawyerService를 통해 엔티티 조회
-      Lawyer lawyer = lawyerService.findByLoginEmail(authentication.getName());
       // 기존 토큰 삭제 후 새로 저장
       refreshTokenService.createForLawyer(lawyer, refreshToken);
 
-      // 4. 응답에 두 토큰 모두 포함
+      ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", refreshToken)
+          .httpOnly(true)
+          .secure(true)
+          .sameSite("Strict")
+          .path("/")
+          .maxAge(Duration.ofDays(7))
+          .build();
+
+      // 5. 응답에 토큰 포함
       Map<String, String> body = new LinkedHashMap<>();
       body.put("accessToken",  accessToken);
-      body.put("refreshToken", refreshToken);
-      body.put("username",     authentication.getName());
+      body.put("name",     authentication.getName());
 
-      return ResponseEntity.ok(body);
+      return ResponseEntity.ok()
+          .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
+          .body(body);
 
     } catch (BadCredentialsException e) {
       return ResponseEntity.status(HttpStatus.UNAUTHORIZED)

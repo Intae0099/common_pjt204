@@ -3,7 +3,9 @@ package com.B204.lawvatar_backend.common.filter;
 import com.B204.lawvatar_backend.common.principal.ClientPrincipal;
 import com.B204.lawvatar_backend.common.principal.LawyerPrincipal;
 import com.B204.lawvatar_backend.common.util.JwtUtil;
+import com.B204.lawvatar_backend.user.client.entity.Client;
 import com.B204.lawvatar_backend.user.client.repository.ClientRepository;
+import com.B204.lawvatar_backend.user.lawyer.entity.Lawyer;
 import com.B204.lawvatar_backend.user.lawyer.repository.LawyerRepository;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
@@ -20,14 +22,18 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+@Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
   private final JwtUtil jwtUtil;
   private final LawyerRepository lawyerRepo;
   private final ClientRepository clientRepo;
 
-  public JwtAuthenticationFilter(JwtUtil jwtUtil, LawyerRepository lawyerRepo,
+  public JwtAuthenticationFilter(
+      JwtUtil jwtUtil,
+      LawyerRepository lawyerRepo,
       ClientRepository clientRepo) { this.jwtUtil = jwtUtil;
     this.lawyerRepo = lawyerRepo;
     this.clientRepo = clientRepo;
@@ -37,10 +43,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
   protected void doFilterInternal(HttpServletRequest req,
       HttpServletResponse res,
       FilterChain chain) throws ServletException, IOException {
+
     String path = req.getServletPath();
     if (path.startsWith("/auth") ||
         path.startsWith("/oauth2") ||
-        path.startsWith("/login/oauth2")) {
+        path.startsWith("/login/oauth2") ||
+        path.startsWith("/api/lawyers/signup") ||
+        path.startsWith("/api/lawyers/login")
+//        || path.startsWith("/api")                         // 일단 다 열어둠 . 추후 수정 필요 / must be fixed
+    ) {
       chain.doFilter(req, res);
       return;
     }
@@ -60,22 +71,34 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
           .map(r -> new SimpleGrantedAuthority((String) r))
           .collect(Collectors.toList());
 
-      // 2) userType 클레임으로 분기
+      // 2) userType 및 subject 분기
       String userType = claims.get("userType", String.class);
-      Long id = Long.valueOf(claims.getSubject());
+      String subject = claims.getSubject();
 
       Object principal;
+
       if ("LAWYER".equalsIgnoreCase(userType)) {
-        // 변호사 테이블에서 로드 (예: lawyerRepo)
-        var lawyer = lawyerRepo.findById(id)
-            .orElseThrow(() -> new UsernameNotFoundException("No lawyer " + id));
-        principal = new LawyerPrincipal(lawyer);
-      } else {
-        // 일반 유저 테이블에서 로드 (예: userRepo)
-        var client = clientRepo.findById(id)
-            .orElseThrow(() -> new UsernameNotFoundException("No user " + id));
+        // 방어 로직 추가
+        try {
+          Long id = Long.valueOf(subject);
+          Lawyer lawyer = lawyerRepo.findById(id)
+              .orElseThrow(() -> new UsernameNotFoundException("No lawyer with id: " + id));
+          principal = new LawyerPrincipal(lawyer);
+        } catch (NumberFormatException e) {
+          res.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid subject for LAWYER token");
+          return;
+        }
+
+      } else if ("CLIENT".equalsIgnoreCase(userType)) {
+        Client client = clientRepo.findByOauthIdentifier(subject)
+            .orElseThrow(() -> new UsernameNotFoundException("No client with oauthIdentifier: " + subject));
         principal = new ClientPrincipal(client);
+      } else {
+        res.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid userType");
+        return;
       }
+
+
 
       // 3) Authentication 토큰 생성
       Authentication authToken =

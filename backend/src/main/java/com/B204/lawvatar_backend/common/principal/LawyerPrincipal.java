@@ -1,8 +1,10 @@
 package com.B204.lawvatar_backend.common.principal;
 
 import com.B204.lawvatar_backend.user.lawyer.entity.Lawyer;
+import com.B204.lawvatar_backend.user.lawyer.entity.LawyerTag;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
@@ -27,7 +29,31 @@ public class LawyerPrincipal implements UserDetails {
 
   @Override
   public String getUsername() {
-    return lawyer.getId().toString();
+    return lawyer.getLoginEmail().toString();
+  }
+  
+  public Long getId(){
+    return lawyer.getId();
+  }
+
+  public String getIntroduction(){
+    return lawyer.getIntroduction();
+  }
+
+  public String getExam() {
+    return lawyer.getExam();
+  }
+
+  public String getRegistrationNumber(){
+    return lawyer.getRegistrationNumber();
+  }
+
+  public int getConsultationCount(){
+    return lawyer.getConsultationCount();
+  }
+
+  public List<LawyerTag> getTags(){
+    return lawyer.getTags();
   }
 
   @Override

@@ -52,4 +52,7 @@ public class JwtUtil {
         getBody();
   }
 
+  public String extractSubject(String token) {
+    return validateAndGetClaims(token).getSubject();
+  }
 }
