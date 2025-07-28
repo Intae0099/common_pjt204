@@ -63,14 +63,16 @@ export default {
         if (!token) throw new Error('토큰 없음');
 
         const authStore = useAuthStore();
-        authStore.setToken(token); // access_token 저장
+        authStore.setToken(token);               // ✅ access_token 저장
+        authStore.setUserType('LAWYER');         // ✅ userType 저장 (변호사)
 
-        this.$router.push('/');
+        this.$router.push('/lawyer/mypage');     // ✅ 변호사 마이페이지로 이동
       } catch (error) {
         console.error('로그인 실패:', error);
         alert('이메일 또는 비밀번호가 올바르지 않습니다.');
       }
     }
   }
+
 };
 </script>

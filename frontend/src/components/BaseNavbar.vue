@@ -26,7 +26,7 @@
 
     <!-- 오른쪽: 마이페이지 & 로그아웃 -->
     <div>
-      <RouterLink to="/lawyer/mypage" class="me-3 text-dark fw-medium text-decoration-none">마이페이지</RouterLink>
+      <RouterLink :to="mypagePath">마이페이지</RouterLink>
       <a href="#" class="text-dark fw-medium text-decoration-none" @click.prevent="logout">Logout</a>
     </div>
     </div>
@@ -42,8 +42,12 @@ const authStore = useAuthStore()
 const router = useRouter()
 const route = useRoute()
 
+const mypagePath = computed(() =>
+  authStore.userType === 'LAWYER' ? '/lawyer/mypage' : '/user/mypage'
+)
+
 const logout = () => {
-  authStore.clearToken()
+  authStore.clearAuth()
   router.push('/login')
 }
 

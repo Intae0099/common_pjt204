@@ -27,9 +27,15 @@ const router = useRouter()
 const login = async () => {
   try {
     const res = await axios.get('/oauth2/authorization/kakao')
+
     const token = res.data.access_token
     authStore.setToken(token)
-    router.push('/')
+
+    // ✅ 사용자 타입 설정 (소셜 로그인은 일반회원)
+    authStore.setUserType('USER')
+
+    // ✅ 로그인 후 경로 이동
+    router.push('/user/mypage')
   } catch (err) {
     console.error('로그인 실패:', err)
     alert('로그인 실패')
