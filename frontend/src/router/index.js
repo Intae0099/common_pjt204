@@ -7,7 +7,7 @@ import SignUpFirst from '@/features/auth/lawyer/SignUpFirst.vue';
 import SignUpSecond from '@/features/auth/lawyer/SignUpSecond.vue';
 import SignUpThird from '@/features/auth/lawyer/SignUpThird.vue';
 import LawyerLogin from '@/features/auth/lawyer/LawyerLogin.vue';
-import FindPassword from '@/features/auth/lawyer/FindPassword.vue';
+
 //AI상담
 import AiStep from '@/features/ai_consult/AIStep.vue'
 
@@ -62,11 +62,7 @@ const router = createRouter({
       name: 'LawyerLogin',
       component: LawyerLogin
     },
-    {
-      path: '/login/lawyer/find-password',
-      name: 'FindPassword',
-      component: FindPassword
-    },
+
 
     //AI상담
     {

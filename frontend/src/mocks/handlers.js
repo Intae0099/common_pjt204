@@ -1,6 +1,64 @@
 import { http, HttpResponse } from 'msw'
 
 export const handlers = [
+  http.post('/api/auth/lawyers/login', async ({ request }) => {
+    const body = await request.json()
+    const { loginId, loginPwd } = body
+
+    // 원하는 가짜 조건 추가 가능
+    if (loginId === 'wjddusdl921@gmail.com' && loginPwd === '0123456') {
+      return HttpResponse.json({
+        access_token: 'fake-jwt-token-for-test'
+      })
+    } else {
+      return HttpResponse.json(
+        { detail: '이메일 또는 비밀번호가 올바르지 않습니다.' },
+        { status: 401 }
+      )
+    }
+  }),
+  // ✅ 변호사 본인 정보
+  http.get('/api/lawyers/me', () => {
+    return HttpResponse.json({
+      name: '김지훈',
+      loginEmail: 'lawyer@example.com',
+      introduction: '형사/민사 사건을 다루는 10년차 변호사입니다.',
+      tags: ['형사', '이혼', '가사'],
+    })
+  }),
+
+  // ✅ 상담 예약 목록 (오늘 이후를 테스트하기 위해 미래 날짜 포함)
+  http.get('/api/appointments/me', () => {
+    return HttpResponse.json([
+      {
+        appointmentId: 101,
+        clientId: 1,
+        startTime: new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString() // 3시간 뒤
+      },
+      {
+        appointmentId: 102,
+        clientId: 2,
+        startTime: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 내일
+      }
+    ])
+  }),
+
+  // ✅ 클라이언트 목록
+  http.get('/api/admin/clients/list', () => {
+    return HttpResponse.json([
+      {
+        clientId: 1,
+        name: '홍길동',
+        email: 'client1@example.com'
+      },
+      {
+        clientId: 2,
+        name: '이몽룡',
+        email: 'client2@example.com'
+      }
+    ])
+  }),
+
   http.post('/api/ai-consult', () => {
     return HttpResponse.json({
       result: '상담 요청이 정상적으로 처리되었습니다.',

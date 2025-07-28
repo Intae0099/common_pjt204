@@ -13,7 +13,7 @@
         <input
           id="email"
           type="email"
-          v-model="form.email"
+          v-model="form.loginId"
           placeholder="예시) lawyer@example.com"
           required
         />
@@ -24,7 +24,7 @@
         <input
           id="password"
           type="password"
-          v-model="form.password"
+          v-model="form.loginPwd"
           placeholder="비밀번호 입력"
           required
         />
@@ -35,7 +35,6 @@
 
     <!-- 하단 링크 -->
     <div>
-      <router-link to="/login/lawyer/find-password">비밀번호를 잊으셨나요?</router-link>
       <router-link to="/signup/step1">아직 회원이 아니신가요?</router-link>
     </div>
   </div>
@@ -50,8 +49,8 @@ export default {
   data() {
     return {
       form: {
-        email: '',
-        password: ''
+        loginId: '',
+        loginPwd: ''
       }
     };
   },

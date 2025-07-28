@@ -26,7 +26,7 @@
 
     <!-- 오른쪽: 마이페이지 & 로그아웃 -->
     <div>
-      <RouterLink to="/user/mypage" class="me-3 text-dark fw-medium text-decoration-none">마이페이지</RouterLink>
+      <RouterLink to="/lawyer/mypage" class="me-3 text-dark fw-medium text-decoration-none">마이페이지</RouterLink>
       <a href="#" class="text-dark fw-medium text-decoration-none" @click.prevent="logout">Logout</a>
     </div>
     </div>

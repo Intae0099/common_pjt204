@@ -27,12 +27,13 @@
         <label>태그 선택 (선택사항)</label>
         <div>
           <button
-            v-for="tag in tagList"
-            :key="tag"
+            v-for="tag in tagMap"
+            :key="tag.id"
             type="button"
-            @click="toggleTag(tag)"
+            :class="{ selected: form.tags.includes(tag.id) }"
+            @click="toggleTag(tag.id)"
           >
-            {{ tag }}
+            {{ tag.name }}
           </button>
         </div>
       </div>
@@ -57,19 +58,27 @@ import axios from 'axios';
 
 export default {
   name: 'SignUpThird',
-  components: {
-    BaseModal
-  },
+  components: { BaseModal },
   data() {
     return {
       form: {
         introduction: '',
-        tags: []
+        tags: [] // 숫자 ID 배열
       },
-      tagList: [
-        '합의금', '교통사고', '무면허', '음주운전',
-        '재산분할', '위자료', '상간소송', '양육권',
-        '폭행', '명예훼손', '전세사기', '의료사고'
+      // ID ↔ 이름 매핑 테이블
+      tagMap: [
+        { id: 1, name: '합의금' },
+        { id: 2, name: '교통사고' },
+        { id: 3, name: '무면허' },
+        { id: 4, name: '음주운전' },
+        { id: 5, name: '재산분할' },
+        { id: 6, name: '위자료' },
+        { id: 7, name: '상간소송' },
+        { id: 8, name: '양육권' },
+        { id: 9, name: '폭행' },
+        { id: 10, name: '명예훼손' },
+        { id: 11, name: '전세사기' },
+        { id: 12, name: '의료사고' }
       ],
       showModal: false
     };
@@ -80,23 +89,23 @@ export default {
     }
   },
   methods: {
-    toggleTag(tag) {
+    toggleTag(tagId) {
       const tags = this.form.tags;
-      if (tags.includes(tag)) {
-        this.form.tags = tags.filter(t => t !== tag);
+      if (tags.includes(tagId)) {
+        this.form.tags = tags.filter(id => id !== tagId);
       } else {
-        this.form.tags.push(tag);
+        this.form.tags.push(tagId);
       }
     },
     async handleSubmit() {
-      // 현재 단계 값 저장
+      // 회원가입 전 데이터 저장
       this.authStore.updateSignup({
         introduction: this.form.introduction,
         tags: this.form.tags
       });
 
       try {
-        await axios.post('/api/auth/lawyers/sign-up', this.authStore.signupData);
+        await axios.post('/api/lawyers/signup', this.authStore.signupData);
         this.showModal = true;
       } catch (error) {
         console.error('회원가입 실패:', error);
@@ -107,8 +116,11 @@ export default {
       this.showModal = false;
       this.authStore.resetSignup();
       this.$router.push('/');
-    },
-
+    }
   }
 };
 </script>
+
+<style scoped>
+
+</style>
