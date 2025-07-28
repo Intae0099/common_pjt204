@@ -42,7 +42,7 @@ class CaseAnalysisService:
             for doc in retrieved_docs:
                 formatted_case_docs.append({
                     "id": doc.get("case_id", ""),
-                    "name": doc.get("summary", ""), # summary를 name으로 사용
+                    "issue": doc.get("issue", ""), # issue를 name으로 사용
                     "text": doc.get("chunk_text", "")
                 })
 
@@ -69,9 +69,7 @@ class CaseAnalysisService:
             case_analysis_result = parse_case_analysis_output(conclusion_text)
 
             return {
-                "thought_process": thought_process,
                 "case_analysis": case_analysis_result,
-                "retrieved_docs": formatted_case_docs # 검색된 문서 추가
             }
 
 # 사용 예시 (기존 analyze_case 함수와 호환성을 위해)
