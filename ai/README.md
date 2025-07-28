@@ -47,22 +47,38 @@ legal-ai-platform/
 
 ---
 
-## 3. 주요 기능
+## 3. API 응답 규격
 
-1. **사건 내용 구조화 (Structuring)**  
-   — LLM 대화 루프를 통해 입력된 사건 개요를 표준 JSON 스키마로 정제
+### 성공 응답
 
-2. **AI 법률 분석 (Analysis)**  
-   — 유사 판례·법령 검색 → CoT 프롬프트로 쟁점·소견 추출 → 보고서·태그 생성
+```json
+{
+  "success": true,
+  "data": { ... }
+}
+```
 
-3. **상담 신청서 자동 생성**  
-   — 구조화된 사건 경위서에 메타데이터를 결합해 신청서 JSON 생성
+### 실패 응답
 
-4. **판례·법령 검색**  
-   — ChromaDB(또는 Faiss) 기반 키워드 유사도 검색 + 전문·조문 파싱
+```json
+{
+  "success": false,
+  "error": {
+    "code": "ERROR_CODE",
+    "message": "에러 메시지"
+  },
+  "details": { ... } // (선택적) 상세 정보
+}
+```
 
-5. **AI 챗봇 인터랙션**  
-   — 실시간 Q&A 스트리밍 응답, 대화 기록 저장
+### 공통 오류 코드
+
+| 코드 | 설명 |
+|---|---|
+| `INVALID_PARAM` | 필수 값 누락, 형식 오류 등 |
+| `UNAUTHORIZED` | 토큰 없음, 만료, 권한 부족 |
+| `NOT_FOUND` | 요청한 리소스를 찾을 수 없음 |
+| `SERVER_ERROR` | 예기치 못한 서버 오류 |
 
 ---
 
@@ -105,9 +121,3 @@ pytest tests/
 * 외부 호출(OpenAI, ChromaDB, DB)은 `pytest-mock` 으로 모킹하세요.
 
 ---
-
-> **담당:** AI 파트 (Structuring, Analysis, Application, Search, Chat)
-> **문의:** \[이메일 주소] / Slack 채널 #ai-개발
-
-
-

@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field
 from typing import List, Dict, Any, Optional
+from app.api.schemas.error import BaseSuccessResponse
 
 class CaseAnalysisResult(BaseModel):
     issues: List[str] = Field(default_factory=list, description="식별된 주요 법적 쟁점.")
@@ -23,6 +24,4 @@ class AnalysisResponseData(BaseModel):
     tags: List[str] = Field(default_factory=list, description="분석 결과에 따른 태그 목록.")
     recommendedLawyers: List[Dict[str, Any]] = Field(default_factory=list, description="추천 변호사 목록.")
 
-class AnalysisResponse(BaseModel):
-    success: bool = Field(True, description="API 호출 성공 여부.")
-    data: AnalysisResponseData = Field(..., description="API 응답 데이터.")
+AnalysisResponse = BaseSuccessResponse[AnalysisResponseData]

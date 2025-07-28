@@ -1,40 +1,44 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from typing import List, Dict, Any
-
-from app.api.schemas.analysis import AnalysisRequest, AnalysisResponse, CaseAnalysisResult, AnalysisResponseData
-from app.api.dependencies import get_case_analysis_service
+# app/api/routers/analysis.py
+from fastapi import APIRouter, Depends, status
+from app.api.dependencies import get_case_analysis_service, get_current_user
+from app.api.exceptions import BadRequestException
+from app.api.schemas.analysis import AnalysisRequest, AnalysisResponseData, AnalysisResponse
+from app.api.schemas.error import BaseErrorResponse
 from services.case_analysis_service import CaseAnalysisService
 
 router = APIRouter()
 
-@router.post("/analysis", response_model=AnalysisResponse, status_code=status.HTTP_200_OK)
+@router.post(
+    "/analysis",
+    response_model=AnalysisResponse,               # ← 공통 성공 래퍼 사용
+    status_code=status.HTTP_200_OK,
+    response_model_exclude_none=True,              # ← None 필드 제거
+    dependencies=[Depends(get_current_user)],      # ← 인증을 바디 파싱 전에 수행
+    responses={
+        status.HTTP_400_BAD_REQUEST: {"model": BaseErrorResponse, "description": "잘못된 요청"},
+        status.HTTP_401_UNAUTHORIZED: {"model": BaseErrorResponse, "description": "인증 실패"},
+        status.HTTP_404_NOT_FOUND: {"model": BaseErrorResponse, "description": "리소스를 찾을 수 없음"},
+        status.HTTP_500_INTERNAL_SERVER_ERROR: {"model": BaseErrorResponse, "description": "서버 내부 오류"},
+    },
+)
 async def analyze_case_endpoint(
     request: AnalysisRequest,
-    case_analysis_service: CaseAnalysisService = Depends(get_case_analysis_service)
+    case_analysis_service: CaseAnalysisService = Depends(get_case_analysis_service),
 ):
-    try:
-        # case_analysis_service.analyze_case는 { "case_analysis": CaseAnalysisResult 객체 } 형태를 반환
-        service_result = case_analysis_service.analyze_case(
-            user_query=request.case.fullText, # request.query 대신 request.case.fullText 사용
-        )
+    if not request.case or not getattr(request.case, "fullText", "").strip():
+        raise BadRequestException("필수 필드 'case.fullText'가 누락되었습니다.")
 
-        # service_result에서 CaseAnalysisResult 객체를 추출
-        case_analysis_report = service_result.get("case_analysis")
+    service_result = case_analysis_service.analyze_case(
+        user_query=request.case.fullText,
+    )
+    case_analysis_report = service_result.get("case_analysis")
+    if not case_analysis_report:
+        raise BadRequestException("사건 분석 결과를 생성하지 못했습니다.")
 
-        # 응답 예시에 맞게 tags와 recommendedLawyers를 추출 (현재 서비스 로직에 없으므로 빈 리스트로 가정)
-        # 실제 서비스 로직에서 이 값들을 반환하도록 수정해야 합니다.
-        tags = case_analysis_report.tags if case_analysis_report else []
-        recommended_lawyers = case_analysis_report.recommendedLawyers if case_analysis_report else []
-
-        # AnalysisResponseData 객체 생성
-        response_data = AnalysisResponseData(
-            report=case_analysis_report,
-            tags=tags,
-            recommendedLawyers=recommended_lawyers
-        )
-
-        # 최종 AnalysisResponse 객체 반환
-        return AnalysisResponse(success=True, data=response_data)
-
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+    data = AnalysisResponseData(
+        report=case_analysis_report,
+        tags=getattr(case_analysis_report, "tags", []) or [],
+        recommendedLawyers=getattr(case_analysis_report, "recommendedLawyers", []) or [],
+    )
+    # 공통 응답 규격으로 반환
+    return {"success": True, "data": data}
