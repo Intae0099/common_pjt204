@@ -1,12 +1,21 @@
-from fastapi import Depends
-from langchain.llms.base import LLM
-from llm import Gpt4oMini # 실제 LLM 구현체
+from fastapi import Depends, Header
+from typing import Optional
+from llm import Gpt4oMini
 from services.case_analysis_service import CaseAnalysisService
+from app.api.exceptions import UnauthorizedException
 
-def get_llm() -> LLM:
+def get_llm() -> Gpt4oMini:
     """LLM 인스턴스를 반환합니다."""
     return Gpt4oMini()
 
-def get_case_analysis_service(llm: LLM = Depends(get_llm)) -> CaseAnalysisService:
+def get_case_analysis_service(llm: Gpt4oMini = Depends(get_llm)) -> CaseAnalysisService:
     """CaseAnalysisService 인스턴스를 반환합니다."""
     return CaseAnalysisService(llm)
+
+def get_current_user(authorization: Optional[str] = Header(None)) -> str:
+    """인증 헤더를 확인하고 사용자 정보를 반환합니다."""
+    if authorization is None:
+        raise UnauthorizedException("인증 헤더가 없습니다.")
+    # 실제로는 토큰을 검증하고 사용자 정보를 반환해야 합니다.
+    # 여기서는 예시로 "user"를 반환합니다.
+    return "user"

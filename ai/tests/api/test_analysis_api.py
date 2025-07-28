@@ -1,31 +1,33 @@
+# tests/api/test_analysis_api.py
 from fastapi.testclient import TestClient
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock
 import pytest
 
 from app.main import app
 from services.case_analysis_service import CaseAnalysisService
 from app.api.schemas.analysis import CaseAnalysisResult
+from app.api.dependencies import get_case_analysis_service, get_current_user
 
-from app.api.dependencies import get_case_analysis_service
-
+# 전역 기본 클라이언트 (일반 테스트용)
 client = TestClient(app)
 
+# 1) 서비스 모킹 인스턴스
 @pytest.fixture
 def mock_case_analysis_service():
-    with patch('app.api.dependencies.get_case_analysis_service') as mock_get_service:
-        mock_service_instance = MagicMock(spec=CaseAnalysisService)
-        mock_get_service.return_value = mock_service_instance
-        yield mock_service_instance
+    return MagicMock(spec=CaseAnalysisService)
 
+# 2) 의존성 오버라이드(인증 + 서비스) — 모든 테스트에 자동 적용
 @pytest.fixture(autouse=True)
-def override_dependency(mock_case_analysis_service):
-    # 의존성 오버라이드 등록
+def overrides(mock_case_analysis_service):
     app.dependency_overrides[get_case_analysis_service] = lambda: mock_case_analysis_service
+    app.dependency_overrides[get_current_user] = lambda: "user"  # 인증 우회
     yield
-    app.dependency_overrides.clear()
+    # 개별 키만 해제 (다른 오버라이드에 영향 없도록)
+    app.dependency_overrides.pop(get_case_analysis_service, None)
+    app.dependency_overrides.pop(get_current_user, None)
 
 def test_analyze_case_success(mock_case_analysis_service):
-    # 1) CaseAnalysisResult 인스턴스로 모킹
+    # 1) 서비스 반환값 모킹
     mocked_report = CaseAnalysisResult(
         issues=["Issue 1", "Issue 2"],
         opinion="Mock opinion",
@@ -48,12 +50,12 @@ def test_analyze_case_success(mock_case_analysis_service):
         }
     }
 
-    # 3) API 호출
-    response = client.post("/api/analysis", json=request_body)
+    # 3) 호출
+    resp = client.post("/api/analysis", json=request_body)
 
-    # 4) 응답 검증
-    assert response.status_code == 200
-    assert response.json() == {
+    # 4) 검증 (공통 성공 규격)
+    assert resp.status_code == 200
+    assert resp.json() == {
         "success": True,
         "data": {
             "report": {
@@ -69,38 +71,35 @@ def test_analyze_case_success(mock_case_analysis_service):
             "recommendedLawyers": []
         }
     }
-
-    # 5) 서비스 호출 인자 검증
     mock_case_analysis_service.analyze_case.assert_called_once_with(user_query="Test fullText")
 
 def test_analyze_case_internal_error(mock_case_analysis_service):
-    # 서비스 레이어가 예외를 던지도록 모킹
+    # 일반 Exception으로 500 경로 유도 (APIException이 아님)
     mock_case_analysis_service.analyze_case.side_effect = Exception("Internal service error")
 
-    # 올바른 요청 바디 형태로 변경
     request_body = {
-        "case": {
-            "title": "Error title",
-            "summary": "Error summary",
-            "fullText": "Test query for error"
-        }
+        "case": {"title": "Error title", "summary": "Error summary", "fullText": "Test query for error"}
     }
 
-    response = client.post("/api/analysis", json=request_body)
+    # 이 테스트에서만 서버 예외 재-던짐 방지
+    with TestClient(app, raise_server_exceptions=False) as local_client:
+        resp = local_client.post("/api/analysis", json=request_body)
 
-    # 이제 서비스 내부 예외로 인해 500 에러가 내려와야 합니다.
-    assert response.status_code == 500
-    assert "Internal service error" in response.json()["detail"]
+    # 500 + 공통 실패 규격
+    assert resp.status_code == 500
+    body = resp.json()
+    assert body["success"] is False
+    assert body["error"]["code"] == "SERVER_ERROR"
+    assert "message" in body["error"]  # 내부 메시지는 일반화되어 내려가는 설계
 
 def test_analyze_case_invalid_input():
-    response = client.post(
-        "/api/analysis",
-        json={
-            "invalid_field": "Test query"
-        }
-    )
+    # 유효성 실패는 설계상 400/INVALID_PARAM으로 통일
+    resp = client.post("/api/analysis", json={"invalid_field": "Test query"})
 
-    assert response.status_code == 422  # Unprocessable Entity
-    assert "detail" in response.json()
-    # 'case' 필드가 없다고 나와야 합니다
-    assert response.json()["detail"][0]["loc"] == ["body", "case"]
+    assert resp.status_code == 400
+    body = resp.json()
+    assert body["success"] is False
+    assert body["error"]["code"] == "INVALID_PARAM"
+    # 세부 위치는 details 배열로 확인
+    assert "details" in body
+    assert any("case" in err.get("loc", []) for err in body["details"])
