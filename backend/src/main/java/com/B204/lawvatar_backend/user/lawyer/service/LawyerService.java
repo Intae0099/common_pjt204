@@ -8,6 +8,7 @@ import com.B204.lawvatar_backend.user.lawyer.repository.LawyerRepository;
 import com.B204.lawvatar_backend.user.lawyer.repository.TagRepository;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
+import java.util.Base64;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -91,6 +92,11 @@ public class LawyerService implements UserDetailsService {
           lawyer.getTags().add(lt);
         });
       }
+    }
+
+    if (dto.getPhotoBase64() != null) {
+      byte[] img = Base64.getDecoder().decode(dto.getPhotoBase64());
+      lawyer.setPhoto(img);
     }
 
   }

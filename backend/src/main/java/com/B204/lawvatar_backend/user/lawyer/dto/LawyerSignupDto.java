@@ -12,6 +12,7 @@ public class LawyerSignupDto {
     private String introduction;
     private String exam;
     private String registrationNumber;
+    private String photoBase64;
 
     private ArrayList<Long> tags;
 }

@@ -28,4 +28,7 @@ public class LawyerUpdateDto {
 
   /** 태그 ID 리스트 (null이면 변경 안 함) */
   private List<Long> tags;
+
+  /** Base64로 인코딩된 이미지 (prefix 제외) */
+  private String photoBase64;
 }

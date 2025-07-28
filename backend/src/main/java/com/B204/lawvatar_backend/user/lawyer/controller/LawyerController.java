@@ -18,6 +18,7 @@ import com.B204.lawvatar_backend.user.lawyer.service.LawyerService;
 import jakarta.validation.Valid;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -90,6 +91,13 @@ public class LawyerController {
     l.setCertificationStatus(CertificationStatus.PENDING);
     l.setConsultationCount(0);
     l.setTags(new ArrayList<>());
+
+    // 3) photoBase64 가 있으면 디코딩하여 설정
+    if (dto.getPhotoBase64() != null && !dto.getPhotoBase64().isBlank()) {
+      byte[] img = Base64.getDecoder().decode(dto.getPhotoBase64());
+      l.setPhoto(img);
+    }
+
     lawyerRepo.save(l);
 
     // 가입 승인 API 생기면 옮겨야 함
