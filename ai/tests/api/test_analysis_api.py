@@ -4,8 +4,7 @@ import pytest
 
 from app.main import app
 from services.case_analysis_service import CaseAnalysisService
-from llm import Gpt4oMini
-from llm.llm_response_parser import CaseAnalysisResult # CaseAnalysisResult 임포트
+from app.api.schemas.analysis import CaseAnalysisResult
 
 from app.api.dependencies import get_case_analysis_service
 
@@ -18,68 +17,80 @@ def mock_case_analysis_service():
         mock_get_service.return_value = mock_service_instance
         yield mock_service_instance
 
-@pytest.fixture
-def mock_llm():
-    with patch('app.api.dependencies.get_llm') as mock_get_llm:
-        mock_llm_instance = MagicMock(spec=Gpt4oMini)
-        mock_get_llm.return_value = mock_llm_instance
-        yield mock_llm_instance
-
-
 @pytest.fixture(autouse=True)
 def override_dependency(mock_case_analysis_service):
-    # TestClient 생성 전에, 또는 바로 다음 줄에:
+    # 의존성 오버라이드 등록
     app.dependency_overrides[get_case_analysis_service] = lambda: mock_case_analysis_service
     yield
     app.dependency_overrides.clear()
 
 def test_analyze_case_success(mock_case_analysis_service):
-    # CaseAnalysisResult 객체의 JSON 직렬화 형태와 동일한 딕셔너리로 모킹
+    # 1) CaseAnalysisResult 인스턴스로 모킹
+    mocked_report = CaseAnalysisResult(
+        issues=["Issue 1", "Issue 2"],
+        opinion="Mock opinion",
+        expected_sentence="Mock sentence",
+        confidence=0.99,
+        references={},
+        tags=[],
+        recommendedLawyers=[]
+    )
     mock_case_analysis_service.analyze_case.return_value = {
-        "case_analysis": {
-            "issues": ["Issue 1", "Issue 2"],
-            "opinion": "Mock opinion",
-            "expected_sentence": "Mock sentence",
-            "confidence": 0.99,
-            "references": {},
-            "tags": [],
-            "recommendedLawyers": []
-        },
+        "case_analysis": mocked_report
     }
 
-    response = client.post(
-        "/api/analysis",
-        json={
-            "query": "Test query for analysis"
+    # 2) 올바른 요청 바디
+    request_body = {
+        "case": {
+            "title": "Some title",
+            "summary": "Some summary",
+            "fullText": "Test fullText"
         }
-    )
+    }
 
+    # 3) API 호출
+    response = client.post("/api/analysis", json=request_body)
+
+    # 4) 응답 검증
     assert response.status_code == 200
     assert response.json() == {
-        "case_analysis": {
-            "issues": ["Issue 1", "Issue 2"],
-            "opinion": "Mock opinion",
-            "expected_sentence": "Mock sentence",
-            "confidence": 0.99,
-            "references": {},
+        "success": True,
+        "data": {
+            "report": {
+                "issues": ["Issue 1", "Issue 2"],
+                "opinion": "Mock opinion",
+                "expected_sentence": "Mock sentence",
+                "confidence": 0.99,
+                "references": {},
+                "tags": [],
+                "recommendedLawyers": []
+            },
             "tags": [],
             "recommendedLawyers": []
         }
     }
-    mock_case_analysis_service.analyze_case.assert_called_once_with("Test query for analysis")
+
+    # 5) 서비스 호출 인자 검증
+    mock_case_analysis_service.analyze_case.assert_called_once_with(user_query="Test fullText")
 
 def test_analyze_case_internal_error(mock_case_analysis_service):
+    # 서비스 레이어가 예외를 던지도록 모킹
     mock_case_analysis_service.analyze_case.side_effect = Exception("Internal service error")
 
-    response = client.post(
-        "/api/analysis",
-        json={
-            "query": "Test query for error"
+    # 올바른 요청 바디 형태로 변경
+    request_body = {
+        "case": {
+            "title": "Error title",
+            "summary": "Error summary",
+            "fullText": "Test query for error"
         }
-    )
+    }
 
+    response = client.post("/api/analysis", json=request_body)
+
+    # 이제 서비스 내부 예외로 인해 500 에러가 내려와야 합니다.
     assert response.status_code == 500
-    assert response.json() == {"detail": "Internal service error"}
+    assert "Internal service error" in response.json()["detail"]
 
 def test_analyze_case_invalid_input():
     response = client.post(
@@ -89,6 +100,7 @@ def test_analyze_case_invalid_input():
         }
     )
 
-    assert response.status_code == 422 # Unprocessable Entity
+    assert response.status_code == 422  # Unprocessable Entity
     assert "detail" in response.json()
-    assert response.json()["detail"][0]["loc"] == ["body", "query"]
+    # 'case' 필드가 없다고 나와야 합니다
+    assert response.json()["detail"][0]["loc"] == ["body", "case"]
