@@ -1,9 +1,9 @@
 package com.B204.lawvatar_backend.openvidu.room.entity;
-
-import com.B204.lawvatar_backend.openvidu.session.entity.Session;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+
+import java.util.*;
 
 @Entity
 @Getter
@@ -15,11 +15,32 @@ public class Room {
     @Column(name = "room_id")
     private Long id;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "session_id")
-    private Session session;
-
     private String openviduCustomSessionId;
     private String openviduSessionId;
+
+    // Method
+
+    /**
+     * customSessoinId를 생성하는 메서드
+     * @return UUID 방식의 문자열
+     */
+    public static String generateCustomSessionId() {
+        return UUID.randomUUID().toString();
+    }
+
+    /**
+     * Room 객체 생성하는 정적 메서드
+     * @param openviduCustomSessionId openVidu의 customSessionId
+     * @param openviduSessionId openVidu의 sessionId
+     * @return 생성된 Room 객체
+     */
+    public static Room createRoom(String openviduCustomSessionId, String openviduSessionId) {
+
+        Room room = new Room();
+        room.openviduCustomSessionId = openviduCustomSessionId;
+        room.openviduSessionId = openviduSessionId;
+
+        return room;
+    }
 
 }
