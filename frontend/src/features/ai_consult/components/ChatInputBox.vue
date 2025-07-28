@@ -13,15 +13,19 @@
     />
 
     <!-- 제출 버튼 (아이콘 대체 가능) -->
-    <button @click="submit" :disabled="!text.trim() || disabled">
-      ⬇️
+    <button
+      @click="submit"
+      :disabled="!text.trim() || disabled"
+      class="submit-button"
+    >
+      <ArrowRightIcon class="arrow-icon"/>
     </button>
   </div>
 </template>
 
 <script setup>
 import { ref } from 'vue'
-
+import { ArrowRightIcon } from '@heroicons/vue/24/solid'
 const { placeholder, disabled, userAvatarUrl } = defineProps({
   placeholder: {
     type: String,
@@ -105,5 +109,10 @@ const submit = () => {
 .submit-button:disabled {
   opacity: 0.3;
   cursor: not-allowed;
+}
+
+.arrow-icon {
+  width: 24px;
+  height: 24px;
 }
 </style>
