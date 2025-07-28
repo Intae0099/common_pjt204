@@ -19,8 +19,8 @@ class TestCaseAnalysisService(unittest.TestCase):
         """analyze_case가 chain.invoke에 올바른 파라미터로 호출되는지 검증"""
         # 1) search_cases가 반환할 원본 문서들
         raw_docs = [
-            {"case_id": "2019다1234", "summary": "판례1", "chunk_text": "내용1"},
-            {"case_id": "2020다5678", "summary": "판례2", "chunk_text": "내용2"},
+            {"case_id": "2019다1234", "issue": "판례1", "chunk_text": "내용1"},
+            {"case_id": "2020다5678", "issue": "판례2", "chunk_text": "내용2"},
         ]
         mock_search_cases.return_value = raw_docs
 
@@ -42,8 +42,8 @@ class TestCaseAnalysisService(unittest.TestCase):
 
         # 4) formatted_case_docs와 JSON 직렬화
         formatted_docs = [
-            {"id": "2019다1234", "name": "판례1", "text": "내용1"},
-            {"id": "2020다5678", "name": "판례2", "text": "내용2"},
+            {"id": "2019다1234", "issue": "판례1", "text": "내용1"},
+            {"id": "2020다5678", "issue": "판례2", "text": "내용2"},
         ]
         expected_docs_json = json.dumps(formatted_docs, ensure_ascii=False)
 
