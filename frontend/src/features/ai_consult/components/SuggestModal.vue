@@ -3,15 +3,15 @@
     <div class="modal-content">
       <h2 class="modal-title">빠르게 상담을 진행하시겠어요?</h2>
       <p class="modal-desc">
-        현재 상황을 빠르게 해결하고 싶으시다면, 아래 중 하나를 선택해 주세요.
+        현재 상황을 빠르게 해결하고 싶으시다면,<br/>아래 중 하나를 선택해 주세요.
       </p>
 
       <div class="modal-buttons">
         <button class="confirm" @click="$emit('route', 'lawyer')">
-          ✅ 변호사 추천받기
+          변호사 추천받기
         </button>
         <button class="cancel" @click="$emit('close')">
-          ❌ 아니요, 괜찮아요
+          아니요, 괜찮아요
         </button>
       </div>
     </div>

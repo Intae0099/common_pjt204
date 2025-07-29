@@ -8,13 +8,14 @@
             :disabled="isLoading || isFindingVerdict"
             @submit="handleUserInput"
           />
-
           <!-- 오른쪽: AiBox는 작성중 / 결과 표시 -->
+          <LoadingDots/>
           <AiBox
             :isLoading="isLoading"
             :response="aiResponse"
             :userText="userInput"
             :showPredictButton="!verdictResult"
+            :verdictResult="verdictResult"
             @open-modal="showModal = true"
             @predict="handlePredictVerdict"
           />
@@ -36,13 +37,10 @@
 
         <!-- 판례 찾는 중 표시 -->
         <VerdictFindingBox v-if="isFindingVerdict" />
-        <div v-if="verdictResult">
-          <p>{{ verdictResult }}</p>
-          <button
-            v-if="canShowRecommendBtn && !showRecommendList"
-            @click="showLawyers"
-          >
+        <div v-if="verdictResult && canShowRecommendBtn && !showRecommendList" class="recommend-button-wrapper">
+          <button class="recommend-button" @click="showLawyers">
             변호사 추천받기
+            <span class="arrow">→</span>
           </button>
         </div>
         <!-- 변호사 추천 리스트 -->
@@ -63,6 +61,7 @@ import SuggestModal from './components/SuggestModal.vue'
 import VerdictFindingBox from './components/VerdictFindingBox.vue'
 import LawyerRecommendList from './components/LawyerRecommendList.vue'
 import axios from 'axios'
+import LoadingDots from './components/LoadingDots.vue'
 
 const userInput = ref('')
 const aiResponse = ref(null)
@@ -124,6 +123,9 @@ const handleModalRoute = (target) => {
 </script>
 
 <style scoped>
+*{
+  font-family: 'Noto Sans KR', sans-serif;
+}
 .layout-background {
   position: relative;
   width: 100vw;
@@ -149,10 +151,47 @@ const handleModalRoute = (target) => {
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  gap: 60px;
+  gap: 50px;
   flex-wrap: wrap;
   max-width: 1200px;
   margin: 0 auto;
   padding-top: 40px;
 }
+@media (max-width: 990px) {
+  .wrapper {
+    flex-direction: column;
+    align-items: center;
+  }
+}
+.recommend-button-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-top: 200px;
+}
+
+.recommend-button {
+  background-color: #F7FCFF;
+  color: #82A0B3;
+  font-weight: 500;
+  border: 1.8px solid #e4ebf0;
+  border-radius: 12px;
+  padding: 10px 20px;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease-in-out;
+  box-shadow: 0px 1px 5px rgba(224, 234, 239, 0.2);
+}
+
+.recommend-button:hover {
+  background-color: #f3f9fd;
+  cursor: pointer;
+}
+
+.arrow {
+  font-size: 1.1rem;
+  font-weight: bold;
+}
+
 </style>
