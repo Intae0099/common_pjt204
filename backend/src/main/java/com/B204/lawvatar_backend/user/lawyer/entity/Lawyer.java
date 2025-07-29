@@ -20,7 +20,7 @@ public class Lawyer {
     @Column(name = "login_email", nullable = false, unique = true, length = 50)
     private String loginEmail;
 
-    @Column(name = "password_hash", nullable = false, length = 255)
+    @Column(name = "login_password_hash", nullable = false, length = 255)
     private String passwordHash;
 
     @Lob

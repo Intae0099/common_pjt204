@@ -15,6 +15,7 @@ import com.B204.lawvatar_backend.user.lawyer.repository.LawyerRepository;
 import com.B204.lawvatar_backend.user.lawyer.repository.LawyerTagRepository;
 import com.B204.lawvatar_backend.user.lawyer.repository.TagRepository;
 import com.B204.lawvatar_backend.user.lawyer.service.LawyerService;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.Valid;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -122,8 +123,9 @@ public class LawyerController {
   }
 
   @PostMapping("/emails/check")
-  public ResponseEntity<?> isEmailAvailable(@RequestParam String email){
-    Optional l = lawyerRepo.findByLoginEmail(email);
+  public ResponseEntity<?> isEmailAvailable(@JsonProperty("loginEmail")
+  String loginEmail){
+    Optional l = lawyerRepo.findByLoginEmail(loginEmail);
     boolean isAvailable = l.isEmpty();
 
     Map<String, String> response = Map.of("isAvailable", String.valueOf(isAvailable));
