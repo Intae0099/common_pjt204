@@ -11,7 +11,9 @@ class TestCaseAnalysisService(unittest.TestCase):
     def setUp(self):
         # 1) LLM도 가짜로
         llm = MagicMock(spec=Gpt4oMini)
-        self.service = CaseAnalysisService(llm)
+        embedding_model = MagicMock()
+        cross_encoder_model = MagicMock()
+        self.service = CaseAnalysisService(llm, embedding_model, cross_encoder_model)
         # 2) chain 전체를 MagicMock으로 교체
         self.service.chain = MagicMock()
         

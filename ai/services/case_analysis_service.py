@@ -8,15 +8,31 @@ from llm.llm_response_parser import CotOutputParser, parse_case_analysis_output,
 from llm.prompt_templates import get_cot_prompt
 from services.search_service import search_cases
 
+from langchain.chains import LLMChain
+from langchain.llms.base import LLM
+from typing import List, Dict
+import json
+
+from config.tags import SPECIALTY_TAGS
+from llm.llm_response_parser import CotOutputParser, parse_case_analysis_output, CaseAnalysisResult
+from llm.prompt_templates import get_cot_prompt
+from services.search_service import search_cases
+from llm.models.embedding_model import EmbeddingModel
+from llm.models.cross_encoder_model import CrossEncoderModel
+
 class CaseAnalysisService:
-    def __init__(self, llm: LLM):
+    def __init__(self, llm: LLM, embedding_model: EmbeddingModel, cross_encoder_model: CrossEncoderModel):
         """
-        LLM 객체를 주입받아 초기화합니다.
+        LLM 객체와 임베딩/크로스인코더 모델 객체를 주입받아 초기화합니다.
 
         Args:
             llm (LLM): LangChain의 LLM 인터페이스를 구현한 객체
+            embedding_model (EmbeddingModel): 임베딩 모델 인스턴스
+            cross_encoder_model (CrossEncoderModel): 크로스인코더 모델 인스턴스
         """
         self.llm = llm
+        self.embedding_model = embedding_model
+        self.cross_encoder_model = cross_encoder_model
         self.prompt_template = get_cot_prompt()
         self.parser = CotOutputParser()
         # `prompt | llm` 로 RunnableSequence를 만듭니다. (LangChain 0.1.17 이상 권장 방식)
@@ -33,7 +49,7 @@ class CaseAnalysisService:
                 top_k_docs: 검색할 관련 판례의 개수
             """
             # 1. 관련 판례 검색 (RAG)
-            retrieved_docs = search_cases(user_query, top_k=top_k_docs)
+            retrieved_docs = search_cases(user_query, self.embedding_model, self.cross_encoder_model, top_k=top_k_docs)
 
             # 2. 검색된 판례를 LLM 입력 형식에 맞게 변환
             # search_cases의 결과는 {'case_id': str, 'summary': str, 'full_text': str}
@@ -75,8 +91,11 @@ class CaseAnalysisService:
 # 사용 예시 (기존 analyze_case 함수와 호환성을 위해)
 def analyze_case(case_text: str) -> dict:
     from llm.clients.langchain_client import Gpt4oMini
+    from llm.models.model_loader import ModelLoader
     llm = Gpt4oMini()
-    service = CaseAnalysisService(llm)
+    embedding_model = ModelLoader.get_embedding_model()
+    cross_encoder_model = ModelLoader.get_cross_encoder_model()
+    service = CaseAnalysisService(llm, embedding_model, cross_encoder_model)
     return service.analyze_case(case_text)
 
 if __name__ == "__main__":
@@ -91,8 +110,11 @@ if __name__ == "__main__":
     """
 
     from llm.clients.langchain_client import Gpt4oMini
+    from llm.models.model_loader import ModelLoader
     llm = Gpt4oMini()
-    service = CaseAnalysisService(llm)
+    embedding_model = ModelLoader.get_embedding_model()
+    cross_encoder_model = ModelLoader.get_cross_encoder_model()
+    service = CaseAnalysisService(llm, embedding_model, cross_encoder_model)
 
     analysis = service.analyze_case(sample_query)
     print("== Thought Process ==")

@@ -11,8 +11,10 @@ load_dotenv(dotenv_path=os.path.join(os.path.dirname(os.path.abspath(__file__)),
 
 class TestSearch(unittest.TestCase):
     def setUp(self):
-        """테스트 시작 전 DB 연결 및 모델 로드"""
-        pass
+        # 실제 모델 클래스나 Mock을 사용해 인스턴스 생성
+        from llm.models.model_loader import ModelLoader
+        self.embedding_model = ModelLoader.get_embedding_model()
+        self.cross_encoder_model = ModelLoader.get_cross_encoder_model()
 
     def tearDown(self):
         """테스트 종료 후 DB 연결 종료"""
@@ -40,7 +42,12 @@ class TestSearch(unittest.TestCase):
     def test_search_accuracy(self):
         """'신탁' 키워드 검색 시 '2000마2997' 판례가 결과에 포함되는지 검증"""
         query = '신탁'
-        results = search_cases(query, top_k=10)
+        results = search_cases(
+            query,
+            self.embedding_model,
+            self.cross_encoder_model,
+            top_k=10
+        )
         case_ids = [doc['case_id'] for doc in results]
         self.assertIn('2000마2997', case_ids, f"Case '2000마2997' should be in the search results for '{query}'")
 

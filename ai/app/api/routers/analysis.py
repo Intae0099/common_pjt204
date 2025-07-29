@@ -42,3 +42,4 @@ async def analyze_case_endpoint(
     )
     # 공통 응답 규격으로 반환
     return {"success": True, "data": data}
+
