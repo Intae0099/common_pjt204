@@ -21,12 +21,13 @@ public class Lawyer {
     private String loginEmail;
 
     @Column(name = "login_password_hash", nullable = false, length = 255)
-    private String loginPasswordHash;
+    private String passwordHash;
 
-    @Column(columnDefinition = "text")
-    private String photo;
+    @Lob
+    @Column(name = "photo", columnDefinition = "LONGBLOB")
+    private byte[] photo;
 
-    @Column(length = 20, nullable = false)
+    @Column(nullable = false, length = 10)
     private String name;
 
     @Column(columnDefinition = "TEXT")

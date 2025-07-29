@@ -16,6 +16,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -37,6 +38,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
       ClientRepository clientRepo) { this.jwtUtil = jwtUtil;
     this.lawyerRepo = lawyerRepo;
     this.clientRepo = clientRepo;
+  }
+
+  @Override
+  protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
+    String path = request.getRequestURI();
+    // 사전 검사, 회원가입, 로그인 등 공개 엔드포인트
+    return path.startsWith("/api/lawyers/signup")
+        || path.startsWith("/api/lawyers/emails/check")
+        || path.startsWith("/api/lawyers/login")
+        || path.startsWith("/login/oauth2/")
+        || HttpMethod.OPTIONS.matches(request.getMethod());  // preflight도 skip
   }
 
   @Override

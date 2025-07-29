@@ -34,6 +34,10 @@ public class ClientPrincipal implements UserDetails {
     return client.getId().toString();
   }
 
+  public Long getId(){
+    return client.getId();
+  }
+
   public String getOauthtName() {
     return client.getOauthName();
   }

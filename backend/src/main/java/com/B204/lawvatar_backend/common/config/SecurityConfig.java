@@ -26,6 +26,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseCookie;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -45,6 +46,8 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
+import org.springframework.web.util.UriComponents;
+import org.springframework.web.util.UriComponentsBuilder;
 
 @Configuration
 @EnableWebSecurity
@@ -96,6 +99,7 @@ public class SecurityConfig {
     public void onAuthenticationSuccess(HttpServletRequest req,
         HttpServletResponse res,
         Authentication authentication) throws IOException {
+      System.out.println("▶▶▶ OAuth2JwtSuccessHandler#onAuthenticationSuccess 호출됨!");
 
       OAuth2AuthenticationToken oauthToken = (OAuth2AuthenticationToken) authentication;
       String regId = oauthToken.getAuthorizedClientRegistrationId();
@@ -145,11 +149,16 @@ public class SecurityConfig {
           .build();
       res.setHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
 
-      Map<String, String> responseBody = Map.of("accessToken", accessToken);
+      String redirectUrl = UriComponentsBuilder
+          .fromUriString("http://localhost:5173/oauth2/callback/kakao")
+          .queryParam("accessToken", accessToken)
+          .build().toUriString();
 
-      res.setStatus(HttpServletResponse.SC_OK);
-      res.setContentType(MediaType.APPLICATION_JSON_VALUE);
-      res.getWriter().write(new ObjectMapper().writeValueAsString(responseBody));
+      // Map<String, String> responseBody = Map.of("accessToken", accessToken);
+
+      // res.setStatus(HttpServletResponse.SC_OK);
+      res.sendRedirect(redirectUrl);
+      // res.getWriter().write(new ObjectMapper().writeValueAsString(responseBody));
     }
   }
 
@@ -187,7 +196,6 @@ public class SecurityConfig {
 
       Map<String,String> body = new LinkedHashMap<>();
       body.put("accessToken",  accessToken);
-      // body.put("refreshToken", refreshToken);
 
       res.setStatus(HttpServletResponse.SC_OK);
       res.setContentType(MediaType.APPLICATION_JSON_VALUE);
@@ -209,6 +217,12 @@ public class SecurityConfig {
     daoProvider.setPasswordEncoder(passwordEncoder());
 
     http
+        // 1) CSRF 비활성화
+        .csrf(csrf -> csrf.disable())
+
+        // 2) CORS 활성화 (기본 CorsConfigurationSource 빈을 사용하려면 withDefaults())
+        .cors(Customizer.withDefaults())
+
         // CSRF 비활성화
         .csrf(csrf -> csrf.disable())
 
@@ -243,6 +257,7 @@ public class SecurityConfig {
             .requestMatchers( "/login/oauth2/**").permitAll()
             .requestMatchers("/.well-known/**").permitAll()
             .requestMatchers("/api/lawyers/signup", "/api/lawyers/login").permitAll()
+            .requestMatchers("/api/lawyers/**").permitAll()
             .requestMatchers("/api/protected/**").authenticated()
             .requestMatchers("/clients/**").authenticated()
             .anyRequest().permitAll()
