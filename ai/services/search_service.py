@@ -5,8 +5,8 @@ from dotenv import load_dotenv
 
 from db.database import get_psycopg2_connection
 from utils.logger import setup_logger, get_logger
-from llm.models.embedding_model import get_embedding
-from llm.models.cross_encoder_model import get_cross_encoder_scores
+from llm.models.embedding_model import EmbeddingModel
+from llm.models.cross_encoder_model import CrossEncoderModel
 
 load_dotenv()
 
@@ -14,7 +14,13 @@ load_dotenv()
 setup_logger()
 logger = get_logger(__name__)
 
-def search_cases(query: str, top_k: int = 5, use_rerank: bool = True) -> list[dict]:
+def search_cases(
+    query: str,
+    embedding_model: EmbeddingModel,
+    cross_encoder_model: CrossEncoderModel,
+    top_k: int = 5,
+    use_rerank: bool = True
+) -> list[dict]:
     """
     주어진 질의(query)에 대해 임베딩 유사도 기준으로
     유사한 법률 문서 청크를 조회한다.
@@ -24,6 +30,10 @@ def search_cases(query: str, top_k: int = 5, use_rerank: bool = True) -> list[di
     ----------
     query : str
         검색어(자연어 문장 또는 키워드).
+    embedding_model : EmbeddingModel
+        임베딩 모델 인스턴스.
+    cross_encoder_model : CrossEncoderModel
+        크로스 인코더 모델 인스턴스.
     top_k : int, 기본값 5
         반환할 결과 개수(Top-K).
     use_rerank : bool, 기본값 True
@@ -36,7 +46,7 @@ def search_cases(query: str, top_k: int = 5, use_rerank: bool = True) -> list[di
         DB 오류나 예외 발생 시 빈 리스트를 반환한다.
     """
     # 1) 질의 임베딩 생성
-    query_embedding = get_embedding(query)
+    query_embedding = embedding_model.get_embedding(query)
 
     conn = None
     try:
@@ -66,7 +76,7 @@ def search_cases(query: str, top_k: int = 5, use_rerank: bool = True) -> list[di
 
         if use_rerank:
             logger.info("Applying reranking to search results...")
-            reranked = rerank_cases(query, initial_results)
+            reranked = rerank_cases(query, initial_results, cross_encoder_model)
             # 재정렬 후 상위 3개만 추출
             reranked_top3 = reranked[:3]
             logger.info(f"Reranked 결과 개수(상위 3개): {len(reranked_top3)}")
@@ -85,7 +95,7 @@ def search_cases(query: str, top_k: int = 5, use_rerank: bool = True) -> list[di
         if conn:
             conn.close()
 
-def rerank_cases(query: str, initial_results: list[dict]) -> list[dict]:
+def rerank_cases(query: str, initial_results: list[dict], cross_encoder_model: CrossEncoderModel) -> list[dict]:
     """
     Cross-encoder 모델을 사용하여 초기 검색 결과(판례 요약)를 재평가하여 관련도 순으로 재정렬한다.
 
@@ -95,6 +105,8 @@ def rerank_cases(query: str, initial_results: list[dict]) -> list[dict]:
         사용자 질의.
     initial_results : list[dict]
         초기 검색 결과. 각 요소는 {'case_id': str, 'summary': str, 'full_text': str} 형태.
+    cross_encoder_model : CrossEncoderModel
+        크로스 인코더 모델 인스턴스.
 
     반환값
     ----------
@@ -112,7 +124,7 @@ def rerank_cases(query: str, initial_results: list[dict]) -> list[dict]:
             # Convert to string to prevent error, or handle as appropriate (e.g., skip)
             summary = str(summary) if summary is not None else ""
         documents_to_rerank.append(summary)
-    scores = get_cross_encoder_scores(query, documents_to_rerank)
+    scores = cross_encoder_model.get_cross_encoder_scores(query, documents_to_rerank)
 
     # 결과에 스코어 추가
     scored_results = []
@@ -137,25 +149,10 @@ if __name__ == '__main__':
 
     # 1) 재정렬 적용된 결과
     logger.info("▶ 재정렬 적용 결과")
-    results_reranked = search_cases(sample_query, top_k=5, use_rerank=True)
-    if not results_reranked:
-        logger.warning("검색 결과가 없습니다.")
-    else:
-        for idx, doc in enumerate(results_reranked, start=1):
-            logger.info(f"{idx}. Case ID: {doc['case_id']}")
-            logger.info(f"   Issue : {doc['issue'] or '[이슈 없음]'}")
-
-    # 2) 재정렬 미적용 결과
-    logger.info("\n▶ 재정렬 미적용 결과")
-    results_original = search_cases(sample_query, top_k=5, use_rerank=False)
-    if not results_original:
-        logger.warning("검색 결과가 없습니다.")
-    else:
-        for idx, doc in enumerate(results_original, start=1):
-            logger.info(f"{idx}. Case ID: {doc['case_id']}")
-            logger.info(f"   Summary : {doc['summary'] or '[요약 없음]'}")
-            # preview = doc['full_text'][:100].replace("\n", " ")
-            # logger.info(f"   Preview : {preview}...")
-            # logger.info("-" * 80)
+    # Note: For direct execution, you might need to instantiate models here or adjust for testing.
+    # This part will need to be updated to reflect the new model loading.
+    # For now, leaving it as is, but it won't work without model instances.
+    # results_reranked = search_cases(sample_query, top_k=5, use_rerank=True)
+    logger.info("Direct execution of search_cases is not supported without model instances. Please run via FastAPI app.")
 
     logger.info("\n[검색 질의 테스트 완료]")

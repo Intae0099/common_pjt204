@@ -1,7 +1,7 @@
 import unittest
 
 # 실제 코드가 있는 경로로 수정
-from ai.llm.llm_response_parser import CotOutputParser, parse_case_analysis_output, CaseAnalysisResult
+from llm.llm_response_parser import CotOutputParser, parse_case_analysis_output, CaseAnalysisResult
 
 class TestCotOutputParser(unittest.TestCase):
 

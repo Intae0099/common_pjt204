@@ -17,9 +17,9 @@ legal-ai-platform/
 │   └── routes.py           # 단일 라우터 모듈 (v1)
 │
 ├── services/               # 비즈니스 서비스 (기능 1:1 대응)
-│   ├── structuring.py      # 2‑1 사건 구조화
-│   ├── analysis.py         # 3‑1~3‑4 법률 분석
-│   ├── application.py      # 4‑X 상담 신청서
+│   ├── structuring.py      # 2-1 사건 구조화
+│   ├── analysis.py         # 3-1~3-4 법률 분석
+│   ├── application.py      # 4-X 상담 신청서
 │   ├── search.py           # 5·6 판례·법령 검색
 │   └── chat.py             # 7 챗봇
 │
@@ -27,7 +27,11 @@ legal-ai-platform/
 │   ├── model.py            # OpenAI 싱글턴
 │   ├── prompts.py          # 모든 프롬프트 정의
 │   ├── chains.py           # LangChain 체인 래퍼
-│   └── chroma.py           # ChromaDB 초기화·검색 Helper
+│   ├── chroma.py           # ChromaDB 초기화·검색 Helper
+│   └── models/             # 임베딩 및 크로스인코더 모델 정의 및 로딩
+│       ├── embedding_model.py    # 임베딩 모델 클래스
+│       ├── cross_encoder_model.py # 크로스인코더 모델 클래스
+│       └── model_loader.py       # 모델 로딩 및 싱글턴 관리
 │
 ├── db/                     # ORM & 마이그레이션
 │   ├── models.py           # SQLAlchemy ORM
@@ -111,7 +115,13 @@ legal-ai-platform/
 
 ---
 
-## 5. 테스트
+## 5. 모델 로딩
+
+임베딩 및 크로스인코더 모델은 서버 시작 시 `llm/models/model_loader.py`를 통해 메모리에 미리 로드됩니다. 이는 FastAPI의 `lifespan` 이벤트를 활용하여 애플리케이션 시작 시점에 단 한 번만 모델을 초기화하고, 이후 모든 요청에서 동일한 인스턴스를 재사용하도록 합니다. 이를 통해 불필요한 모델 로딩 오버헤드를 줄여 성능을 향상시키고, 모델 관리의 일관성을 유지합니다.
+
+---
+
+## 6. 테스트
 
 ```bash
 pytest tests/
@@ -121,3 +131,4 @@ pytest tests/
 * 외부 호출(OpenAI, ChromaDB, DB)은 `pytest-mock` 으로 모킹하세요.
 
 ---
+
