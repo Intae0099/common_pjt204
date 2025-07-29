@@ -12,10 +12,36 @@
     <div v-else-if="response" class="result-box">
       <img class="bot" src="@/assets/ai-bot.png" alt="AI 봇" />
       <div class="ai-message-box">
-        <p>{{ response.result }}</p>
-        <p v-if="verdictResult" style="margin-top: 8px; color: #072D45;">
-        {{ verdictResult }}
-        </p>
+
+        <!-- 🔹 판례 예측 전: 사건 요약만 -->
+        <template v-if="!verdictResult && response.report?.issues?.length">
+          <h4>사건 요약</h4>
+          <ul>
+            <li v-for="(issue, index) in response.report.issues" :key="index">
+              {{ issue }}
+            </li>
+          </ul>
+        </template>
+
+        <!-- 🔸 판례 예측 후: opinion 등 -->
+        <template v-else-if="verdictResult">
+          <h4>AI 의견</h4>
+          <p>{{ verdictResult.opinion }}</p>
+          <p><strong>예상 형량:</strong> {{ verdictResult.sentencePrediction }}</p>
+          <p><strong>신뢰도:</strong> {{ verdictResult.confidence }}</p>
+          <!-- ✅ 유사 판례 정보 -->
+          <div v-if="verdictResult.references?.cases?.length" style="margin-top: 1rem;">
+            <h4>📚 유사 판례</h4>
+            <ul>
+              <li v-for="(caseItem, index) in verdictResult.references.cases" :key="index" style="margin-bottom: 0.5rem;">
+                <p><strong>사건명:</strong> {{ caseItem.name }}</p>
+                <p><strong>법원:</strong> {{ caseItem.court }}</p>
+                <p><strong>년도:</strong> {{ caseItem.year }}</p>
+              </li>
+            </ul>
+          </div>
+        </template>
+
       </div>
     </div>
 

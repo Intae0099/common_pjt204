@@ -1,108 +1,155 @@
 <template>
-  <!-- v-if="userInfo"를 추가하여 데이터가 로드된 후에만 화면이 보이도록 처리 -->
-  <div v-if="userInfo" class="mypage-container">
+  <div v-if="user && appointments.length !== null" class="mypage-container">
     <div class="text-wrapper-4">마이페이지</div>
+
+    <!-- 프로필 카드 -->
     <div class="element">
       <div class="div">
-        <!-- 사용자 정보 섹션 -->
         <div class="overlap">
-          <img class="img" alt="Profile" />
-          <div class="text-wrapper">{{ userInfo.name }}</div>
+          <div class="text-wrapper">{{ user.oauthname }}</div>
           <div class="ellipse"></div>
-          <div class="text-wrapper-2">{{ userInfo.birthdate }}</div>
-          <div class="text-wrapper-3">계정설정</div>
+          <div class="text-wrapper">{{ user.email }}</div>
         </div>
-        <hr>
 
-        <!-- 예약일정 섹션 (v-for 활용) -->
+        <hr />
+
+        <!-- 예약 일정 -->
         <div class="text-wrapper-5">예약일정</div>
-        <!-- 예약이 없을 경우 메시지를 보여줄 수 있습니다. -->
-        <div v-if="reservationList.length === 0" class="no-reservations">
+        <div v-if="filteredAppointments.length === 0" class="no-reservations">
           예약된 일정이 없습니다.
         </div>
-        <!-- v-for를 사용해 예약 목록을 반복 렌더링 -->
-        <div v-for="item in reservationList" :key="item.id">
-          <div class="overlap-group">
-            <div class="text-wrapper-6">{{ item.title }}</div>
-            <div class="text-wrapper-7">{{ item.date }}</div>
+        <div v-else>
+          <div
+            v-for="appt in filteredAppointments"
+            :key="appt.appointmentId"
+            class="overlap-group"
+          >
+            <div class="text-wrapper-6">
+              {{ lawyerMap[String(appt.lawyerId)] || '알 수 없음' }} 변호사
+            </div>
+            <div class="text-wrapper-7">{{ formatDateTime(appt.startTime) }}</div>
             <div class="east">
-              <img class="vector" alt="Vector" :src="vector5" />
+              <!-- <img class="vector" alt="Vector" src="@/assets/images/vector5.svg" /> -->
             </div>
           </div>
-          <hr>
+          <hr />
         </div>
 
-        <!-- 고정 메뉴들 -->
+        <!-- 상담신청서 보관함 -->
         <div class="text-wrapper-8">상담신청서 보관함</div>
-        <hr>
-        <div class="text-wrapper-9">상담내역</div>
-        <hr>
-
-        <div class="text-wrapper-10">회원탈퇴</div>
+        <div v-for="form in applications" :key="form.applicationId" class="overlap-group">
+          <div class="text-wrapper-6">{{ form.title }}</div>
+          <div class="text-wrapper-7">{{ form.createdAt }}</div>
+          <div class="east">
+            <!-- <img class="vector" alt="Vector" src="@/assets/images/vector5.svg" /> -->
+          </div>
         </div>
+        <hr />
+
+        <!-- 상담내역 -->
+        <div class="text-wrapper-9">상담내역</div>
+        <hr />
+
+        <!-- 회원탈퇴 -->
+        <div class="text-wrapper-10">회원탈퇴</div>
+      </div>
     </div>
   </div>
-  <!-- 데이터 로딩 중 표시될 화면 -->
+
   <div v-else>
     마이페이지 정보를 불러오는 중입니다...
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue'
+import axios from '@/lib/axios'
 
-// --- 이미지 import ---
-// 실제 프로젝트의 이미지 경로에 맞게 수정해주세요.
-// import x03 from '@/assets/images/profile_icon.png';
-// import vector from '@/assets/images/vector.svg';
-// import vector5 from '@/assets/images/vector5.svg';
+// 사용자 정보
+const user = ref(null)
 
-// --- 데이터 상태 정의 ---
-// 1. 사용자 정보를 담을 객체 (처음에는 null로 초기화)
-const userInfo = ref(null);
+// 예약 정보
+const appointments = ref([])
+const lawyerMap = ref({})
 
-// 2. 예약 일정 목록을 담을 배열
-const reservationList = ref([]);
+// 상담신청서 목록
+const applications = ref([])
 
-// 3. 변호사 상담 내역 목록을 담을 배열 (기존 lawyers 데이터)
-// const lawyers = ref([]);
+// 필터링된 예약 정보 (오늘 이후)
+const filteredAppointments = computed(() => {
+  const now = new Date()
+  return appointments.value.filter(appt => new Date(appt.startTime) > now)
+})
+
+// 날짜 형식 함수
+const formatDateTime = dateStr => {
+  const date = new Date(dateStr)
+  return date.toLocaleString('ko-KR', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
+}
 
 
-// --- 데이터 로딩 (onMounted 훅 사용) ---
-// 컴포넌트가 화면에 마운트된 후 실행됩니다.
-onMounted(() => {
-  // 실제로는 이 곳에서 백엔드 API를 호출합니다.
-  // 예: const data = await fetch('/api/mypage').then(res => res.json());
+// API 호출
+onMounted(async () => {
+  try {
+    const [userRes, appointmentRes, formRes, lawyerListRes] = await Promise.all([
+      axios.get('/api/clients/me'),
+      axios.get('/api/appointments/me'),
+      axios.get('/api/applications/me'),
+      axios.get('/api/lawyers/list'),
+    ])
 
-  // 지금은 더미 데이터로 시뮬레이션합니다.
-  // 1. 사용자 정보 데이터 주입
-  userInfo.value = {
-    name: '홍길동',
-    birthdate: '2001.06.23',
-    // profileImage: x03, // import한 이미지 변수 사용
-  };
+    user.value = userRes.data
+    appointments.value = appointmentRes.data
+    applications.value = formRes.data
+    // lawyerId → name 매핑
+    const map = {}
+    lawyerListRes.data.forEach(lawyer => {
+      map[String(lawyer.lawyerId)] = lawyer.name
+    })
+    lawyerMap.value = map
 
-  // 2. 예약 일정 데이터 주입 (여러 개)
-  reservationList.value = [
-    { id: 1, title: '사건1 상담신청서 예시제목', date: '2025-04-16' },
-    { id: 2, title: '부동산 계약 관련 긴급 상담', date: '2025-04-20' },
-    { id: 3, title: '손해배상 청구 자문', date: '2025-05-01' },
-  ];
+  } catch (err) {
+    console.error('마이페이지 데이터 로딩 실패:', err)
+  }
+  console.log('✅ lawyerMap:', JSON.stringify(lawyerMap.value, null, 2))
+  console.log('✅ appointments:', JSON.stringify(appointments.value, null, 2))
 
-  // 3. 변호사 상담 내역 데이터 주입
-  // lawyers.value = [
-  //   { id: 1, name: '김변호', date: '2024-03-15', status: '상담완료' },
-  //   { id: 2, name: '이변호', date: '2024-03-20', status: '상담완료' },
-  //   { id: 3, name: '박변호', date: '2024-04-01', status: '결제완료' },
-  // ];
-});
+
+})
 </script>
 
 <style scoped>
-/* 여기에 기존 CSS를 그대로 두시면 됩니다. */
+.mypage-container {
+  padding: 1rem;
+}
+
 .no-reservations {
   padding: 20px;
   text-align: center;
   color: #888;
+}
+
+/* 예시: 필요한 스타일은 추가로 보완하세요 */
+.text-wrapper-4 {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-bottom: 1rem;
+}
+.overlap {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.text-wrapper-6 {
+  font-weight: bold;
+}
+.text-wrapper-7 {
+  color: gray;
 }
 </style>

@@ -80,8 +80,11 @@ const handleUserInput = async (text) => {
   isLoading.value = true
 
   try {
-    const { data } = await axios.post('/api/ai-consult', { content: text })
-    aiResponse.value = data
+    const { data } = await axios.post('/api/ai/pre-consultation', {
+      content: text,
+    })
+
+    aiResponse.value = data // 전체 json 저장
   } catch (error) {
     console.error('AI 응답 실패:', error)
   } finally {
@@ -89,23 +92,37 @@ const handleUserInput = async (text) => {
   }
 }
 
-const handlePredictVerdict = async () => {
-  isFindingVerdict.value = true
-  try {
-    const { data } = await axios.post('/api/verdict/predict', {
-      content: userInput.value,
-    })
 
-    // ✅ 전체 데이터를 받아놓고 필요한 부분만 시점에 맞게 표시
-    verdictResult.value = data.verdictSummary
-    lawyers.value = data.lawyers
-    canShowRecommendBtn.value = true
-  } catch (err) {
-    console.error('판례 예측 실패', err)
-  } finally {
-    isFindingVerdict.value = false
+const handlePredictVerdict = () => {
+  const token = localStorage.getItem('access_token') // 또는 적절한 로그인 상태 체크 방식
+  if (!token) {
+    alert('로그인이 필요합니다. 로그인 페이지로 이동합니다.')
+    router.push('/login') // 실제 로그인 경로에 맞게 수정
+    return
   }
+
+  isFindingVerdict.value = true
+  setTimeout(() => {
+    try {
+      const report = aiResponse.value?.report
+      verdictResult.value = {
+        issues: report.issues,
+        opinion: report.opinion,
+        sentencePrediction: report.sentencePrediction,
+        confidence: report.confidence,
+        references: report.references,
+
+      }
+      lawyers.value = aiResponse.value.recommendedLawyers
+      canShowRecommendBtn.value = true
+    } catch (err) {
+      console.error('예측 데이터 파싱 실패:', err)
+    } finally {
+      isFindingVerdict.value = false
+    }
+  }, 500) // 로딩 표시용 약간의 delay
 }
+
 
 const showLawyers = () => {
   showRecommendList.value = true

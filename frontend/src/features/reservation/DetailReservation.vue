@@ -60,7 +60,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import axios from 'axios'
+import axios from '@/lib/axios'
 import { useRoute } from 'vue-router'
 import ApplicationChoiceModal from '@/features/reservation/ApplicationChoiceModal.vue'
 

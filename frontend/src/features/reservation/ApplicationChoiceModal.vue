@@ -40,7 +40,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import axios from 'axios'
+import axios from '@/lib/axios'
 import { useRouter } from 'vue-router'
 
 const props = defineProps({

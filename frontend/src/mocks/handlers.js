@@ -44,11 +44,13 @@ export const handlers = [
       {
         appointmentId: 101,
         clientId: 1,
+        lawyerId: '1203',
         startTime: new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString() // 3시간 뒤
       },
       {
         appointmentId: 102,
         clientId: 2,
+        lawyerId: '5223',
         startTime: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 내일
       }
     ])
@@ -70,37 +72,65 @@ export const handlers = [
     ])
   }),
 
-  http.post('/api/ai-consult', () => {
-    return HttpResponse.json({
-      result: '상담 요청이 정상적으로 처리되었습니다.',
-      nextAction: '판례 예측 요청 가능',
-    })
-  }),
-
-  http.post('/api/verdict/predict', async ({ request }) => {
+  http.post('/api/ai/pre-consultation', async ({ request }) => {
     const body = await request.json()
-    console.log('판례 예측 요청:', body)
+    console.log('AI 사전상담 요청:', body)
+
     return HttpResponse.json({
-      verdictSummary: '유사 판례 분석 결과: 위자료 청구 가능성이 높습니다.',
-      confidence: 0.91,
-      lawyers: [
+      report: {
+        issues: ['계약 체결 시 기망 여부', '피해 금액 산정'],
+        opinion: '피해 회복 가능성이 높다.',
+        sentencePrediction: '징역 8월 ~ 1년 6월',
+        confidence: '0.84',
+        references: {
+          cases: [
+            {
+              id: '93810',
+              name: '소유권이전등기말소',
+              court: '대법원',
+              year: '1978'
+            }
+          ],
+          statutes: [
+            {
+              code: '형법',
+              article: '347조(사기)'
+            }
+          ]
+        }
+      },
+      tags: ['형사·사기'],
+      recommendedLawyers: [
         {
-          id: 1,
-          name: '김지훈 변호사',
-          specialty: '형사 사건',
-          intro: '피해자와 피의자 모두의 입장을 이해하며 조력하는 변호사입니다.',
-          image: 'https://via.placeholder.com/80x80'
+          lawyerId: '1203',
+          loginEmail: 'taein4225@naver.com',
+          name: '김태인',
+          introduction: '최선을 다하겠습니다!!',
+          exam: '로스쿨',
+          registrationNumber: '2020-12345',
+          certificationStatus: 'APROVED',
+          consultationCount: '8',
+          tags: ['이혼', '폭행', '음주운전', '상해'],
+          matchScore: '0.93',
+          photo: '/9j/4AAQSkZJRgABAQEASABIAAD/4QBiRXhpZgAASUkqAAgAAAAHABIBAwABAAAAAQAAABoBBQABAAAAZgAAABsBBQABAAAAagAAACgBAwABAAAAAgAAADEBAgANAAAAcgAAADIBAgAUAAAAegAAAGmHBAABAAAAkAEAAP/bAEMAAwICAwICAwMDAwMEAwMDBAUFBAQFBQUGBggGBgYGBgcICQcJCQoKCwsMDQwMDAwMEA8ODg4NDxAQEBAQEA8ODg7/wAALCAABAAEBAREA/8QAFAABAAAAAAAAAAAAAAAAAAAACP/EABcRAQEBAQAAAAAAAAAAAAAAAAEAAwT/2gAIAQEAAD8A9//Z'
         },
         {
-          id: 2,
-          name: '이은지 변호사',
-          specialty: '이혼·가사',
-          intro: '가정법 분야에서 15년 경력의 전문가입니다.',
-          image: 'https://via.placeholder.com/80x80'
+          lawyerId: '4506',
+          loginEmail: 'lee@example.com',
+          name: '이은지',
+          introduction: '가정법 분야에서 15년 경력의 전문가입니다.',
+          exam: '사법시험',
+          registrationNumber: '2010-54321',
+          certificationStatus: 'APROVED',
+          consultationCount: '15',
+          tags: ['이혼', '가정폭력'],
+          matchScore: '0.87',
+          photo: '/9j/4AAQSkZJRgABAQEASABIAAD/4QBiRXhpZgAASUkqAAgAAAAHABIBAwABAAAAAQAAABoBBQABAAAAZgAAABsBBQABAAAAagAAACgBAwABAAAAAgAAADEBAgANAAAAcgAAADIBAgAUAAAAegAAAGmHBAABAAAAkAEAAP/bAEMAAwICAwICAwMDAwMEAwMDBAUFBAQFBQUGBggGBgYGBgcICQcJCQoKCwsMDQwMDAwMEA8ODg4NDxAQEBAQEA8ODg7/wAALCAABAAEBAREA/8QAFAABAAAAAAAAAAAAAAAAAAAACP/EABcRAQEBAQAAAAAAAAAAAAAAAAEAAwT/2gAIAQEAAD8A9//Z'
         }
       ]
     })
   }),
+
 
   http.get('/api/lawyers/:id', ({ params }) => {
     const { id } = params
@@ -145,6 +175,35 @@ export const handlers = [
     ]);
   }),
 
+  // 변호사 전체 리스트 조회 (권한 검사 없는 버전)
+  http.get('/api/lawyers/list', () => {
+    return HttpResponse.json([
+      {
+        lawyerId: '1203',
+        name: '김태인',
+        loginEmail: 'taein4225@naver.com',
+        introduction: '최선을 다하겠습니다!!',
+        exam: '로스쿨',
+        registrationNumber: '2020-12345',
+        certificationStatus: 'APROVED',
+        consultationCount: '8',
+        profile_image: 'https://via.placeholder.com/150',
+        tags: [3, 5, 6, 7]
+      },
+      {
+        lawyerId: '5223',
+        name: '우영우',
+        loginEmail: 'woo4225@naver.com',
+        introduction: '돌고래가 보여요! 천재변호사 우영우입니다.',
+        exam: '사법시험',
+        registrationNumber: '2022-95126',
+        certificationStatus: 'APROVED',
+        consultationCount: '100',
+        profile_image: 'https://via.placeholder.com/150',
+        tags: [1, 2]
+      }
+    ])
+  }),
   // 특정 날짜에 변호사 예약 불가 시간 조회
   http.get('/api/lawyers/:lawyerId/unavailable-slot', ({ request, params }) => {
     const url = new URL(request.url)
@@ -199,4 +258,15 @@ export const handlers = [
       appointmentId: 9999
     }, { status: 201 })
   }),
+
+  http.get('/api/clients/me', () => {
+    return HttpResponse.json({
+      email: 'ssafy123@naver.com',
+      oauthname: '김싸피',
+      oauthProvider: 'kakao',
+      oauthIdentifier: '19249452013'
+    })
+  }),
+
 ]
+

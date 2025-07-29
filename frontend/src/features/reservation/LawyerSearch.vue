@@ -22,7 +22,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import axios from 'axios'
+import axios from '@/lib/axios'
 
 const lawyers = ref([])
 const searchQuery = ref('')
@@ -67,7 +67,7 @@ const goToReservation = (lawyer) => {
   const userType = localStorage.getItem('user_type')
   if (!userType) {
     alert('로그인이 필요한 기능입니다. 로그인 페이지로 이동합니다.')
-    router.push({ name: 'UserLogin' }) // 로그인 라우트 이름에 맞게 수정
+    router.push('/login') // 로그인 라우트 이름에 맞게 수정
     return
   }
   router.push({ name: 'DetailReservation', params: { id: lawyer.id } })
