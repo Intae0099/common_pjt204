@@ -11,7 +11,7 @@ from app.api.handlers import (
     http_error_handler,
 )
 from app.api.exceptions import APIException
-from app.api.routers import analysis
+from app.api.routers import analysis, structuring
 from llm.models.model_loader import ModelLoader
 from utils.logger import setup_logger, get_logger
 
@@ -27,7 +27,7 @@ async def lifespan(app: FastAPI):
     yield
     logger.info("Application shutdown.")
 
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(lifespan=lifespan, response_model_exclude_none=True)
 
 app.add_exception_handler(APIException, api_exception_handler)
 app.add_exception_handler(RequestValidationError, validation_exception_handler)
@@ -35,6 +35,7 @@ app.add_exception_handler(StarletteHTTPException, http_error_handler)
 app.add_exception_handler(Exception, generic_exception_handler)
 
 app.include_router(analysis.router, prefix="/api", tags=["analysis"])
+app.include_router(structuring.router, prefix="/api", tags=["structuring"])
 
 @app.get("/")
 def read_root():
