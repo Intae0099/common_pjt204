@@ -17,29 +17,32 @@
 </template>
 
 <script setup>
-import { useAuthStore } from '@/stores/auth'
-import { useRouter } from 'vue-router'
-import axios from '@/lib/axios'
+// import { useAuthStore } from '@/stores/auth'
+// import { useRouter } from 'vue-router'
+// import axios from '@/lib/axios'
 
-const authStore = useAuthStore()
-const router = useRouter()
+// const authStore = useAuthStore()
+// const router = useRouter()
 
 const login = async () => {
-  try {
-    const res = await axios.get('/oauth2/authorization/kakao')
 
-    const token = res.data.access_token
-    authStore.setToken(token)
+  window.location.href = 'http://localhost:8080/oauth2/authorization/kakao'
 
-    // ✅ 사용자 타입 설정 (소셜 로그인은 일반회원)
-    authStore.setUserType('USER')
+//   try {
+//     const res = await axios.get('/oauth2/authorization/kakao')
 
-    // ✅ 로그인 후 경로 이동
-    router.push('/user/mypage')
-  } catch (err) {
-    console.error('로그인 실패:', err)
-    alert('로그인 실패')
-  }
+//     const token = res.data.access_token
+//     authStore.setToken(token)
+
+//     // ✅ 사용자 타입 설정 (소셜 로그인은 일반회원)
+//     authStore.setUserType('USER')
+
+//     // ✅ 로그인 후 경로 이동
+//     router.push('/user/mypage')
+//   } catch (err) {
+//     console.error('로그인 실패:', err)
+//     alert('로그인 실패')
+//   }
 }
 </script>
 

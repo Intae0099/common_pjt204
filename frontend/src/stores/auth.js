@@ -11,12 +11,12 @@ export const useAuthStore = defineStore('auth', {
     // 변호사 회원가입 데이터 (1~3단계 입력값 저장용)
     signupData: {
       name: '',
-      loginEmail: '',      // ✅ 변경됨
+      loginEmail: '',
       password: '',
       exam: '',
       registrationNumber: '',
       introduction: '',
-      tags: []              // ✅ 숫자 ID 배열
+      tags: []
     }
   }),
 

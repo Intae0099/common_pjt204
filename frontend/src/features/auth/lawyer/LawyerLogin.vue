@@ -13,7 +13,7 @@
         <input
           id="email"
           type="email"
-          v-model="form.loginId"
+          v-model="form.loginEmail"
           placeholder="예시) lawyer@example.com"
           required
         />
@@ -24,7 +24,7 @@
         <input
           id="password"
           type="password"
-          v-model="form.loginPwd"
+          v-model="form.password"
           placeholder="비밀번호 입력"
           required
         />
@@ -41,7 +41,7 @@
 </template>
 
 <script>
-import axios from 'axios';
+import axios from '@/lib/axios';
 import { useAuthStore } from '@/stores/auth';
 
 export default {
@@ -49,17 +49,17 @@ export default {
   data() {
     return {
       form: {
-        loginId: '',
-        loginPwd: ''
+        loginEmail: '',
+        password: ''
       }
     };
   },
   methods: {
     async handleLogin() {
       try {
-        const response = await axios.post('/api/auth/lawyers/login', this.form);
+        const response = await axios.post('/api/lawyers/login', this.form);
 
-        const token = response.data?.access_token;
+        const token = response.data?.accessToken;
         if (!token) throw new Error('토큰 없음');
 
         const authStore = useAuthStore();
