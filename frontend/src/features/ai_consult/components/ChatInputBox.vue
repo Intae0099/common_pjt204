@@ -37,7 +37,7 @@ const { placeholder, disabled, userAvatarUrl } = defineProps({
   },
   userAvatarUrl: {
     type: String,
-    default: 'test.png' // 👉 사용자 이미지 URL (ex: 로그인된 유저 프로필)
+    default: 'default-profile.png' // 👉 사용자 이미지 URL (ex: 로그인된 유저 프로필)
   }
 })
 
@@ -48,12 +48,14 @@ const text = ref('')
 const submit = () => {
   if (text.value.trim()) {
     emit('submit', text.value.trim())
-    text.value = ''
   }
 }
 </script>
 
 <style scoped>
+*{
+  font-family: 'Noto Sans KR', sans-serif;
+}
 .chat-input-box {
   display: flex;
   flex-direction: column;
@@ -66,8 +68,8 @@ const submit = () => {
   height: 60px;
   object-fit: cover;
   border-radius: 50%;
-  margin-bottom: 12px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+  box-shadow: 0 4px 8px rgba(0, 132, 255, 0.1);
 }
 
 .input-wrapper {
@@ -78,7 +80,7 @@ const submit = () => {
 
 .textarea {
   width: 100%;
-  min-width: 400px;
+  min-width: 350px;
   min-height: 120px;
   border: 1px solid #e0ecf5;
   border-radius: 12px;
@@ -89,7 +91,9 @@ const submit = () => {
   outline: none;
   background: white;
 }
-
+.textarea::placeholder {
+  color: #d1dee8;
+}
 .textarea:disabled {
   background-color: #f5f5f5;
   color: #aaa;
@@ -103,7 +107,7 @@ const submit = () => {
   background: none;
   font-size: 18px;
   cursor: pointer;
-  color: #007bff;
+  color: #C7E5F7;
 }
 
 .submit-button:disabled {
