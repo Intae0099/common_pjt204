@@ -15,6 +15,7 @@ create table lawyer (
 	id int unsigned auto_increment primary key,
 	login_email varchar(100) unique not null,
     login_password_hash varchar(100) not null, -- 비밀번호가 30byte 제한이라면, 단방향 암호화하고 Base64로 저장했을때 100byte를 절대 넘지 않을 것
+    photo text,
     name varchar(30) not null,
     introduction text,
     exam varchar(50),
@@ -116,7 +117,7 @@ create table appointment (
     application_id int unsigned not null,
     appointment_status enum('PENDING', 'CONFIRMED', 'REJECTED', 'IN_PROGRESS', 'CANCELED', 'ENDED') not null default 'PENDING',
     start_time datetime not null,
-    end_time datetime,
+    end_time datetime not null,
     created_at datetime not null default current_timestamp,
     
     constraint fk_appointment_client_id
