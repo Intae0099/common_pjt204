@@ -12,14 +12,15 @@ public class Room {
 
     // Field
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "room_id")
     private Long id;
 
+    @Column(nullable = false)
     private String openviduCustomSessionId;
+
+    @Column(nullable = false)
     private String openviduSessionId;
 
     // Method
-
     /**
      * customSessoinId를 생성하는 메서드
      * @return UUID 방식의 문자열

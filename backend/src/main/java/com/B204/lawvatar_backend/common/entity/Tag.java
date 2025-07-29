@@ -18,7 +18,6 @@ public class Tag {
 
     // Field
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "tag_id")
     private Long Id;
 
     private String name;
