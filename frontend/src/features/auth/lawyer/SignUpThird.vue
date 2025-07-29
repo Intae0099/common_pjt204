@@ -54,7 +54,7 @@
 <script>
 import BaseModal from '@/components/BaseModal.vue';
 import { useAuthStore } from '@/stores/auth';
-import axios from 'axios';
+import axios from '@/lib/axios';
 
 export default {
   name: 'SignUpThird',
@@ -98,14 +98,19 @@ export default {
       }
     },
     async handleSubmit() {
-      // 회원가입 전 데이터 저장
+      // 1) Store에 값 병합
       this.authStore.updateSignup({
         introduction: this.form.introduction,
         tags: this.form.tags
       });
 
+      // 2) Proxy를 풀어서 plain Object로 복사
+      const payload = { ...this.authStore.signupData };
+
+      console.log('payload to send:', payload);
+
       try {
-        await axios.post('/api/lawyers/signup', this.authStore.signupData);
+        await axios.post('/api/lawyers/signup', payload);
         this.showModal = true;
       } catch (error) {
         console.error('회원가입 실패:', error);

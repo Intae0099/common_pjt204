@@ -27,7 +27,7 @@
           <input
             type="email"
             placeholder="예시) honggildong@naver.com"
-            v-model="form.email"
+            v-model="form.loginEmail"
             @blur="validateEmailFormat"
             required
           />
@@ -78,7 +78,7 @@
 
 <script>
 import { useAuthStore } from '@/stores/auth';
-import axios from 'axios';
+import axios from '@/lib/axios';
 
 export default {
   name: 'SignUpFirst',
@@ -89,8 +89,6 @@ export default {
         loginEmail: '',   // 기존 email → loginEmail 로 변경
         password: '',
         passwordConfirm: '',
-        phone: '',
-        officeNumber: ''
       },
       isEmailValid: true,
       isEmailChecked: false,
@@ -165,8 +163,6 @@ export default {
         name: this.form.name,
         loginEmail: this.form.loginEmail,
         password: this.form.password,
-        phone: this.form.phone,
-        officeNumber: this.form.officeNumber
         // exam, registrationNumber, introduction, tags 등은 다음 단계에서 추가
       });
 

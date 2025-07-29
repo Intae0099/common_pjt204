@@ -6,6 +6,7 @@ import SignUpFirst from '@/features/auth/lawyer/SignUpFirst.vue';
 import SignUpSecond from '@/features/auth/lawyer/SignUpSecond.vue';
 import SignUpThird from '@/features/auth/lawyer/SignUpThird.vue';
 import LawyerLogin from '@/features/auth/lawyer/LawyerLogin.vue';
+import KakaoCallback from '@/features/auth/user/KakaoCallback.vue'
 
 // 마이페이지
 import LawyerMyPage from '@/features/profile/lawyer/LawyerMyPage.vue';
@@ -38,7 +39,13 @@ const router = createRouter({
     //회원가입 및 로그인
     {
       path: '/login',
+      name : 'SocialLogin',
       component: SocialLogin
+    },
+    {
+    path: '/oauth2/callback/kakao',
+    name: 'KakaoCallback',
+    component: KakaoCallback
     },
     {
       path: '/signup/step1',
@@ -73,12 +80,12 @@ const router = createRouter({
     // 마이페이지
     {
       path: '/lawyer/mypage',
-      name: 'Lawyermypage',
+      name: 'LawyerMyPage',
       component: LawyerMyPage
     },
     {
       path: '/user/mypage',
-      name: 'Usermypage',
+      name: 'UserMyPage',
       component: UserMyPage
     },
     {
