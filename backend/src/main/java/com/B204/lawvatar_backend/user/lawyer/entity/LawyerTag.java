@@ -16,15 +16,16 @@ public class LawyerTag {
 
     // Field
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "lawyer_tag_id")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "lawyer_id")
+    @Column(nullable = false)
     private Lawyer lawyer;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "tag_id")
+    @Column(nullable = false)
     private Tag tag;
 
 }

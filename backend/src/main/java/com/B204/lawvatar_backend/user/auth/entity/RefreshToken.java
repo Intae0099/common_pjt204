@@ -6,6 +6,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.extern.apachecommons.CommonsLog;
 
 import java.time.LocalDateTime;
 
@@ -16,7 +17,6 @@ public class RefreshToken {
 
     // Field
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "refresh_token_id")
     private Long id;
 
     // 리프레시 토큰의 소유자 (의뢰인 또는 변호사)

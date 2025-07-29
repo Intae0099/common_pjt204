@@ -16,26 +16,33 @@ public class Appointment {
 
     // Field
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "appointment_id")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "client_id")
+    @Column(nullable = false)
     private Client client;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "lawyer_id")
+    @Column(nullable = false)
     private Lawyer lawyer;
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "application_id")
+    @Column(nullable = false)
     private Application application;
 
     @Enumerated(EnumType.STRING)
     private AppointmentStatus appointmentStatus;
 
+    @Column(nullable = false)
     private LocalDateTime startTime;
+
+    @Column(nullable = false)
     private LocalDateTime endTime;
+
+    @Column(nullable = false)
     private LocalDateTime createdAt;
 
 }

@@ -13,15 +13,16 @@ public class Session {
 
     // Field
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "session_id")
     private Long id;
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "appointment_id")
+    @Column(nullable = false)
     private Appointment appointment;
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "room_id")
+    @Column(nullable = false)
     private Room room;
 
     @Column(columnDefinition = "tinyint unsigned")
