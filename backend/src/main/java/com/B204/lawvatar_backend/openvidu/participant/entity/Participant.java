@@ -17,18 +17,15 @@ public class Participant {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "room_id")
-    @Column(nullable = false)
+    @JoinColumn(name = "room_id", nullable = false)
     private Room room;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "client_id")
-    @Column(nullable = false)
+    @JoinColumn(name = "client_id", nullable = false)
     private Client client;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "lawyer_id")
-    @Column(nullable = false)
+    @JoinColumn(name = "lawyer_id", nullable = false)
     private Lawyer lawyer;
 
     // Method

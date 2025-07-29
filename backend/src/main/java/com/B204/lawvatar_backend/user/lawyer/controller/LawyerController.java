@@ -78,9 +78,9 @@ public class LawyerController {
 
   @PostMapping("/signup")
   public ResponseEntity<?> signup(@RequestBody LawyerSignupDto dto) {
-    if (lawyerRepo.existsByLoginEmail(dto.getLoginEmail())) {
-      return ResponseEntity.badRequest().body("이미 등록된 이메일입니다.");
-    }
+//    if (lawyerRepo.existsByLoginEmail(dto.getLoginEmail())) {
+//      return ResponseEntity.badRequest().body("이미 등록된 이메일입니다.");
+//    }
 
     Lawyer l = new Lawyer();
     l.setLoginEmail(dto.getLoginEmail());
