@@ -117,7 +117,7 @@ create table appointment (
     application_id int unsigned not null,
     appointment_status enum('PENDING', 'CONFIRMED', 'REJECTED', 'IN_PROGRESS', 'CANCELED', 'ENDED') not null default 'PENDING',
     start_time datetime not null,
-    end_time datetime,
+    end_time datetime not null,
     created_at datetime not null default current_timestamp,
     
     constraint fk_appointment_client_id
