@@ -2,6 +2,7 @@ from fastapi import Depends, Header
 from typing import Optional
 from llm import Gpt4oMini
 from services.case_analysis_service import CaseAnalysisService
+from services.structuring_service import StructuringService
 from app.api.exceptions import UnauthorizedException
 from llm.models.model_loader import ModelLoader
 from llm.models.embedding_model import EmbeddingModel
@@ -18,6 +19,12 @@ def get_case_analysis_service(
 ) -> CaseAnalysisService:
     """CaseAnalysisService 인스턴스를 반환합니다."""
     return CaseAnalysisService(llm, embedding_model, cross_encoder_model)
+
+def get_structuring_service(
+    llm: Gpt4oMini = Depends(get_llm)
+) -> StructuringService:
+    """StructuringService 인스턴스를 반환합니다."""
+    return StructuringService(llm)
 
 def get_embedding_model_dependency():
     return ModelLoader.get_embedding_model()
