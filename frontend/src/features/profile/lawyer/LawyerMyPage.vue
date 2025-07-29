@@ -9,8 +9,11 @@
       <p><strong>이메일:</strong> {{ lawyer.loginEmail }}</p>
       <p><strong>소개:</strong> {{ lawyer.introduction }}</p>
       <p><strong>전문분야:</strong>
-        <span v-for="tag in lawyer.tags" :key="tag" class="tag">{{ tag }}</span>
+        <span v-for="tagId in lawyer.tags" :key="tagId" class="tag">
+          {{ getTagName(tagId) }}
+        </span>
       </p>
+      <button class="btn btn-outline-primary mt-3" @click="goToProfileUpdate">수정하기</button>
     </section>
 
     <!-- ✅ 오늘 이후 상담 예약 -->
@@ -38,81 +41,108 @@
 </template>
 
 <script>
-import axios from 'axios';
+import axios from 'axios'
 
 export default {
   name: 'LawyerMyPage',
+
   data() {
     return {
       lawyer: null,
       appointments: [],
       clients: [],
-    };
+      tagMap: [
+        { id: 1, name: '형사 분야' },
+        { id: 2, name: '교통·사고·보험' },
+        { id: 3, name: '가사·가족' },
+        { id: 4, name: '민사·계약·채권' },
+        { id: 5, name: '파산·회생·채무조정' },
+        { id: 6, name: '상속·증여' },
+        { id: 7, name: '지식재산권' },
+        { id: 8, name: '노동·고용' },
+        { id: 9, name: '행정·조세' },
+        { id: 10, name: '환경·공공' },
+        { id: 11, name: '의료·생명·개인정보' },
+        { id: 12, name: '금융·증권·기업' }
+      ]
+    }
   },
+
   computed: {
     // 오늘 이후 예약만 필터링
     upcomingAppointments() {
-      const now = new Date();
+      const now = new Date()
       return this.appointments
         .filter(appt => new Date(appt.startTime) > now)
         .map(appt => {
-          const client = this.clients.find(c => c.clientId === appt.clientId);
+          const client = this.clients.find(c => c.clientId === appt.clientId)
           return {
             ...appt,
             client: client || { name: '알 수 없음', email: '알 수 없음' },
-          };
-        });
+          }
+        })
     }
   },
+
   methods: {
     async fetchLawyerProfile() {
       try {
-        const res = await axios.get('/api/lawyers/me');
-        this.lawyer = res.data;
+        const res = await axios.get('/api/lawyers/me')
+        this.lawyer = res.data
       } catch (err) {
-        console.error('변호사 정보 조회 실패:', err);
+        console.error('변호사 정보 조회 실패:', err)
       }
     },
 
     async fetchAppointments() {
       try {
-        const res = await axios.get('/api/appointments/me');
-        this.appointments = res.data;
+        const res = await axios.get('/api/appointments/me')
+        this.appointments = res.data
       } catch (err) {
-        console.error('상담 예약 조회 실패:', err);
+        console.error('상담 예약 조회 실패:', err)
       }
     },
 
     async fetchClients() {
       try {
-        const res = await axios.get('/api/admin/clients/list');
-        this.clients = res.data;
+        const res = await axios.get('/api/admin/clients/list')
+        this.clients = res.data
       } catch (err) {
-        console.error('클라이언트 목록 조회 실패:', err);
+        console.error('클라이언트 목록 조회 실패:', err)
       }
+    },
+    getTagName(id) {
+      const tag = this.tagMap.find(t => t.id === id)
+      return tag ? tag.name : '알 수 없음'
     },
 
     formatDateTime(dateString) {
       const options = {
         year: 'numeric', month: 'short', day: 'numeric',
         hour: '2-digit', minute: '2-digit'
-      };
-      return new Date(dateString).toLocaleString(undefined, options);
+      }
+      return new Date(dateString).toLocaleString(undefined, options)
+    },
+
+    goToProfileUpdate() {
+      this.$router.push({ name: 'LawyerProfileUpdate' })
     },
 
     handleDelete() {
-      alert('회원 탈퇴 기능은 아직 구현되지 않았습니다.');
+      alert('회원 탈퇴 기능은 아직 구현되지 않았습니다.')
     }
   },
+
   async mounted() {
     await Promise.all([
       this.fetchLawyerProfile(),
       this.fetchAppointments(),
       this.fetchClients()
-    ]);
+    ])
   }
-};
+}
 </script>
+
 
 <style scoped>
 .lawyer-mypage {

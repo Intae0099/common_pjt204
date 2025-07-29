@@ -1,6 +1,13 @@
 <template>
   <div>
     <button @click="$router.back()">← 이전</button>
+    <!-- 프로필 사진 -->
+    <img
+      v-if="lawyer?.photo"
+      :src="`data:image/jpeg;base64,${lawyer.photo}`"
+      alt="변호사 프로필"
+      style="width: 150px; height: 150px; border-radius: 50%; object-fit: cover; margin-bottom: 1rem"
+    />
     <h2>{{ lawyer?.name }} 변호사</h2>
     <p>{{ lawyer?.introduction }}</p>
     <!-- 태그 이름 표시 -->
@@ -109,7 +116,15 @@ const fetchUnavailableSlots = async () => {
   const res = await axios.get(`/api/lawyers/${lawyerId}/unavailable-slot`, {
     params: { date: selectedDate.value }
   })
-  unavailableSlots.value = res.data
+  const selectedDateStr = selectedDate.value
+  const unavailableTimes = res.data
+    .filter(slot => slot.startTime.startsWith(selectedDateStr))
+    .map(slot => {
+      const timePart = slot.startTime.split(' ')[1].slice(0, 5) // "HH:MM"
+      return timePart
+    })
+
+  unavailableSlots.value = unavailableTimes
 }
 
 const openModal = () => {

@@ -3,7 +3,12 @@
     <input v-model="searchQuery" placeholder="이름 or 상담 분야" />
     <div v-for="lawyer in filteredLawyers" :key="lawyer.id">
       <div>
-        <img :src="lawyer.profile_image" />
+        <img
+          v-if="lawyer.photo"
+          :src="`data:image/jpeg;base64,${lawyer.photo}`"
+          alt="변호사 프로필 이미지"
+          style="width: 150px; height: 150px; object-fit: cover"
+        />
         <p>{{ lawyer.name }} 변호사</p>
         <div>
           <span v-for="tag in lawyer.tags" :key="tag">#{{ getTagName(tag) }}</span>

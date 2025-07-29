@@ -7,15 +7,18 @@ import SignUpSecond from '@/features/auth/lawyer/SignUpSecond.vue';
 import SignUpThird from '@/features/auth/lawyer/SignUpThird.vue';
 import LawyerLogin from '@/features/auth/lawyer/LawyerLogin.vue';
 
+// 마이페이지
+import LawyerMyPage from '@/features/profile/lawyer/LawyerMyPage.vue';
+import UserMyPage from '@/features/profile/user/UserMyPage.vue';
+import LawyerProfileUpdate from '@/features/profile/lawyer/LawyerProfileUpdate.vue';
+
 //AI상담
 import AiStep from '@/features/ai_consult/AIStep.vue'
 
 //판례검색
 import CaseSearchPage from '@/features/cases/CaseSearchPage.vue'
 import CaseDetail from '@/features/cases/CaseDetail.vue';
-import LawyerMyPage from '@/features/profile/lawyer/LawyerMyPage.vue';
-import UserMyPage from '@/features/profile/user/UserMyPage.vue';
-import LawyerProfileUpdate from '@/features/profile/lawyer/LawyerProfileUpdate.vue';
+
 
 // 상담예약
 import LawyerSearch from '@/features/reservation/LawyerSearch.vue'
@@ -80,7 +83,7 @@ const router = createRouter({
     },
     {
       path: '/lawyer/update',
-      name: 'LawyerUpdatepage',
+      name: 'LawyerProfileUpdate',
       component: LawyerProfileUpdate
     },
     //판례검색

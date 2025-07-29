@@ -34,7 +34,7 @@ export const handlers = [
       name: '김지훈',
       loginEmail: 'lawyer@example.com',
       introduction: '형사/민사 사건을 다루는 10년차 변호사입니다.',
-      tags: ['형사', '이혼', '가사'],
+      tags: [1, 2, 4],
     })
   }),
 
@@ -125,7 +125,9 @@ export const handlers = [
         certificationStatus: 'APROVED',
         consultationCount: '8',
         profile_image: 'https://via.placeholder.com/150',
-        tags: [3, 5, 6, 7]
+        tags: [3, 5, 6, 7],
+        photo: '/9j/4AAQSkZJRgABAQEASABIAAD/4QBiRXhpZgAASUkqAAgAAAAHABIBAwABAAAAAQAAABoBBQABAAAAZgAAABsBBQABAAAAagAAACgBAwABAAAAAgAAADEBAgANAAAAcgAAADIBAgAUAAAAegAAAGmHBAABAAAAkAEAAP/bAEMAAwICAwICAwMDAwMEAwMDBAUFBAQFBQUGBggGBgYGBgcICQcJCQoKCwsMDQwMDAwMEA8ODg4NDxAQEBAQEA8ODg7/wAALCAABAAEBAREA/8QAFAABAAAAAAAAAAAAAAAAAAAACP/EABcRAQEBAQAAAAAAAAAAAAAAAAEAAwT/2gAIAQEAAD8A9//Z'
+
       },
       {
         lawyerId: '5223',
@@ -137,22 +139,38 @@ export const handlers = [
         certificationStatus: 'APROVED',
         consultationCount: '100',
         profile_image: 'https://via.placeholder.com/150',
-        tags: [1, 2]
+        tags: [1, 2],
+        photo: '/9j/4AAQSkZJRgABAQEASABIAAD/4QBiRXhpZgAASUkqAAgAAAAHABIBAwABAAAAAQAAABoBBQABAAAAZgAAABsBBQABAAAAagAAACgBAwABAAAAAgAAADEBAgANAAAAcgAAADIBAgAUAAAAegAAAGmHBAABAAAAkAEAAP/bAEMAAwICAwICAwMDAwMEAwMDBAUFBAQFBQUGBggGBgYGBgcICQcJCQoKCwsMDQwMDAwMEA8ODg4NDxAQEBAQEA8ODg7/wAALCAABAAEBAREA/8QAFAABAAAAAAAAAAAAAAAAAAAACP/EABcRAQEBAQAAAAAAAAAAAAAAAAEAAwT/2gAIAQEAAD8A9//Z'
       }
     ]);
   }),
 
   // 특정 날짜에 변호사 예약 불가 시간 조회
-  http.get('/api/lawyers/:lawyerId/unavailable-slot', ({ request }) => {
+  http.get('/api/lawyers/:lawyerId/unavailable-slot', ({ request, params }) => {
     const url = new URL(request.url)
     const date = url.searchParams.get('date')
+    const { lawyerId } = params
 
-    const unavailable = {
-      '2025-07-25': ['10:00', '14:30'],
-      '2025-07-26': ['09:00', '11:00']
+    // 변호사별 mock unavailable 시간
+    const unavailableMap = {
+      '1203': {
+        '2025-07-30': ['10:00', '11:30'],
+        '2025-07-31': ['09:00', '14:00']
+      },
+      '9999': {
+        '2025-07-30': ['13:00']
+      }
     }
 
-    return HttpResponse.json(unavailable[date] || [])
+    const daySlots = unavailableMap[lawyerId]?.[date] || []
+
+    const result = daySlots.map(time => ({
+      lawyerId: lawyerId.toString(),
+      startTime: `${date} ${time}:00`,
+      endTime: `${date} ${time.slice(0, 2)}:${(parseInt(time.slice(3)) + 30) % 60 === 0 ? '00' : '30'}:00`
+    }))
+
+    return HttpResponse.json(result)
   }),
 
 
@@ -160,12 +178,14 @@ export const handlers = [
   http.get('/api/applications/me', () => {
     return HttpResponse.json([
       {
-        id: 101,
-        title: '7월 교통사고 사건 신청서'
+        applicationId: 101,
+        title: '7월 교통사고 사건 신청서',
+        isCompleted: "true"
       },
       {
-        id: 102,
-        title: '합의 관련 상담 신청서'
+        applicationId: 102,
+        title: '합의 관련 상담 신청서',
+        isCompleted: "true"
       }
     ])
   }),
