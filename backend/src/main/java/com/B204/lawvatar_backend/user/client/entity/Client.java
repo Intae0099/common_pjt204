@@ -16,21 +16,21 @@ public class Client {
 
     // Field
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "client_id")
     private Long id;
 
-    @Column(length = 20)
+    @Column(length = 20, nullable = false)
     private String oauthName;
 
-    @Column(length = 30)
+    @Column(length = 100, unique = true)
     private String email;
 
-    @Column(length = 20)
+    @Column(length = 20, nullable = false)
     private String oauthProvider;
 
-    @Column(length = 20)
+    @Column(length = 100, nullable = false)
     private String oauthIdentifier;
 
+    // Constructor
     public Client(String oauthName, String oauthProvider){
         this.oauthName = oauthName;
         this.oauthProvider = oauthProvider;

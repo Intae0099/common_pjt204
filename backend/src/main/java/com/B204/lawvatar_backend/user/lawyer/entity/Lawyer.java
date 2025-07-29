@@ -17,7 +17,7 @@ public class Lawyer {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "login_email", nullable = false, unique = true, length = 50)
+    @Column(name = "login_email", nullable = false, unique = true, length = 100)
     private String loginEmail;
 
     @Column(name = "login_password_hash", nullable = false, length = 255)
@@ -33,16 +33,16 @@ public class Lawyer {
     @Column(columnDefinition = "TEXT")
     private String introduction;
 
-    @Column(nullable = false, length = 20)
+    @Column(length = 20, nullable = false)
     private String exam;
 
-    @Column(nullable = false, length = 20)
+    @Column(length = 20, nullable = false)
     private String registrationNumber;
 
     @Enumerated(EnumType.STRING)
     private CertificationStatus certificationStatus = CertificationStatus.PENDING;
 
-    @Column(columnDefinition = "int unsigned")
+    @Column(columnDefinition = "int unsigned", nullable = false)
     private int consultationCount = 0;
 
     @OneToMany(mappedBy = "lawyer", cascade = CascadeType.ALL, orphanRemoval = true)
