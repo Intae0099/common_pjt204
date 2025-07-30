@@ -135,6 +135,9 @@ public class LawyerController {
   public ResponseEntity<?> loginJson(@RequestBody LawyerLoginDto dto) {
     if (dto.getLoginEmail() == null || dto.getPassword() == null) {
       return ResponseEntity.badRequest().body(Map.of("error", "이메일 또는 비밀번호 누락"));
+    }else if (!lawyerRepo.existsByLoginEmail(dto.getLoginEmail())) {
+      return ResponseEntity.status(HttpStatus.NOT_FOUND)
+          .body(Map.of("error", "그런 계정은 없다."));
     }
 
     try {
@@ -144,6 +147,18 @@ public class LawyerController {
       );
 
       Lawyer lawyer = lawyerService.findByLoginEmail(authentication.getName());
+
+      if (lawyer.getCertificationStatus() == CertificationStatus.PENDING) {
+        // 403 Forbidden: 승인 대기 중
+        return ResponseEntity
+            .status(HttpStatus.FORBIDDEN)
+            .body(Map.of("error", "계정 승인 대기 중입니다."));
+      }
+      if (lawyer.getCertificationStatus() == CertificationStatus.REJECTED) {
+        return ResponseEntity
+            .status(HttpStatus.FORBIDDEN)
+            .body(Map.of("error", "승인 거부된 계정입니다."));
+      }
 
       // 2. Access Token 생성 (userType은 "LAWYER")
       String accessToken = jwtUtil.generateAccessToken(
@@ -179,10 +194,7 @@ public class LawyerController {
     } catch (BadCredentialsException e) {
       return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
           .body(Map.of("error", "비밀번호가 올바르지 않다."));
-    } catch (UsernameNotFoundException e) {
-      return ResponseEntity.status(HttpStatus.NOT_FOUND)
-          .body(Map.of("error", "그런 계정은 없다."));
-    } catch (Exception e) {
+    }catch (Exception e) {
       return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
           .body(Map.of("error", e.getMessage()));
     }
