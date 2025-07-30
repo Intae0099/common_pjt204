@@ -184,7 +184,7 @@ public class LawyerController {
           .body(Map.of("error", "그런 계정은 없다."));
     } catch (Exception e) {
       return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-          .body(Map.of("error", "아무튼 실패"));
+          .body(Map.of("error", e.getMessage()));
     }
   }
 
