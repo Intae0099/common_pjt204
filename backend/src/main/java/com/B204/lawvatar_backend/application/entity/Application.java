@@ -17,8 +17,7 @@ public class Application {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "client_id")
-    @Column(nullable = false)
+    @JoinColumn(name = "client_id", nullable = false)
     private Client client;
 
     /*사건 경위서*/

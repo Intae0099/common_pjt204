@@ -19,13 +19,11 @@ public class LawyerTag {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "lawyer_id")
-    @Column(nullable = false)
+    @JoinColumn(name = "lawyer_id", nullable = false)
     private Lawyer lawyer;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "tag_id")
-    @Column(nullable = false)
+    @JoinColumn(name = "tag_id", nullable = false)
     private Tag tag;
 
 }
