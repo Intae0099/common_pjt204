@@ -13,6 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -57,6 +58,19 @@ public class ClientController {
 
     clientService.updateClientInfo(principal.getId(), dto);
     return ResponseEntity.ok().build();
+  }
+
+  @DeleteMapping("/me")
+  public ResponseEntity<Void> deleteMyAccount(Authentication authentication){
+
+    if(!(authentication.getPrincipal() instanceof ClientPrincipal client)){
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    }
+
+    Long clientId = client.getId();
+    clientService.deleteByClientId(clientId);
+    return ResponseEntity.noContent().build();
+
   }
 
 }

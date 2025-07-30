@@ -1,5 +1,6 @@
 package com.B204.lawvatar_backend.user.client.service;
 
+import com.B204.lawvatar_backend.user.auth.repository.RefreshTokenRepository;
 import com.B204.lawvatar_backend.user.client.dto.ClientUpdateDto;
 import com.B204.lawvatar_backend.user.client.entity.Client;
 import com.B204.lawvatar_backend.user.client.repository.ClientRepository;
@@ -22,10 +23,13 @@ import org.springframework.stereotype.Service;
 public class ClientService implements OAuth2UserService<OAuth2UserRequest, OAuth2User> {
 
   private static final Logger log = LoggerFactory.getLogger(ClientService.class);
+  private final ClientRepository clientRepo;
+  private final RefreshTokenRepository refreshTokenRepo;
 
-  private final ClientRepository repo;
-  public ClientService(ClientRepository repo) {
-    this.repo = repo;
+  public ClientService(ClientRepository clientRepo,
+      RefreshTokenRepository refreshTokenRepo) {
+    this.clientRepo = clientRepo;
+    this.refreshTokenRepo = refreshTokenRepo;
   }
 
   @Override
@@ -55,8 +59,8 @@ public class ClientService implements OAuth2UserService<OAuth2UserRequest, OAuth
     String nickname                = (String) profile.get("nickname");
 
     // 3) 기존 사용자 조회, 없으면 생성
-    Client client = repo.findByOauthIdentifier(rawId.toString())
-        .orElseGet(() -> repo.save(new Client(rawId.toString(), nickname, "kakao")));
+    Client client = clientRepo.findByOauthIdentifier(rawId.toString())
+        .orElseGet(() -> clientRepo.save(new Client(rawId.toString(), nickname, "kakao")));
 
     // 4) 스프링 시큐리티용 OAuth2User 반환
     return new DefaultOAuth2User(
@@ -68,7 +72,7 @@ public class ClientService implements OAuth2UserService<OAuth2UserRequest, OAuth
 
   @Transactional
   public void updateClientInfo(Long clientId, ClientUpdateDto dto) {
-    Client client = repo.findById(clientId)
+    Client client = clientRepo.findById(clientId)
         .orElseThrow(() -> new EntityNotFoundException("Client not found"));
 
     if (dto.getOauthName() != null) {
@@ -77,5 +81,19 @@ public class ClientService implements OAuth2UserService<OAuth2UserRequest, OAuth
     if (dto.getEmail() != null) {
       client.setEmail(dto.getEmail());
     }
+  }
+
+  public void deleteByClientId(Long id) {
+
+    // ##### appointment & booking Repo 개발 후 추가
+    // 1) 상담신청서 삭제
+    // applicationRepo.deleteByClientId(clientId);
+
+    // 2) 예약 내역 삭제
+    // bookingRepo.deleteByClientId(clientId);
+
+    refreshTokenRepo.deleteByClientId(id);
+    clientRepo.deleteById(id);
+
   }
 }
