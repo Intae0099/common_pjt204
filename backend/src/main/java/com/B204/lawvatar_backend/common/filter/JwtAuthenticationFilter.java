@@ -48,7 +48,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         || path.startsWith("/api/lawyers/emails/check")
         || path.startsWith("/api/lawyers/login")
         || path.startsWith("/login/oauth2/")
-        || HttpMethod.OPTIONS.matches(request.getMethod());  // preflight도 skip
+        || HttpMethod.OPTIONS.matches(request.getMethod());
   }
 
   @Override

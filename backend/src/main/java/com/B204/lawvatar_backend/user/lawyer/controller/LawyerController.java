@@ -37,6 +37,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -78,9 +79,6 @@ public class LawyerController {
 
   @PostMapping("/signup")
   public ResponseEntity<?> signup(@RequestBody LawyerSignupDto dto) {
-//    if (lawyerRepo.existsByLoginEmail(dto.getLoginEmail())) {
-//      return ResponseEntity.badRequest().body("이미 등록된 이메일입니다.");
-//    }
 
     Lawyer l = new Lawyer();
     l.setLoginEmail(dto.getLoginEmail());
@@ -208,6 +206,16 @@ public class LawyerController {
     return ResponseEntity.ok().build();
   }
 
+  @DeleteMapping("/me")
+  public ResponseEntity<Void> deleteMyAccount(Authentication authentication){
 
+    if(!(authentication.getPrincipal() instanceof LawyerPrincipal lawyer)) {
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    }
+
+    Long lawyerId = lawyer.getId();
+    lawyerService.deleteLawyerById(lawyerId);
+    return ResponseEntity.noContent().build();
+  }
 
 }
