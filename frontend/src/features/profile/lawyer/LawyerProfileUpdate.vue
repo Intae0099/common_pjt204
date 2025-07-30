@@ -1,156 +1,119 @@
 <template>
   <div class="profile-edit-container">
-    <div class="header">
-      <div class="back-button" @click="goBack">이전</div>
-      <div class="title">프로필 수정</div>
+    <h2>프로필 수정</h2>
+
+    <div class="section">
+      <h3>이름</h3>
+      <input v-model="name" />
     </div>
 
-    <!-- 소개글 섹션 -->
     <div class="section">
-      <h2 class="section-title">소개글</h2>
-      <textarea
-        class="intro-textarea"
-        v-model="introduction"
-        placeholder="의뢰인들에게 나를 소개하는 글을 작성해주세요. (100자 이내)"
-        maxlength="100"
-      ></textarea>
-      <div class="char-counter">{{ introduction.length }} / 100</div>
+      <h3>소개글</h3>
+      <textarea v-model="introduction" maxlength="100" />
     </div>
 
-    <!-- 태그 선택 섹션 -->
     <div class="section">
-      <h2 class="section-title">태그선택</h2>
+      <h3>전문분야 태그</h3>
       <div class="tag-container">
-        <!-- v-for를 사용해 모든 태그를 동적으로 렌더링 -->
         <button
-          v-for="tag in availableTags"
-          :key="tag"
-          class="tag-button"
-          :class="{ 'selected': selectedTags.has(tag) }"
-          @click="toggleTag(tag)"
+          v-for="tag in tagMap"
+          :key="tag.id"
+          :class="['tag-button', { selected: selectedTagIds.has(tag.id) }]"
+          @click="toggleTag(tag.id)"
         >
-          {{ tag }}
+          {{ tag.name }}
         </button>
       </div>
-
-      <!-- '#직접입력' 클릭 시 나타나는 입력창 -->
-      <div v-if="isCustomInputVisible" class="custom-input-wrapper">
-        <input
-          type="text"
-          v-model="customTagInput"
-          class="custom-tag-input"
-          placeholder="태그 입력 후 Enter"
-          @keyup.enter="addCustomTag"
-        />
-        <button @click="addCustomTag" class="add-tag-button">추가</button>
-      </div>
     </div>
 
-    <!-- 변경사항 확인 버튼 -->
     <div class="footer">
-      <button class="save-button" @click="saveChanges">변경사항 확인</button>
+      <button @click="saveChanges">변경사항 확인</button>
     </div>
   </div>
 </template>
 
+
+
 <script setup>
-import { ref, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import axios from '@/lib/axios'
 
-const router = useRouter();
+const router = useRouter()
 
-// --- 반응형 데이터 정의 ---
-// 1. 소개글
-const introduction = ref('');
+const name = ref('')
+const introduction = ref('')
+const selectedTagIds = ref(new Set())
 
-// 2. 전체 태그 목록
-const availableTags = ref([]);
+// 🧠 프론트에 고정된 tagMap
+const tagMap = [
+  { id: 1, name: '형사 분야' },
+  { id: 2, name: '교통·사고·보험' },
+  { id: 3, name: '가사·가족' },
+  { id: 4, name: '민사·계약·채권' },
+  { id: 5, name: '파산·회생·채무조정' },
+  { id: 6, name: '상속·증여' },
+  { id: 7, name: '지식재산권' },
+  { id: 8, name: '노동·고용' },
+  { id: 9, name: '행정·조세' },
+  { id: 10, name: '환경·공공' },
+  { id: 11, name: '의료·생명·개인정보' },
+  { id: 12, name: '금융·증권·기업' },
+]
 
-// 3. 사용자가 선택한 태그 목록 (Set 사용으로 중복 방지 및 성능 향상)
-const selectedTags = ref(new Set());
 
-// 4. 직접 입력을 위한 상태
-const isCustomInputVisible = ref(false);
-const customTagInput = ref('');
-
-
-// --- 메서드 정의 ---
-const goBack = () => {
-  router.go(-1);
-};
-
-// 태그 클릭 시 선택/해제 토글
-const toggleTag = (tag) => {
-  if (tag === '#직접입력') {
-    isCustomInputVisible.value = !isCustomInputVisible.value;
-    return;
-  }
-
-  if (selectedTags.value.has(tag)) {
-    selectedTags.value.delete(tag);
+const toggleTag = (tagId) => {
+  if (selectedTagIds.value.has(tagId)) {
+    selectedTagIds.value.delete(tagId)
   } else {
-    selectedTags.value.add(tag);
+    selectedTagIds.value.add(tagId)
   }
-};
+}
 
-// 직접 입력한 태그 추가
-const addCustomTag = () => {
-  const newTag = customTagInput.value.trim();
-  if (newTag) {
-    // '#'가 없으면 붙여줌
-    const formattedTag = newTag.startsWith('#') ? newTag : `#${newTag}`;
-
-    // 선택된 태그 목록에 추가
-    selectedTags.value.add(formattedTag);
-
-    // 사용 가능한 태그 목록에도 없으면 추가 (선택사항)
-    if (!availableTags.value.includes(formattedTag)) {
-        availableTags.value.push(formattedTag);
-    }
-
-    // 입력창 초기화 및 숨기기
-    customTagInput.value = '';
-    isCustomInputVisible.value = false;
-  }
-};
-
-// 변경사항 저장
-const saveChanges = () => {
-  // Set을 배열로 변환하여 백엔드로 전송 준비
+const saveChanges = async () => {
   const payload = {
+    name: name.value,
     introduction: introduction.value,
-    tags: Array.from(selectedTags.value)
-  };
+    tagIds: Array.from(selectedTagIds.value),
+  }
 
-  console.log('서버로 전송할 데이터:', payload);
-  alert('변경사항이 저장되었습니다!');
-  // 실제로는 여기서 API 호출
-  // await api.updateProfile(payload);
-};
+  try {
+    await axios.patch('/api/lawyers/me/edit', payload)
+    alert('수정 완료!')
+    router.back()
+  } catch (err) {
+    console.error('저장 실패:', err)
+    alert('오류가 발생했습니다.')
+  }
+}
 
-
-// --- 생명주기 훅: 컴포넌트 로드 시 데이터 로딩 ---
-onMounted(() => {
-  // --- 실제로는 여기서 백엔드 API를 호출하여 데이터를 가져옵니다 ---
-
-  // 1. 기존 소개글 로딩 (시뮬레이션)
-  introduction.value = '안녕하세요. 10년 경력의 베테랑 변호사 홍길동입니다. 여러분의 어려운 문제를 시원하게 해결해 드리겠습니다.';
-
-  // 2. 선택 가능한 모든 태그 목록 로딩 (시뮬레이션)
-  availableTags.value = [
-    '#교통사고', '#음주운전', '#무면허', '#합의금',
-    '#전세사기', '#폭행', '#명예훼손', '#의료사고',
-    '#상간소송', '#재산분할', '#양육권', '#위자료',
-    '#직접입력' // 직접입력 버튼은 항상 포함
-  ];
-
-  // 3. 사용자가 이전에 선택했던 태그 목록 로딩 (시뮬레이션)
-  const userPreSelected = ['#교통사고', '#전세사기', '#재산분할'];
-  selectedTags.value = new Set(userPreSelected);
-});
-
+onMounted(async () => {
+  try {
+    const res = await axios.get('/api/lawyers/me')
+    name.value = res.data.name
+    introduction.value = res.data.introduction
+    selectedTagIds.value = new Set(res.data.tags) // ID만 받음
+  } catch (err) {
+    console.error('변호사 정보 로딩 실패:', err)
+  }
+})
 </script>
 
-<style scoped>
 
+<style scoped>
+.tag-button {
+  padding: 6px 12px;
+  border: 1px solid #ccc;
+  border-radius: 12px;
+  margin: 4px;
+  background-color: #f1f1f1;
+  cursor: pointer;
+}
+
+.tag-button.selected {
+  background-color: #5A45FF;
+  color: white;
+  border-color: #5A45FF;
+}
 </style>
+

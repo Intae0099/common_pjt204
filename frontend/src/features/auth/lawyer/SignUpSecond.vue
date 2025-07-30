@@ -25,20 +25,11 @@
       </div>
 
       <div>
-        <label>회차</label>
-        <select v-model="form.examRound" required>
-          <option disabled value="">회차선택</option>
-          <option v-for="n in 30" :key="n" :value="n">{{ n }}회</option>
-        </select>
-      </div>
-
-      <div>
-        <label>경력</label>
+        <label>변호사 등록번호</label>
         <input
-          type="number"
+          type="text"
           placeholder="숫자만 입력해주세요"
-          v-model.number="form.careerYears"
-          min="0"
+          v-model="form.registrationNumber"
           required
         />
       </div>
@@ -62,8 +53,7 @@ export default {
     return {
       form: {
         exam: '',
-        examRound: '',
-        careerYears: ''
+        registrationNumber: ''
       }
     };
   },
@@ -73,8 +63,7 @@ export default {
 
       authStore.updateSignup({
         exam: this.form.exam,
-        examRound: this.form.examRound,
-        careerYears: this.form.careerYears
+        registrationNumber: this.form.registrationNumber
       });
 
       this.$router.push('/signup/step3');

@@ -2,29 +2,31 @@ import { createRouter, createWebHistory } from 'vue-router'
 
 //회원가입 및 로그인
 import SocialLogin from '@/features/auth/user/SocialLogin.vue'
-import OAuthCallback from '@/features/auth/user/OAuthCallback.vue'
 import SignUpFirst from '@/features/auth/lawyer/SignUpFirst.vue';
 import SignUpSecond from '@/features/auth/lawyer/SignUpSecond.vue';
 import SignUpThird from '@/features/auth/lawyer/SignUpThird.vue';
 import LawyerLogin from '@/features/auth/lawyer/LawyerLogin.vue';
-import FindPassword from '@/features/auth/lawyer/FindPassword.vue';
+import KakaoCallback from '@/features/auth/user/KakaoCallback.vue'
+
+// 마이페이지
+import LawyerMyPage from '@/features/profile/lawyer/LawyerMyPage.vue';
+import UserMyPage from '@/features/profile/user/UserMyPage.vue';
+import LawyerProfileUpdate from '@/features/profile/lawyer/LawyerProfileUpdate.vue';
+
 //AI상담
 import AiStep from '@/features/ai_consult/AIStep.vue'
 
 //판례검색
 import CaseSearchPage from '@/features/cases/CaseSearchPage.vue'
 import CaseDetail from '@/features/cases/CaseDetail.vue';
-import LawyerMyPage from '@/features/profile/lawyer/LawyerMyPage.vue';
-import UserMyPage from '@/features/profile/user/UserMyPage.vue';
-import LawyerProfileUpdate from '@/features/profile/lawyer/LawyerProfileUpdate.vue';
+
 
 // 상담예약
 import LawyerSearch from '@/features/reservation/LawyerSearch.vue'
 import DetailReservation from '@/features/reservation/DetailReservation.vue'
 
 // AI 상담 신청서
-
-
+import ConsultationFormView from '@/features/consultationForm/ConsultationFormView.vue';
 //화상회의
 import PreviewUserView from '@/features/videoconference/user/PreviewUserView.vue';
 import PreviewLawyerView from '@/features/videoconference/lawyer/PreviewLawyerView.vue';
@@ -36,11 +38,13 @@ const router = createRouter({
     //회원가입 및 로그인
     {
       path: '/login',
+      name : 'SocialLogin',
       component: SocialLogin
     },
     {
-      path: '/oauth/callback/:provider',
-      component: OAuthCallback
+    path: '/oauth2/callback/kakao',
+    name: 'KakaoCallback',
+    component: KakaoCallback
     },
     {
       path: '/signup/step1',
@@ -62,11 +66,7 @@ const router = createRouter({
       name: 'LawyerLogin',
       component: LawyerLogin
     },
-    {
-      path: '/login/lawyer/find-password',
-      name: 'FindPassword',
-      component: FindPassword
-    },
+
 
     //AI상담
     {
@@ -79,17 +79,17 @@ const router = createRouter({
     // 마이페이지
     {
       path: '/lawyer/mypage',
-      name: 'Lawyermypage',
+      name: 'LawyerMyPage',
       component: LawyerMyPage
     },
     {
       path: '/user/mypage',
-      name: 'Usermypage',
+      name: 'UserMyPage',
       component: UserMyPage
     },
     {
       path: '/lawyer/update',
-      name: 'LawyerUpdatepage',
+      name: 'LawyerProfileUpdate',
       component: LawyerProfileUpdate
     },
     //판례검색
@@ -116,8 +116,10 @@ const router = createRouter({
       props: true
     },
     // AI 상담 신청서
-
-
+    {
+      path: '/consult-form',
+      component: ConsultationFormView,
+    },
     //화상회의
     {
       path: '/videocall/preview/client',

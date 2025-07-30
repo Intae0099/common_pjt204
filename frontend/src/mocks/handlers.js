@@ -1,37 +1,136 @@
 import { http, HttpResponse } from 'msw'
+// import { rest } from 'msw'
+
 
 export const handlers = [
-  http.post('/api/ai-consult', () => {
+  // rest.get('/oauth2/authorization/kakao', (req, res, ctx) => {
+  //   return res(
+  //     ctx.status(200),
+  //     ctx.json({
+  //       access_token: 'mock-access-token-user-1234',
+  //     })
+  //   )
+  // }),
+
+  http.post('/api/auth/lawyers/login', async ({ request }) => {
+    const body = await request.json()
+    const { loginId, loginPwd } = body
+
+    // 원하는 가짜 조건 추가 가능
+    if (loginId === 'wjddusdl921@gmail.com' && loginPwd === '0123456') {
+      return HttpResponse.json({
+        access_token: 'fake-jwt-token-for-test'
+      })
+    } else {
+      return HttpResponse.json(
+        { detail: '이메일 또는 비밀번호가 올바르지 않습니다.' },
+        { status: 401 }
+      )
+    }
+  }),
+  // ✅ 변호사 본인 정보
+  http.get('/api/lawyers/me', () => {
     return HttpResponse.json({
-      result: '상담 요청이 정상적으로 처리되었습니다.',
-      nextAction: '판례 예측 요청 가능',
+      name: '김지훈',
+      loginEmail: 'lawyer@example.com',
+      introduction: '형사/민사 사건을 다루는 10년차 변호사입니다.',
+      tags: [1, 2, 4],
     })
   }),
 
-  http.post('/api/verdict/predict', async ({ request }) => {
+  // ✅ 상담 예약 목록 (오늘 이후를 테스트하기 위해 미래 날짜 포함)
+  http.get('/api/appointments/me', () => {
+    return HttpResponse.json([
+      {
+        appointmentId: 101,
+        clientId: 1,
+        lawyerId: '1203',
+        startTime: new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString() // 3시간 뒤
+      },
+      {
+        appointmentId: 102,
+        clientId: 2,
+        lawyerId: '5223',
+        startTime: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 내일
+      }
+    ])
+  }),
+
+  // ✅ 클라이언트 목록
+  http.get('/api/admin/clients/list', () => {
+    return HttpResponse.json([
+      {
+        clientId: 1,
+        name: '홍길동',
+        email: 'client1@example.com'
+      },
+      {
+        clientId: 2,
+        name: '이몽룡',
+        email: 'client2@example.com'
+      }
+    ])
+  }),
+
+  http.post('/api/ai/pre-consultation', async ({ request }) => {
     const body = await request.json()
-    console.log('판례 예측 요청:', body)
+    console.log('AI 사전상담 요청:', body)
+
     return HttpResponse.json({
-      verdictSummary: '유사 판례 분석 결과: 위자료 청구 가능성이 높습니다.',
-      confidence: 0.91,
-      lawyers: [
+      report: {
+        issues: ['계약 체결 시 기망 여부', '피해 금액 산정'],
+        opinion: '피해 회복 가능성이 높다.',
+        sentencePrediction: '징역 8월 ~ 1년 6월',
+        confidence: '0.84',
+        references: {
+          cases: [
+            {
+              id: '93810',
+              name: '소유권이전등기말소',
+              court: '대법원',
+              year: '1978'
+            }
+          ],
+          statutes: [
+            {
+              code: '형법',
+              article: '347조(사기)'
+            }
+          ]
+        }
+      },
+      tags: ['형사·사기'],
+      recommendedLawyers: [
         {
-          id: 1,
-          name: '김지훈 변호사',
-          specialty: '형사 사건',
-          intro: '피해자와 피의자 모두의 입장을 이해하며 조력하는 변호사입니다.',
-          image: 'https://via.placeholder.com/80x80'
+          lawyerId: '1203',
+          loginEmail: 'taein4225@naver.com',
+          name: '김태인',
+          introduction: '최선을 다하겠습니다!!',
+          exam: '로스쿨',
+          registrationNumber: '2020-12345',
+          certificationStatus: 'APROVED',
+          consultationCount: '8',
+          tags: ['이혼', '폭행', '음주운전', '상해'],
+          matchScore: '0.93',
+          photo: '/9j/4AAQSkZJRgABAQEASABIAAD/4QBiRXhpZgAASUkqAAgAAAAHABIBAwABAAAAAQAAABoBBQABAAAAZgAAABsBBQABAAAAagAAACgBAwABAAAAAgAAADEBAgANAAAAcgAAADIBAgAUAAAAegAAAGmHBAABAAAAkAEAAP/bAEMAAwICAwICAwMDAwMEAwMDBAUFBAQFBQUGBggGBgYGBgcICQcJCQoKCwsMDQwMDAwMEA8ODg4NDxAQEBAQEA8ODg7/wAALCAABAAEBAREA/8QAFAABAAAAAAAAAAAAAAAAAAAACP/EABcRAQEBAQAAAAAAAAAAAAAAAAEAAwT/2gAIAQEAAD8A9//Z'
         },
         {
-          id: 2,
-          name: '이은지 변호사',
-          specialty: '이혼·가사',
-          intro: '가정법 분야에서 15년 경력의 전문가입니다.',
-          image: 'https://via.placeholder.com/80x80'
+          lawyerId: '4506',
+          loginEmail: 'lee@example.com',
+          name: '이은지',
+          introduction: '가정법 분야에서 15년 경력의 전문가입니다.',
+          exam: '사법시험',
+          registrationNumber: '2010-54321',
+          certificationStatus: 'APROVED',
+          consultationCount: '15',
+          tags: ['이혼', '가정폭력'],
+          matchScore: '0.87',
+          photo: '/9j/4AAQSkZJRgABAQEASABIAAD/4QBiRXhpZgAASUkqAAgAAAAHABIBAwABAAAAAQAAABoBBQABAAAAZgAAABsBBQABAAAAagAAACgBAwABAAAAAgAAADEBAgANAAAAcgAAADIBAgAUAAAAegAAAGmHBAABAAAAkAEAAP/bAEMAAwICAwICAwMDAwMEAwMDBAUFBAQFBQUGBggGBgYGBgcICQcJCQoKCwsMDQwMDAwMEA8ODg4NDxAQEBAQEA8ODg7/wAALCAABAAEBAREA/8QAFAABAAAAAAAAAAAAAAAAAAAACP/EABcRAQEBAQAAAAAAAAAAAAAAAAEAAwT/2gAIAQEAAD8A9//Z'
         }
       ]
     })
   }),
+
 
   http.get('/api/lawyers/:id', ({ params }) => {
     const { id } = params
@@ -47,40 +146,90 @@ export const handlers = [
   http.get('/api/admin/lawyers/list', () => {
     return HttpResponse.json([
       {
-        id: 1,
-        name: '이정연',
-        tags: ['교통사고', '합의'],
+        lawyerId: '1203',
+        loginEmail: 'taein4225@naver.com',
+        name: '김태인',
+        introduction: '최선을 다하겠습니다!!',
+        exam: '로스쿨',
+        registrationNumber: '2020-12345',
+        certificationStatus: 'APROVED',
+        consultationCount: '8',
         profile_image: 'https://via.placeholder.com/150',
-        introduction: '교통사고 전문 변호사입니다.'
+        tags: [3, 5, 6, 7],
+        photo: '/9j/4AAQSkZJRgABAQEASABIAAD/4QBiRXhpZgAASUkqAAgAAAAHABIBAwABAAAAAQAAABoBBQABAAAAZgAAABsBBQABAAAAagAAACgBAwABAAAAAgAAADEBAgANAAAAcgAAADIBAgAUAAAAegAAAGmHBAABAAAAkAEAAP/bAEMAAwICAwICAwMDAwMEAwMDBAUFBAQFBQUGBggGBgYGBgcICQcJCQoKCwsMDQwMDAwMEA8ODg4NDxAQEBAQEA8ODg7/wAALCAABAAEBAREA/8QAFAABAAAAAAAAAAAAAAAAAAAACP/EABcRAQEBAQAAAAAAAAAAAAAAAAEAAwT/2gAIAQEAAD8A9//Z'
+
       },
       {
-        id: 2,
-        name: '윤규성',
-        tags: ['이혼', '합의'],
+        lawyerId: '5223',
+        loginEmail: 'woo4225@naver.com',
+        name: '우영우',
+        introduction: '돌고래가 보여요! 천재변호사 우영우입니다.',
+        exam: '사법시험',
+        registrationNumber: '2022-95126',
+        certificationStatus: 'APROVED',
+        consultationCount: '100',
         profile_image: 'https://via.placeholder.com/150',
-        introduction: '합의 경험이 풍부한 변호사입니다.'
+        tags: [1, 2],
+        photo: '/9j/4AAQSkZJRgABAQEASABIAAD/4QBiRXhpZgAASUkqAAgAAAAHABIBAwABAAAAAQAAABoBBQABAAAAZgAAABsBBQABAAAAagAAACgBAwABAAAAAgAAADEBAgANAAAAcgAAADIBAgAUAAAAegAAAGmHBAABAAAAkAEAAP/bAEMAAwICAwICAwMDAwMEAwMDBAUFBAQFBQUGBggGBgYGBgcICQcJCQoKCwsMDQwMDAwMEA8ODg4NDxAQEBAQEA8ODg7/wAALCAABAAEBAREA/8QAFAABAAAAAAAAAAAAAAAAAAAACP/EABcRAQEBAQAAAAAAAAAAAAAAAAEAAwT/2gAIAQEAAD8A9//Z'
+      }
+    ]);
+  }),
+
+  // 변호사 전체 리스트 조회 (권한 검사 없는 버전)
+  http.get('/api/lawyers/list', () => {
+    return HttpResponse.json([
+      {
+        lawyerId: '1203',
+        name: '김태인',
+        loginEmail: 'taein4225@naver.com',
+        introduction: '최선을 다하겠습니다!!',
+        exam: '로스쿨',
+        registrationNumber: '2020-12345',
+        certificationStatus: 'APROVED',
+        consultationCount: '8',
+        profile_image: 'https://via.placeholder.com/150',
+        tags: [3, 5, 6, 7]
       },
       {
-        id: 3,
-        name: '전해지',
-        tags: ['교통사고', '합의'],
+        lawyerId: '5223',
+        name: '우영우',
+        loginEmail: 'woo4225@naver.com',
+        introduction: '돌고래가 보여요! 천재변호사 우영우입니다.',
+        exam: '사법시험',
+        registrationNumber: '2022-95126',
+        certificationStatus: 'APROVED',
+        consultationCount: '100',
         profile_image: 'https://via.placeholder.com/150',
-        introduction: '의뢰인의 입장에서 최선을 다하겠습니다.'
+        tags: [1, 2]
       }
     ])
   }),
-
   // 특정 날짜에 변호사 예약 불가 시간 조회
-  http.get('/api/lawyers/:lawyerId/unavailable-slot', ({ request }) => {
+  http.get('/api/lawyers/:lawyerId/unavailable-slot', ({ request, params }) => {
     const url = new URL(request.url)
     const date = url.searchParams.get('date')
+    const { lawyerId } = params
 
-    const unavailable = {
-      '2025-07-25': ['10:00', '14:30'],
-      '2025-07-26': ['09:00', '11:00']
+    // 변호사별 mock unavailable 시간
+    const unavailableMap = {
+      '1203': {
+        '2025-07-30': ['10:00', '11:30'],
+        '2025-07-31': ['09:00', '14:00']
+      },
+      '9999': {
+        '2025-07-30': ['13:00']
+      }
     }
 
-    return HttpResponse.json(unavailable[date] || [])
+    const daySlots = unavailableMap[lawyerId]?.[date] || []
+
+    const result = daySlots.map(time => ({
+      lawyerId: lawyerId.toString(),
+      startTime: `${date} ${time}:00`,
+      endTime: `${date} ${time.slice(0, 2)}:${(parseInt(time.slice(3)) + 30) % 60 === 0 ? '00' : '30'}:00`
+    }))
+
+    return HttpResponse.json(result)
   }),
 
 
@@ -88,12 +237,14 @@ export const handlers = [
   http.get('/api/applications/me', () => {
     return HttpResponse.json([
       {
-        id: 101,
-        title: '7월 교통사고 사건 신청서'
+        applicationId: 101,
+        title: '7월 교통사고 사건 신청서',
+        isCompleted: "true"
       },
       {
-        id: 102,
-        title: '합의 관련 상담 신청서'
+        applicationId: 102,
+        title: '합의 관련 상담 신청서',
+        isCompleted: "true"
       }
     ])
   }),
@@ -107,4 +258,15 @@ export const handlers = [
       appointmentId: 9999
     }, { status: 201 })
   }),
+
+  http.get('/api/clients/me', () => {
+    return HttpResponse.json({
+      email: 'ssafy123@naver.com',
+      oauthname: '김싸피',
+      oauthProvider: 'kakao',
+      oauthIdentifier: '19249452013'
+    })
+  }),
+
 ]
+

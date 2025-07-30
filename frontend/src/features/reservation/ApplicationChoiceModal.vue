@@ -5,7 +5,11 @@
 
       <select v-model="selectedApplicationId">
         <option value="">상담신청서 선택</option>
-        <option v-for="app in applications" :value="app.id" :key="app.id">
+        <option
+          v-for="app in applications"
+          :value="app.applicationId"
+          :key="app.applicationId"
+        >
           {{ app.title }}
         </option>
       </select>
@@ -36,7 +40,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import axios from 'axios'
+import axios from '@/lib/axios'
 import { useRouter } from 'vue-router'
 
 const props = defineProps({
@@ -52,17 +56,18 @@ const selectedApplicationId = ref('')
 const router = useRouter()
 
 const fetchApplications = async () => {
-  const res = await axios.get('/api/applications/me')
+  const res = await axios.get('/api/applications/me?isCompleted=true')
   applications.value = res.data
 }
 
 const submitReservation = async () => {
   try {
+    const startTime = `${props.selectedDate}T${props.selectedTime}:00`  // ISO 형식 조합
+
     await axios.post('/api/appointments', {
-      lawyer_id: props.lawyerId,
-      date: props.selectedDate,
-      time: props.selectedTime,
-      application_id: selectedApplicationId.value
+      lawyerId: props.lawyerId,
+      applicationId: selectedApplicationId.value,
+      startTime: startTime
     })
     alert('예약이 완료되었습니다!')
     emit('close')

@@ -13,7 +13,7 @@
         <input
           id="email"
           type="email"
-          v-model="form.email"
+          v-model="form.loginEmail"
           placeholder="예시) lawyer@example.com"
           required
         />
@@ -35,14 +35,13 @@
 
     <!-- 하단 링크 -->
     <div>
-      <router-link to="/login/lawyer/find-password">비밀번호를 잊으셨나요?</router-link>
       <router-link to="/signup/step1">아직 회원이 아니신가요?</router-link>
     </div>
   </div>
 </template>
 
 <script>
-import axios from 'axios';
+import axios from '@/lib/axios';
 import { useAuthStore } from '@/stores/auth';
 
 export default {
@@ -50,7 +49,7 @@ export default {
   data() {
     return {
       form: {
-        email: '',
+        loginEmail: '',
         password: ''
       }
     };
@@ -58,20 +57,22 @@ export default {
   methods: {
     async handleLogin() {
       try {
-        const response = await axios.post('/api/auth/lawyers/login', this.form);
+        const response = await axios.post('/api/lawyers/login', this.form);
 
-        const token = response.data?.access_token;
+        const token = response.data?.accessToken;
         if (!token) throw new Error('토큰 없음');
 
         const authStore = useAuthStore();
-        authStore.setToken(token); // access_token 저장
+        authStore.setToken(token);               // ✅ access_token 저장
+        authStore.setUserType('LAWYER');         // ✅ userType 저장 (변호사)
 
-        this.$router.push('/');
+        this.$router.push('/lawyer/mypage');     // ✅ 변호사 마이페이지로 이동
       } catch (error) {
         console.error('로그인 실패:', error);
         alert('이메일 또는 비밀번호가 올바르지 않습니다.');
       }
     }
   }
+
 };
 </script>
