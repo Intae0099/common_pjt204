@@ -32,6 +32,14 @@ export default {
       default: false
     }
   },
-  emits: ['confirm', 'cancel']
+  emits: ['confirm', 'cancel'],
+  methods: {
+    onConfirm() {
+      this.$emit('confirm');
+    },
+    onCancel() {
+      this.$emit('cancel');
+    }
+  }
 };
 </script>

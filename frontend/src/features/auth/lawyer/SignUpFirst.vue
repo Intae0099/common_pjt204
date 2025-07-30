@@ -28,6 +28,7 @@
             type="email"
             placeholder="예시) honggildong@naver.com"
             v-model="form.loginEmail"
+            :disabled="emailDisabled"
             @blur="validateEmailFormat"
             required
           />
@@ -56,16 +57,6 @@
         <input type="password" v-model="form.passwordConfirm" required />
       </div>
 
-      <div>
-        <label>휴대번호</label>
-        <input type="tel" v-model="form.phone" placeholder="010-1234-5678" required />
-      </div>
-
-      <div>
-        <label>사무실 번호(선택 사항)</label>
-        <input type="text" v-model="form.officeNumber" />
-      </div>
-
       <button type="submit">다음</button>
     </form>
 
@@ -92,6 +83,7 @@ export default {
       },
       isEmailValid: true,
       isEmailChecked: false,
+      emailDisabled: false,
     };
   },
   computed: {
@@ -133,6 +125,7 @@ export default {
         if (res.data.isAvailable) {
           alert('사용 가능한 이메일입니다.');
           this.isEmailChecked = true;
+          this.emailDisabled = true;
         } else {
           alert('이미 사용 중인 이메일입니다.');
           this.isEmailChecked = false;

@@ -28,6 +28,17 @@
       <p v-else>예정된 상담이 없습니다.</p>
     </section>
 
+    <!-- ✅ 상담 대기 중인 목록 -->
+    <section v-if="pendingAppointments.length > 0">
+      <h3>수락 대기중인 상담</h3>
+      <ul>
+        <li v-for="appt in pendingAppointments" :key="appt.appointmentId">
+          <p>의뢰인: {{ getClientName(appt.clientId) }} ({{ getClientEmail(appt.clientId) }})</p>
+          <button class="btn btn-success btn-sm" @click="acceptAppointment(appt.appointmentId)">상담 수락하기</button>
+        </li>
+      </ul>
+    </section>
+
     <!-- ✅ 이후 구현 예정 기능 안내 -->
     <section>
       <h3>📁 기타</h3>
@@ -41,7 +52,7 @@
 </template>
 
 <script>
-import axios from 'axios'
+import axios from '@/lib/axios';
 
 export default {
   name: 'LawyerMyPage',
@@ -73,7 +84,10 @@ export default {
     upcomingAppointments() {
       const now = new Date()
       return this.appointments
-        .filter(appt => new Date(appt.startTime) > now)
+        .filter(appt =>
+          appt.appointmentStatus === 'APPROVED' &&
+          appt.startTime && new Date(appt.startTime) > now
+        )
         .map(appt => {
           const client = this.clients.find(c => c.clientId === appt.clientId)
           return {
@@ -81,7 +95,10 @@ export default {
             client: client || { name: '알 수 없음', email: '알 수 없음' },
           }
         })
-    }
+    },
+    pendingAppointments() {
+      return this.appointments.filter(appt => appt.appointmentStatus === 'PENDING')
+    },
   },
 
   methods: {
@@ -116,6 +133,16 @@ export default {
       return tag ? tag.name : '알 수 없음'
     },
 
+    getClientName(clientId) {
+      const client = this.clients.find(c => String(c.clientId) === String(clientId))
+      return client ? client.name : '알 수 없음'
+    },
+
+    getClientEmail(clientId) {
+      const client = this.clients.find(c => String(c.clientId) === String(clientId))
+      return client ? client.email : '알 수 없음'
+    },
+
     formatDateTime(dateString) {
       const options = {
         year: 'numeric', month: 'short', day: 'numeric',
@@ -128,9 +155,27 @@ export default {
       this.$router.push({ name: 'LawyerProfileUpdate' })
     },
 
+
+
+    async acceptAppointment(appointmentId) {
+      try {
+        await axios.patch(`/api/appointments/${appointmentId}/status`, {
+          appointmentStatus: 'APPROVED'
+        })
+        alert('상담을 수락했습니다.')
+
+        // 상태 변경 후 다시 목록 갱신
+        await this.fetchAppointments()
+      } catch (err) {
+        console.error('상담 수락 실패:', err)
+        alert('상담 수락 중 오류가 발생했습니다.')
+      }
+    },
+
     handleDelete() {
       alert('회원 탈퇴 기능은 아직 구현되지 않았습니다.')
-    }
+    },
+
   },
 
   async mounted() {

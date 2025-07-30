@@ -1,25 +1,52 @@
 import { http, HttpResponse } from 'msw'
 // import { rest } from 'msw'
-
+let appointments = [
+  {
+    appointmentId: '123',
+    clientId: '125',
+    lawyerId: '521',
+    applicationId: '564',
+    appointmentStatus: 'PENDING',
+    startTime: null,
+    endTime: null,
+    createdAt: '2025-07-24 10:02:23'
+  },
+  {
+    appointmentId: '456',
+    clientId: '555',
+    lawyerId: '521',
+    applicationId: '999',
+    appointmentStatus: 'APPROVED',
+    startTime: '2025-08-01 13:00:00',
+    endTime: '2025-08-01 13:30:00',
+    createdAt: '2025-07-22 08:30:00'
+  }
+]
 
 export const handlers = [
-  // rest.get('/oauth2/authorization/kakao', (req, res, ctx) => {
-  //   return res(
-  //     ctx.status(200),
-  //     ctx.json({
-  //       access_token: 'mock-access-token-user-1234',
-  //     })
-  //   )
-  // }),
 
-  http.post('/api/auth/lawyers/login', async ({ request }) => {
+  http.get('/api/lawyers/emails/check', ({ request }) => {
+    const url = new URL(request.url)
+    const email = url.searchParams.get('loginEmail')
+
+    // 이미 등록된 이메일 예시
+    const existingEmails = ['lawyer@example.com', 'taein4225@naver.com']
+
+    const isAvailable = !existingEmails.includes(email)
+
+    return HttpResponse.json({
+      isAvailable: String(isAvailable) // "true" 또는 "false" 문자열
+    })
+  }),
+
+  http.post('/api/lawyers/login', async ({ request }) => {
     const body = await request.json()
-    const { loginId, loginPwd } = body
+    const { loginEmail, password } = body
 
     // 원하는 가짜 조건 추가 가능
-    if (loginId === 'wjddusdl921@gmail.com' && loginPwd === '0123456') {
+    if (loginEmail === 'wjddusdl921@gmail.com' && password === '0123456') {
       return HttpResponse.json({
-        access_token: 'fake-jwt-token-for-test'
+        accessToken: 'fake-jwt-token-for-test'
       })
     } else {
       return HttpResponse.json(
@@ -34,38 +61,48 @@ export const handlers = [
       name: '김지훈',
       loginEmail: 'lawyer@example.com',
       introduction: '형사/민사 사건을 다루는 10년차 변호사입니다.',
-      tags: [1, 2, 4],
+      tags: ["1", "2", "4"],
     })
   }),
 
   // ✅ 상담 예약 목록 (오늘 이후를 테스트하기 위해 미래 날짜 포함)
-  http.get('/api/appointments/me', () => {
-    return HttpResponse.json([
-      {
-        appointmentId: 101,
-        clientId: 1,
-        lawyerId: '1203',
-        startTime: new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString() // 3시간 뒤
-      },
-      {
-        appointmentId: 102,
-        clientId: 2,
-        lawyerId: '5223',
-        startTime: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 내일
-      }
-    ])
+  http.get('/api/appointments/me', ({ request }) => {
+    const url = new URL(request.url)
+    const status = url.searchParams.get('status')
+
+    let filtered = appointments
+
+    if (status) {
+      filtered = appointments.filter(a => a.appointmentStatus === status)
+    }
+
+    return HttpResponse.json(filtered)
+  }),
+   http.patch('/api/appointments/:appointmentId/status', async ({ params, request }) => {
+    const { appointmentId } = params
+    const body = await request.json()
+
+    const target = appointments.find(a => a.appointmentId === appointmentId)
+    if (!target) {
+      return HttpResponse.json({ message: 'Appointment not found' }, { status: 404 })
+    }
+
+    // 상태 업데이트
+    target.appointmentStatus = body.appointmentStatus
+
+    return HttpResponse.json({ message: 'Appointment status updated' })
   }),
 
   // ✅ 클라이언트 목록
   http.get('/api/admin/clients/list', () => {
     return HttpResponse.json([
       {
-        clientId: 1,
+        clientId: "125",
         name: '홍길동',
         email: 'client1@example.com'
       },
       {
-        clientId: 2,
+        clientId: "555",
         name: '이몽룡',
         email: 'client2@example.com'
       }

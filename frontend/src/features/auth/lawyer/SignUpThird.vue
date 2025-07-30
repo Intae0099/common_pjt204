@@ -16,7 +16,7 @@
     <!-- 3단계 폼 -->
     <form @submit.prevent="handleSubmit">
       <div>
-        <label>소개글 (선택사항)</label>
+        <label>소개글 (필수)</label>
         <textarea
           v-model="form.introduction"
           placeholder="의뢰인들에게 나를 소개하는 글을 작성해주세요."
@@ -24,7 +24,7 @@
       </div>
 
       <div>
-        <label>태그 선택 (선택사항)</label>
+        <label>태그 선택 (1개 이상 필수 선택)</label>
         <div>
           <button
             v-for="tag in tagMap"
@@ -38,7 +38,7 @@
         </div>
       </div>
 
-      <button type="submit">가입하기</button>
+      <button type="submit" :disabled="form.tags.length === 0">가입하기</button>
     </form>
 
     <!-- 가입 완료 모달 -->
@@ -80,7 +80,7 @@ export default {
         { id: 11, name: '의료·생명·개인정보' },
         { id: 12, name: '금융·증권·기업' }
       ],
-      showModal: false
+      showModal: false,
     };
   },
   computed: {
@@ -127,5 +127,9 @@ export default {
 </script>
 
 <style scoped>
-
+button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
 </style>
