@@ -59,7 +59,7 @@ class SearchService:
                 offset = (page - 1) * size
                 cur.execute(
                     """
-                    SELECT lc.case_id, lc.title, lc.decision_date, lc.category, lc.issue, lc.summary, lch.chunk_text
+                    SELECT lc.case_id, lc.title, lc.decision_date, lc.category, lc.issue, lc.summary, lc.full_text, lch.chunk_text
                     FROM legal_chunks lch
                     JOIN legal_cases lc ON lch.case_id = lc.case_id
                     ORDER BY lch.embedding <-> %s::vector
@@ -75,9 +75,10 @@ class SearchService:
                         "category": category,
                         "issue": issue,
                         "summary": summary,
+                        "full_text": full_text,
                         "chunk_text": chunk_text
                     }
-                    for cid, title, decision_date, category, issue, summary, chunk_text in cur.fetchall()
+                    for cid, title, decision_date, category, issue, summary, full_text, chunk_text in cur.fetchall()
                 ]
             logger.debug(f"Initial search results: {initial_results}")
 
