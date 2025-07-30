@@ -14,18 +14,20 @@ public class Application {
 
     // Field
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "application_id")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "client_id")
+    @JoinColumn(name = "client_id", nullable = false)
     private Client client;
 
     /*사건 경위서*/
+    @Column(nullable = false)
     private String title;
+
+    @Column(nullable = false)
     private String summary;
 
-    @Column(columnDefinition = "text")
+    @Column(columnDefinition = "text", nullable = false)
     private String content;
 
     /*상담신청서 남은 문항*/
@@ -37,11 +39,13 @@ public class Application {
 
     /*AI가 생성해주는 추천질문*/
     // JSON으로 그대로 넘어올 예정
-    @Column(columnDefinition = "text")
+    @Column(columnDefinition = "json")
     private String recommendedQuestion;
 
+    @Column(nullable = false)
     private boolean isCompleted;
 
+    @Column(nullable = false)
     private LocalDateTime createdAt;
 
 }

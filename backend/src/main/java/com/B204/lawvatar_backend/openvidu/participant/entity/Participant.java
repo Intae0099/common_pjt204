@@ -14,23 +14,21 @@ public class Participant {
 
     // Field
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "participant_id")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "room_id")
+    @JoinColumn(name = "room_id", nullable = false)
     private Room room;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "client_id")
+    @JoinColumn(name = "client_id", nullable = false)
     private Client client;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "lawyer_id")
+    @JoinColumn(name = "lawyer_id", nullable = false)
     private Lawyer lawyer;
 
     // Method
-
     /**
      * 클라이언트가 참가자인 Participant 객체를 생성하는 정적 메서드
      * @param room
