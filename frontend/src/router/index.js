@@ -26,8 +26,7 @@ import LawyerSearch from '@/features/reservation/LawyerSearch.vue'
 import DetailReservation from '@/features/reservation/DetailReservation.vue'
 
 // AI 상담 신청서
-
-
+import ConsultationFormView from '@/features/consultationForm/ConsultationFormView.vue';
 //화상회의
 import PreviewUserView from '@/features/videoconference/user/PreviewUserView.vue';
 import PreviewLawyerView from '@/features/videoconference/lawyer/PreviewLawyerView.vue';
@@ -117,8 +116,10 @@ const router = createRouter({
       props: true
     },
     // AI 상담 신청서
-
-
+    {
+      path: '/consult-form',
+      component: ConsultationFormView,
+    },
     //화상회의
     {
       path: '/videocall/preview/client',
