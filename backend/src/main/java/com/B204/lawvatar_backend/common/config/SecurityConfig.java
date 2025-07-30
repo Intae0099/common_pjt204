@@ -238,6 +238,14 @@ public class SecurityConfig {
 
         // URL 접근 제한
         .authorizeHttpRequests(auth -> auth
+            // swagger 추가
+            .requestMatchers(
+                "/v3/api-docs/**",
+                "/swagger-ui.html",
+                "/swagger-ui/**",
+                "/swagger-ui/index.html",
+                "/webjars/**"
+            ).permitAll()
             .requestMatchers( "/login/oauth2/**").permitAll()
             .requestMatchers("/.well-known/**").permitAll()
             .requestMatchers("/api/lawyers/signup", "/api/lawyers/login").permitAll()

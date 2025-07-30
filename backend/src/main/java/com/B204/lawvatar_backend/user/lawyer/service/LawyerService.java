@@ -11,6 +11,7 @@ import com.B204.lawvatar_backend.user.lawyer.repository.TagRepository;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import java.util.Base64;
+import java.util.List;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -117,6 +118,29 @@ public class LawyerService implements UserDetailsService {
     refreshTokenRepo.deleteByLawyerId(id);
 
     lawyerRepo.deleteById(id);
+  }
+
+  public List<Lawyer> findLawyers(List<Long> tagIds, String search) {
+
+    boolean hasTags = tagIds != null && !tagIds.isEmpty();
+    boolean hasSearch = search != null && !search.isEmpty();
+
+    if (hasTags && hasSearch) {
+      // 모든 태그 + 이름 검색
+      return lawyerRepo.findByAllTagIdsAndNameContainingIgnoreCase(
+          tagIds, tagIds.size(), search);
+    }
+    if (hasTags) {
+      // 모든 태그만
+      return lawyerRepo.findByAllTagIds(tagIds, tagIds.size());
+    }
+    if (hasSearch) {
+      // 이름만 검색
+      return lawyerRepo.findByNameContainingIgnoreCase(search);
+    }
+    // 둘 다 없으면 전체
+    return lawyerRepo.findAll();
+
   }
 }
 

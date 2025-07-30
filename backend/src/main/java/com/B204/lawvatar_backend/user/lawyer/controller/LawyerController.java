@@ -6,6 +6,7 @@ import com.B204.lawvatar_backend.common.util.JwtUtil;
 import com.B204.lawvatar_backend.user.auth.service.RefreshTokenService;
 import com.B204.lawvatar_backend.user.lawyer.dto.LawyerInfoDto;
 import com.B204.lawvatar_backend.user.lawyer.dto.LawyerLoginDto;
+import com.B204.lawvatar_backend.user.lawyer.dto.LawyerSearchDto;
 import com.B204.lawvatar_backend.user.lawyer.dto.LawyerSignupDto;
 import com.B204.lawvatar_backend.user.lawyer.dto.LawyerUpdateDto;
 import com.B204.lawvatar_backend.user.lawyer.entity.CertificationStatus;
@@ -121,12 +122,12 @@ public class LawyerController {
   }
 
   @PostMapping("/emails/check")
-  public ResponseEntity<?> isEmailAvailable(@JsonProperty("loginEmail")
-  String loginEmail){
-    Optional l = lawyerRepo.findByLoginEmail(loginEmail);
-    boolean isAvailable = l.isEmpty();
+  public ResponseEntity<?> isEmailAvailable(
+      @JsonProperty("loginEmail") String loginEmail){
+    boolean isAvailable = lawyerRepo.existsByLoginEmail(loginEmail);
 
     Map<String, String> response = Map.of("isAvailable", String.valueOf(isAvailable));
+
     return ResponseEntity.ok(response);
   }
 
@@ -218,4 +219,19 @@ public class LawyerController {
     return ResponseEntity.noContent().build();
   }
 
+  @GetMapping("/list")
+  public ResponseEntity<List<LawyerSearchDto>> getLawyers(
+    @RequestParam(value = "tags" , required = false) List<Long> tagIds,
+    @RequestParam(value = "search", required = false) String search
+    ){
+
+    List<Lawyer> lawyers = lawyerService.findLawyers(tagIds, search);
+
+    List<LawyerSearchDto> result = lawyers.stream()
+        .map(LawyerSearchDto::from)
+        .toList();
+
+    return ResponseEntity.ok(result);
+
+  }
 }

@@ -48,6 +48,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         || path.startsWith("/api/lawyers/emails/check")
         || path.startsWith("/api/lawyers/login")
         || path.startsWith("/login/oauth2/")
+        || path.startsWith("/api/lawyers/list")
+        // Swagger/OpenAPI
+        || path.startsWith("/v3/api-docs")
+        || path.startsWith("/swagger-ui")
+        || path.startsWith("/swagger-ui.html")
+        || path.startsWith("/webjars")
         || HttpMethod.OPTIONS.matches(request.getMethod());
   }
 
