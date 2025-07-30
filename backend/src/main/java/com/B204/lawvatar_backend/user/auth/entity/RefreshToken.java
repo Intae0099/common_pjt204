@@ -21,13 +21,6 @@ public class RefreshToken {
 
     // 리프레시 토큰의 소유자 (의뢰인 또는 변호사)
     // nullable로 해야함ㅠㅠ
-<<<<<<< HEAD
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "client_id")
-    private Client client;
-
-    @OneToOne(fetch = FetchType.LAZY)
-=======
     // 의뢰인용 foreign key
     @ManyToOne(fetch = FetchType.LAZY, optional = true)
     @JoinColumn(name = "client_id")
@@ -35,7 +28,6 @@ public class RefreshToken {
 
     // 변호사용 foreign key
     @ManyToOne(fetch = FetchType.LAZY, optional = true)
->>>>>>> d6e43e84b49ca078725d21a605311f95920e18fc
     @JoinColumn(name = "lawyer_id")
     private Lawyer lawyer;
 
