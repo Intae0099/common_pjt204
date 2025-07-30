@@ -20,11 +20,22 @@ def get_case_analysis_service(
     """CaseAnalysisService 인스턴스를 반환합니다."""
     return CaseAnalysisService(llm, embedding_model, cross_encoder_model)
 
+from services.search_service import SearchService
+
+
 def get_structuring_service(
     llm: Gpt4oMini = Depends(get_llm)
 ) -> StructuringService:
     """StructuringService 인스턴스를 반환합니다."""
     return StructuringService(llm)
+
+
+def get_search_service(
+    embedding_model: EmbeddingModel = Depends(ModelLoader.get_embedding_model),
+    cross_encoder_model: CrossEncoderModel = Depends(ModelLoader.get_cross_encoder_model)
+) -> SearchService:
+    """SearchService 인스턴스를 반환합니다."""
+    return SearchService(embedding_model, cross_encoder_model)
 
 def get_embedding_model_dependency():
     return ModelLoader.get_embedding_model()

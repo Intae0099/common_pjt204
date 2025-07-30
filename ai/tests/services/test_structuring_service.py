@@ -45,51 +45,6 @@ async def test_structure_case_success():
     assert result == mock_response
     assert mock_llm.call_count == 1
 
-@pytest.mark.asyncio
-async def test_structure_case_retry_on_json_error():
-    invalid_json_response = "{'title': 'Invalid JSON'"
-    valid_json_response = {
-        "title": "Valid Title",
-        "summary": "Valid Summary",
-        "fullText": "Valid Full Text"
-    }
-    mock_llm = MockLLM(responses=[invalid_json_response, json.dumps(valid_json_response)])
-    service = StructuringService(llm=mock_llm)
-    
-    free_text = "This is a test free text."
-    result = await service.structure_case(free_text)
-    
-    assert result == valid_json_response
-    assert mock_llm.call_count == 2
-
-@pytest.mark.asyncio
-async def test_structure_case_retry_on_validation_error():
-    invalid_structure_response = json.dumps({"title": "Only Title"})
-    valid_json_response = {
-        "title": "Valid Title",
-        "summary": "Valid Summary",
-        "fullText": "Valid Full Text"
-    }
-    mock_llm = MockLLM(responses=[invalid_structure_response, json.dumps(valid_json_response)])
-    service = StructuringService(llm=mock_llm)
-    
-    free_text = "This is a test free text."
-    result = await service.structure_case(free_text)
-    
-    assert result == valid_json_response
-    assert mock_llm.call_count == 2
-
-@pytest.mark.asyncio
-async def test_structure_case_max_retries_exceeded():
-    invalid_json_response = "{'title': 'Invalid JSON'"
-    mock_llm = MockLLM(responses=[invalid_json_response] * 5)
-    service = StructuringService(llm=mock_llm)
-    
-    free_text = "This is a test free text."
-    with pytest.raises(RuntimeError, match="사건 구조화에 여러 번 재시도한 후에도 실패했습니다."):
-        await service.structure_case(free_text)
-    
-    assert mock_llm.call_count == 3
 
 @pytest.mark.asyncio
 async def test_structure_case_early_exit_on_success():

@@ -1,13 +1,13 @@
 import json
 import unittest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, AsyncMock
 
 from services.case_analysis_service import CaseAnalysisService
 from app.api.schemas.analysis import CaseAnalysisResult
 from llm.clients.langchain_client import Gpt4oMini
 from config.tags import SPECIALTY_TAGS
 
-class TestCaseAnalysisService(unittest.TestCase):
+class TestCaseAnalysisService(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         # 1) LLM도 가짜로
         llm = MagicMock(spec=Gpt4oMini)
@@ -17,15 +17,14 @@ class TestCaseAnalysisService(unittest.TestCase):
         # 2) chain 전체를 MagicMock으로 교체
         self.service.chain = MagicMock()
         
-    @patch('services.case_analysis_service.search_cases')
-    def test_analyze_case_invokes_chain_correctly(self, mock_search_cases):
+    async def test_analyze_case_invokes_chain_correctly(self):
         """analyze_case가 chain.invoke에 올바른 파라미터로 호출되고, 반환값이 제대로 파싱되는지 검증"""
-        # 1) search_cases 리턴 설정
+        # 1) search_service.vector_search 리턴 설정
         raw_docs = [
-            {"case_id": "2019다1234", "issue": "판례1", "chunk_text": "내용1"},
-            {"case_id": "2020다5678", "issue": "판례2", "chunk_text": "내용2"},
+            {"case_id": "2019다1234", "issue": "판례1", "full_text": "내용1"},
+            {"case_id": "2020다5678", "issue": "판례2", "full_text": "내용2"},
         ]
-        mock_search_cases.return_value = raw_docs
+        self.service.search_service.vector_search = AsyncMock(return_value=(raw_docs, len(raw_docs)))
 
         # 2) 체인 invoke가 리턴할 페이로드 구성
         payload = {
@@ -53,7 +52,7 @@ class TestCaseAnalysisService(unittest.TestCase):
         tag_list_str = ", ".join(SPECIALTY_TAGS)
 
         # 3) 실제 호출
-        result = self.service.analyze_case(user_query, top_k_docs)
+        result = await self.service.analyze_case(user_query, top_k_docs)
 
         # 4) formatted_docs JSON 문자열화
         formatted_docs = [

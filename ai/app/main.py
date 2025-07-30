@@ -36,7 +36,7 @@ app.add_exception_handler(Exception, generic_exception_handler)
 
 app.include_router(analysis.router, prefix="/api", tags=["analysis"])
 app.include_router(structuring.router, prefix="/api", tags=["structuring"])
-app.include_router(search.router, prefix="/api", tags=["search"])
+app.include_router(search.router, prefix="/api", tags=["Search"])
 
 @app.get("/")
 def read_root():

@@ -28,7 +28,7 @@ async def analyze_case_endpoint(
     if not request.case or not getattr(request.case, "fullText", "").strip():
         raise BadRequestException("필수 필드 'case.fullText'가 누락되었습니다.")
 
-    service_result = case_analysis_service.analyze_case(
+    service_result = await case_analysis_service.analyze_case(
         user_query=request.case.fullText,
     )
     case_analysis_report = service_result.get("case_analysis")

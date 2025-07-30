@@ -1,16 +1,16 @@
 # app/api/schemas/search.py
 from pydantic import BaseModel, Field
 from datetime import date
-from typing import List
+from typing import List, Optional
 
 # 1. 목록 검색 (/search/cases)
 class CaseSnippet(BaseModel):
-    id: int = Field(..., description="판례 일련번호")
-    name: str = Field(..., description="사건명")
-    court: str = Field(..., description="법원명")
+    caseId: str = Field(..., description="판례 일련번호")
+    title: str = Field(..., description="사건명")
     decisionDate: date = Field(..., description="선고일자")
-    tags: List[str] = Field(default_factory=list, description="사건 관련 태그")
-    snippet: str = Field(..., description="판시사항 일부 (스니펫)")
+    category: str = Field(..., description="사건 종류 (예: 민사)")
+    issue: Optional[str] = Field(None, description="판시사항 일부 (스니펫)")
+    summary: Optional[str] = Field(None, description="판시사항 일부 (스니펫)")
 
 class PageMeta(BaseModel):
     total: int = Field(..., description="전체 검색 결과 수")
@@ -27,28 +27,18 @@ class CaseSearchResponse(BaseModel):
     data: CaseSearchData
 
 # 2. 전문 조회 (/cases/{precId})
-class ReferenceStatute(BaseModel):
-    code: str = Field(..., description="참조 법령명")
-    article: str = Field(..., description="참조 조문")
 
-class ReferenceCase(BaseModel):
-    id: int = Field(..., description="참조 판례 일련번호")
-    name: str = Field(..., description="참조 판례 사건명")
-    court: str = Field(..., description="참조 판례 법원명")
-    year: int = Field(..., description="참조 판례 선고년도")
-
-class References(BaseModel):
-    statutes: List[ReferenceStatute]
-    cases: List[ReferenceCase]
 
 class CaseDetail(BaseModel):
-    id: int = Field(..., description="판례 일련번호")
-    name: str = Field(..., description="사건명")
-    court: str = Field(..., description="법원명")
+    caseId: str = Field(..., description="판례 일련번호")
+    title: str = Field(..., description="사건명")
     decisionDate: date = Field(..., description="선고일자")
-    caseType: str = Field(..., description="사건 종류 (예: 민사)")
+    category: str = Field(..., description="사건 종류 (예: 민사)")
+    issue: Optional[str] = Field(None, description="판시사항")
+    summary: Optional[str] = Field(None, description="요약")
+    statutes: str = Field(..., description="참조 법령 (세미콜론 구분)")
+    precedents: str = Field(..., description="참조 판례 (세미콜론 구분)")
     fullText: str = Field(..., description="판례 전문 원문")
-    references: References = Field(..., description="참조 법령 및 판례")
 
 class CaseDetailResponse(BaseModel):
     success: bool
