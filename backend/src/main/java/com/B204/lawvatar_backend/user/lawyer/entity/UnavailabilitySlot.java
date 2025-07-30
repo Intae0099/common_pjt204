@@ -16,8 +16,7 @@ public class UnavailabilitySlot {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "lawyer_id")
-    @Column(nullable = false)
+    @JoinColumn(name = "lawyer_id", nullable = false)
     private Lawyer lawyer;
 
     @Column(nullable = false)

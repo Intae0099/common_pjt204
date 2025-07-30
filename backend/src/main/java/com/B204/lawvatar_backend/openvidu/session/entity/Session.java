@@ -16,13 +16,11 @@ public class Session {
     private Long id;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "appointment_id")
-    @Column(nullable = false)
+    @JoinColumn(name = "appointment_id", nullable = false)
     private Appointment appointment;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "room_id")
-    @Column(nullable = false)
+    @JoinColumn(name = "room_id", nullable = false)
     private Room room;
 
     @Column(columnDefinition = "tinyint unsigned")

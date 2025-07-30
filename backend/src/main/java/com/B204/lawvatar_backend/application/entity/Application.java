@@ -2,14 +2,17 @@ package com.B204.lawvatar_backend.application.entity;
 
 import com.B204.lawvatar_backend.user.client.entity.Client;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
-@Getter
+@Getter @Setter
 @NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Application {
 
     // Field
@@ -17,8 +20,7 @@ public class Application {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "client_id")
-    @Column(nullable = false)
+    @JoinColumn(name = "client_id", nullable = false)
     private Client client;
 
     /*사건 경위서*/
@@ -48,5 +50,7 @@ public class Application {
 
     @Column(nullable = false)
     private LocalDateTime createdAt;
+
+    private List<Integer> tags = new ArrayList<>();
 
 }
