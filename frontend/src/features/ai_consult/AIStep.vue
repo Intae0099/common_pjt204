@@ -80,7 +80,7 @@ const handleUserInput = async (text) => {
   isLoading.value = true
 
   try {
-    const { data } = await axios.post('/api/ai-consult', { content: text })
+    const { data } = await axios.post('/api/ai/pre-consultation', { content: text })
     aiResponse.value = data
   } catch (error) {
     console.error('AI 응답 실패:', error)
