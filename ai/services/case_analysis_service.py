@@ -52,19 +52,22 @@ class CaseAnalysisService:
             # Call vector_search method of SearchService
             retrieved_docs, _ = await self.search_service.vector_search(user_query, size=top_k_docs)
 
-            # 2. 검색된 판례를 LLM 입력 형식에 맞게 변환
-            # search_cases의 결과는 {'case_id': str, 'summary': str, 'full_text': str}
-            # LLM은 {"id": "...", "text": "..."} 형태를 기대
+            # 2. 검색된 판례 청크를 LLM 입력 형식에 맞게 변환
+            # 이제 search_service는 chunk_text를 포함하여 반환합니다.
             formatted_case_docs = []
             for doc in retrieved_docs:
                 formatted_case_docs.append({
                     "id": doc.get("case_id", ""),
-                    "issue": doc.get("issue", ""), # issue를 name으로 사용
-                    "text": doc.get("full_text", "") # Use full_text for LLM input
+                    "issue": doc.get("issue", ""),
+                    "text": doc.get("chunk_text", "")  # chunk_text 필드를 직접 사용
                 })
 
             # case_docs를 JSON 문자열로 직렬화
             docs_json = json.dumps(formatted_case_docs, ensure_ascii=False)
+
+            # 디버깅: 프롬프트에 포함될 데이터의 길이 확인
+            print(f"User Query Length: {len(user_query)}")
+            print(f"Case Docs JSON Length: {len(docs_json)}")
 
             # SPECIALTY_TAGS를 쉼표로 구분된 문자열로 변환
             tag_list_str = ", ".join(SPECIALTY_TAGS)
