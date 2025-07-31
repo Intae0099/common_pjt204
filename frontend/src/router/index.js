@@ -95,6 +95,7 @@ const router = createRouter({
     //판례검색
     {
       path: '/cases/search',
+      name:'CasesSearch',
       component: CaseSearchPage,
     },
     // 판례 상세 조회
@@ -118,6 +119,7 @@ const router = createRouter({
     // AI 상담 신청서
     {
       path: '/consult-form',
+      name:'ConsultForm',
       component: ConsultationFormView,
     },
     //화상회의
