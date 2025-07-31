@@ -41,11 +41,13 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/api/lawyers")
@@ -244,6 +246,18 @@ public class LawyerController {
         .toList();
 
     return ResponseEntity.ok(result);
+  }
 
+  @GetMapping("/{lawyerId}")
+  ResponseEntity<LawyerSearchDto> getLawyerById(
+      @PathVariable Long lawyerId
+  ){
+    Lawyer lawyer = lawyerRepo.findById(lawyerId)
+        .orElseThrow(() ->
+            new ResponseStatusException(HttpStatus.NOT_FOUND,
+                "변호사를 찾을 수 없습니다. id=" + lawyerId));
+
+    // 3) DTO 변환 후 응답
+    return ResponseEntity.ok(LawyerSearchDto.from(lawyer));
   }
 }
