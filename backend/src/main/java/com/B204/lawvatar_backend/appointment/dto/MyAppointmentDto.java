@@ -1,0 +1,39 @@
+package com.B204.lawvatar_backend.appointment.dto;
+
+import com.B204.lawvatar_backend.appointment.entity.Appointment;
+import com.B204.lawvatar_backend.appointment.entity.AppointmentStatus;
+import com.fasterxml.jackson.annotation.JsonFormat;
+import java.time.LocalDateTime;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+
+@Getter
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+public class MyAppointmentDto {
+
+  private Long appointmentId;
+  private Long clientId;
+  private Long lawyerId;
+  private Long applicationId;
+  private AppointmentStatus appointmentStatus;
+  @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+  private LocalDateTime startTime;
+  @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+  private LocalDateTime endTime;
+  @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+  private LocalDateTime createdAt;
+
+  public static MyAppointmentDto from(Appointment appt) {
+    return new MyAppointmentDto(
+        appt.getId(),
+        appt.getClient().getId(),
+        appt.getLawyer().getId(),
+        appt.getApplication().getId(),
+        appt.getAppointmentStatus(),
+        appt.getStartTime(),
+        appt.getEndTime(),
+        appt.getCreatedAt()
+    );
+  }
+}

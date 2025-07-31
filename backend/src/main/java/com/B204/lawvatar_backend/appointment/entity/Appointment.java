@@ -4,13 +4,14 @@ import com.B204.lawvatar_backend.application.entity.Application;
 import com.B204.lawvatar_backend.user.client.entity.Client;
 import com.B204.lawvatar_backend.user.lawyer.entity.Lawyer;
 import jakarta.persistence.*;
+import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
 @Entity
-@Getter
+@Data
 @NoArgsConstructor
 public class Appointment {
 
@@ -26,7 +27,7 @@ public class Appointment {
     @JoinColumn(name = "lawyer_id", nullable = false)
     private Lawyer lawyer;
 
-    @OneToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "application_id", nullable = false)
     private Application application;
 
