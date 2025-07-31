@@ -1,6 +1,7 @@
 package com.B204.lawvatar_backend.user.client.repository;
 
 import com.B204.lawvatar_backend.user.client.entity.Client;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 

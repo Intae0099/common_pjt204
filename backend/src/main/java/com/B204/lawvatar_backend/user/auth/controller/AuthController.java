@@ -51,6 +51,7 @@ public class AuthController {
     String subject = claims.getSubject();  // ← 이 값이 ID 또는 oauthIdentifier
     String userType = claims.get("userType", String.class);
 
+
     // 1. 사용자 로드 (선택적 – roles 조회용)
     List<String> roles;
     if ("LAWYER".equalsIgnoreCase(userType)) {

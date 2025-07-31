@@ -142,5 +142,23 @@ public class LawyerService implements UserDetailsService {
     return lawyerRepo.findAll();
 
   }
+
+  public Lawyer rejectLawyer(Long id) {
+    Lawyer l = lawyerRepo.findById(id)
+        .orElseThrow(() -> new EntityNotFoundException("해당 변호사는 존재하지 않습니다. : " + id));
+
+    if(l.getCertificationStatus() != CertificationStatus.PENDING){
+      throw new IllegalStateException("해당 변호사는 대기 중이 아닙니다 : " + id);
+    }
+
+    l.setCertificationStatus(CertificationStatus.REJECTED);
+    return lawyerRepo.save(l);
+  }
+
+  public List<Lawyer> findByCertificationStatus(CertificationStatus status) {
+
+    return lawyerRepo.findByCertificationStatus(status);
+
+  }
 }
 
