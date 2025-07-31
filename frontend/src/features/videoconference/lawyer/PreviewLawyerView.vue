@@ -96,7 +96,7 @@ onMounted(async () => {
   }
 })
 */
-
+/*
 onMounted(() => {
 
   // try {
@@ -142,7 +142,7 @@ onMounted(() => {
     },
   ]
 })
-
+*/
 // 화상상담방 입장 함수
 const enterMeeting = async () => {
   if (todaysAppointments.value.length === 0) {

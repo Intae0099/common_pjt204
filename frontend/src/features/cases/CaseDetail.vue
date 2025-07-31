@@ -1,11 +1,18 @@
 <!-- src/pages/case/CaseDetail.vue -->
 <template>
   <CaseLayout>
+    <div class="text-wrapper-9 back-button" @click="goBack">이전</div>
+    <div v-if="isLoading" class="status-message">
+      <p>판례 정보를 불러오는 중입니다...</p>
+    </div>
+    <div v-else-if="error" class="status-message error">
+      <p>{{ error }}</p>
+    </div>
   <!-- 데이터가 로드된 후에만 전체 내용을 보여줍니다. -->
-    <div v-if="caseData" class="case-detail-container">
+     <div v-else-if="caseData" class="case-detail-container">
 
       <!-- '이전' 버튼: 클릭 시 뒤로 갑니다. -->
-      <div class="text-wrapper-9 back-button" @click="goBack">이전</div>
+
 
       <div class="rectangle-3"></div>
 
@@ -56,19 +63,64 @@
 import CaseLayout from '@/components/layout/CaseLayout.vue';
 import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { fastapiApiClient } from '@/lib/axios';
 
 // 라우트 정보와 라우터 인스턴스를 가져옵니다.
 const route = useRoute();
 const router = useRouter();
-
 // 판례 상세 데이터를 담을 ref
 const caseData = ref(null);
+const isLoading = ref(true);
+const error = ref(null);
+
 
 // 뒤로 가기 함수
 const goBack = () => {
   router.go(-1);
 };
 
+// API 응답에 <br> 태그 등이 이미 포함되어 있을 수 있으므로,
+// 추가 변환 없이 그대로 사용하거나, 필요 시 줄바꿈 문자를 <br>로 변환
+const formatHtml = (text) => {
+  if (!text) return '';
+  // 예시: API 응답이 순수 텍스트이고 줄바꿈(\n)이 있다면 <br>로 변환
+  // return text.replace(/\n/g, '<br />');
+  return text; // API 응답을 믿고 그대로 반환
+};
+
+onMounted(async () => {
+  const precId = route.params.id;
+  if (!precId) {
+    error.value = '잘못된 접근입니다. 판례 ID가 없습니다.';
+    isLoading.value = false;
+    return;
+  }
+
+  try {
+    isLoading.value = true;
+    error.value = null;
+
+    // ✨ fastapiApiClient를 사용하여 호출합니다.
+    const response = await fastapiApiClient.get(`/cases/${precId}`);
+
+    if (response.data.success) {
+      caseData.value = response.data.data;
+    } else {
+      throw new Error(response.data.error.message);
+    }
+  } catch (err) {
+    console.error('판례 상세 조회 실패:', err);
+    if (err.response?.status === 404) {
+      error.value = '해당 판례를 찾을 수 없습니다.';
+    } else {
+      error.value = err.response?.data?.error?.message || '정보를 불러오는 데 실패했습니다.';
+    }
+  } finally {
+    isLoading.value = false;
+  }
+});
+
+/*
 // 백엔드 API를 대체할 더미 데이터베이스
 const dummyDB = [
   {
@@ -108,4 +160,5 @@ onMounted(() => {
   //     caseData.value = await response.json();
   caseData.value = dummyDB.find(item => item.id === currentCaseId);
 });
+*/
 </script>
