@@ -11,4 +11,6 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
   List<Appointment> findByLawyer(Lawyer lawyer);
 
   List<Appointment> findByClient(Client client);
+
+  boolean existsByLawyerIdAndClientId(Long lawyerId, Long clientId);
 }
