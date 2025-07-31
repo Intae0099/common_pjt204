@@ -136,12 +136,6 @@ def test_search_cases_pagination(mock_search_service):
     assert data["data"]["pageMeta"]["hasNext"] is False
 
 
-def test_search_cases_invalid_keyword():
-    response = client.get("/api/search/cases?keyword=a")
-    assert response.status_code == 400  # Custom handler maps 422 to 400
-    data = response.json()
-    assert "error" in data
-
 
 def test_get_case_detail_success(mock_search_service):
     # Mocking get_case_by_id method

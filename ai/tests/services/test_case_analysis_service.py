@@ -21,8 +21,8 @@ class TestCaseAnalysisService(unittest.IsolatedAsyncioTestCase):
         """analyze_case가 chain.invoke에 올바른 파라미터로 호출되고, 반환값이 제대로 파싱되는지 검증"""
         # 1) search_service.vector_search 리턴 설정
         raw_docs = [
-            {"case_id": "2019다1234", "issue": "판례1", "full_text": "내용1"},
-            {"case_id": "2020다5678", "issue": "판례2", "full_text": "내용2"},
+            {"case_id": "2019다1234", "issue": "판례1", "chunk_text": "내용1"},
+            {"case_id": "2020다5678", "issue": "판례2", "chunk_text": "내용2"},
         ]
         self.service.search_service.vector_search = AsyncMock(return_value=(raw_docs, len(raw_docs)))
 
