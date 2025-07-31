@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class LawyerSearchDto {
+public class LawyerSearchDto {  // client가 lawyer 전체 조회, 검색 시 사용
 
   /** 변호사 고유 ID */
   private Long lawyerId;
