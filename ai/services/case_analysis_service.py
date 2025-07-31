@@ -2,6 +2,7 @@ from langchain.chains import LLMChain
 from langchain.llms.base import LLM
 from typing import List, Dict
 import json
+from pprint import pprint
 
 from config.tags import SPECIALTY_TAGS
 from llm.llm_response_parser import CotOutputParser, parse_case_analysis_output, CaseAnalysisResult
@@ -106,11 +107,11 @@ if __name__ == "__main__":
     import asyncio
     sample_query = """
         {
-        "case": {
-            "title": "SSAFY 보안 서약서 위반 및 교육 자료 무단 게시 사건",
-            "summary": "SSAFY 입과 시 보안 서약서에 서명한 후 교육용 프로젝트 화면 캡쳐를 블로그에 무단 공개함",
-            "fullText": "SSAFY 과정에 참여한 사용자는 입과 시 보안 서약서를 작성하여 교육 자료나 코드, 화면을 외부에 공개하지 않을 것을 약속했습니다. 그러나 중간 프로젝트 발표를 준비하던 중 프로젝트 실행 화면과 소스 코드 일부를 캡쳐하여 개인 블로그에 게시했고, 안내된 가이드라인과 서약서 조항을 명백히 위반했습니다. 이로 인해 교육 기관과 동료 학습자의 권리가 침해될 수 있다는 우려가 제기되었으며, 이를 문제 삼을 경우 즉 본보기가 되어 고소 당하는 것을 걱정하고 있다"
-        }
+            "case": {
+            "title": "헬스장에서의 탈의실 잘못 진입 사건",
+            "summary": "새해 목표를 다짐하며 헬스장에 등록한 후, 잘못 여자 탈의실에 들어간 사건이 발생했다. 상대방에게 사과를 했으나 헬스장 측에서 회원 등록 취소 요청을 받았고, 이후 상대방이 경찰에 신고했다는 소식을 들었다.",
+            "fullText": "얼마 전 새해 목표를 다짐하며 동료와 함께 헬스장에 등록했다. 운동복으로 갈아입고 기분 좋게 샤워실을 찾다가, 문이 열린 채 여자 탈의실에 잘못 들어가고 말았다. 안에 누군가 있는 걸 보고 깜짝 놀라 급히 뛰어나왔지만, 다행히 얼굴을 보지 않아 상대방도 나를 알아보지 못한 상태였다. 얼굴이 화끈거려 동료에게 상황을 설명하고는 민망한 마음을 달래며 운동을 계속했다. 잠시 후 카운터 직원이 부름을 받고 와서 실수를 솔직히 인정하고 정중히 사과 의사를 전했다. 상대방은 대면을 원치 않는다며 곤란해했고, 나는 전화나 문자 등 원하는 방식으로 다시 사과하겠다고 했다. 헬스장 측에서는 며칠 뒤 연락을 주며 회원 등록을 취소해 달라는 요청을 받았다. 아쉬웠지만 상황을 받아들이고 환불 절차를 진행했다. 얼마간 시간이 흐른 뒤, 여자분이 경찰에 신고했다는 이야기를 전해 들으며 더욱 마음이 무거워졌다."
+            }
         }
     """
 
@@ -122,8 +123,20 @@ if __name__ == "__main__":
     service = CaseAnalysisService(llm, embedding_model, cross_encoder_model)
 
     # Use asyncio.run to call the async analyze_case method
-    analysis = asyncio.run(service.analyze_case(sample_query))
-    print("== Thought Process ==")
-    print(analysis["thought_process"])
+    data = json.loads(sample_query)
+    full_text = data["case"]["fullText"]
+    analysis = asyncio.run(service.analyze_case(full_text))
+
+    # 1) Query는 이미 dict라면 직접 dumps
+    print("== Query ==")
+    print(json.dumps(data, ensure_ascii=False, indent=2))
+
+    # 2) Conclusion: analysis가 dict이라면
+    result = analysis['case_analysis']  # CaseAnalysisResult 인스턴스
+
+    # 객체 내부를 dict로 변환
+    case_dict = vars(result)  
+    # 또는 case_dict = result.__dict__
+
     print("\n== Conclusion ==")
-    print(analysis["case_analysis"])
+    print(json.dumps(case_dict, ensure_ascii=False, indent=2))

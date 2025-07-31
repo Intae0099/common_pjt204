@@ -14,6 +14,7 @@ from app.api.exceptions import APIException
 from app.api.routers import analysis, structuring, search, chat
 from llm.models.model_loader import ModelLoader
 from utils.logger import setup_logger, get_logger
+from fastapi.middleware.cors import CORSMiddleware
 
 setup_logger()
 logger = get_logger(__name__)
@@ -28,6 +29,20 @@ async def lifespan(app: FastAPI):
     logger.info("Application shutdown.")
 
 app = FastAPI(lifespan=lifespan, response_model_exclude_none=True)
+
+origins = [
+    "http://localhost:5173",  # Vue.js 개발 서버 주소
+    "https://i13b204.p.ssafy.io/"
+    # "http://your-production-domain.com", # 나중에 배포할 프론트엔드 도메인 주소도 추가
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 app.add_exception_handler(APIException, api_exception_handler)
 app.add_exception_handler(RequestValidationError, validation_exception_handler)
