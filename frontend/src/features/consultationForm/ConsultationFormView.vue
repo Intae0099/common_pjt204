@@ -1,6 +1,7 @@
 <template>
   <ConsultationFomLayout>
     <LayoutDefault>
+
       <section class="page-description">
         <h2 class="title">AI 상담 신청서</h2>
         <p class="subtitle">
@@ -29,6 +30,7 @@
       />
     </LayoutDefault>
   </ConsultationFomLayout>
+  <SaveAlertModal v-if="showSaveModal" @close="showSaveModal = false" />
 </template>
 
 <script setup>
@@ -39,12 +41,14 @@ import LayoutDefault from '@/components/layout/LayoutDefault.vue'
 import ConsultationFomLayout from '@/components/layout/ConsultationFomLayout.vue'
 import ConsultationForm from './component/ConsultationForm.vue'
 import ConsultationCompareResult from './component/ConsultationCompareResult.vue'
+import SaveAlertModal from './component/SaveAlertModal.vue'
 
 const isLoading = ref(true)
 const showCompareView = ref(false)
 const userInput = ref(null)
 const aiResult = ref(null)
 const applicationId = ref(null)
+const showSaveModal = ref()
 
 onMounted(() => {
   setTimeout(() => {
@@ -77,15 +81,6 @@ const handleFormSubmit = async (formData) => {
       fullText: patchRes.data.application.case.fullText,
       recommendedQuestions: JSON.parse(patchRes.data.questions),
     }
-    // aiResult.value = {
-    //   title: formData.title,
-    //   summary: '자동 생성된 사건 요약입니다.',
-    //   fullText: formData.content,
-    //   outcome: formData.outcome,
-    //   disadvantage: formData.disadvantage,
-    //   recommendedQuestions: ['형량 줄일 수 있나요?', '합의하면 처벌 피할 수 있을까요?']
-    // }
-
 
     showCompareView.value = true
   } catch (err) {
@@ -94,7 +89,17 @@ const handleFormSubmit = async (formData) => {
     isLoading.value = false
   }
 }
-
+const handleFinalSubmit = async (formData) => {
+  try {
+    await axios.patch(`https://i13b204.p.ssafy.io/swagger-ui.html/api/applications/${applicationId.value}`, {
+      ...formData,
+    })
+    showSaveModal.value = true
+  } catch (err) {
+    console.error('저장 실패:', err)
+    alert('저장에 실패했습니다.')
+  }
+}
 </script>
 
 <style scoped>

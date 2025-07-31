@@ -1,51 +1,68 @@
 <template>
   <div class="compare-container">
     <!-- 왼쪽: 사용자 입력 폼 -->
+    <div class="left-box">
+      <ConsultationForm
+        :form="localUserData"
+        :questions-input="questionsInput"
+        @submitted="handleSubmit"
+        :hide-submit-button="true"
+      />
+      <div class="left-button">
+        <button class="refresh-btn" @click="emit('regenerate')">AI로 정보 수정하기</button>
+      </div>
+    </div>
 
-       <ConsultationForm
-         :form="localUserData"
-         :questions-input="questionsInput"
-         @submitted="handleSubmit"
-         :hide-submit-button="true"
-       />
-
-    <!-- 오른쪽: AI 결과 -->
-    <div class="ai-result-box">
-      <form class="ai-form">
-        <div class="form-group">
-          <label>사건 제목</label>
-          <p>{{ aiData.title }}</p>
-        </div>
-        <div class="form-group">
-          <label>사건 한 줄 요약</label>
-          <p>{{ aiData.summary }}</p>
-        </div>
-        <div class="form-group scrollable-group">
-          <label>사건 개요</label>
-          <p class="scrollable-content">{{ aiData.fullText }}</p>
-        </div>
-        <div class="form-group scrollable-group">
-          <label>원하는 결과</label>
-          <p class="scrollable-content">{{ aiData.outcome }}</p>
-        </div>
-        <div class="form-group scrollable-group">
-          <label>사건에서 불리한 점</label>
-          <p class="scrollable-content">{{ aiData.disadvantage }}</p>
-        </div>
-        <div class="form-group scrollable-group">
-          <label>AI 추천 질문</label>
-          <ul class="scrollable-content">
-            <li v-for="(q, idx) in aiData.recommendedQuestions" :key="idx">{{ q }}</li>
-          </ul>
-        </div>
-      </form>
+    <div class="right-box">
+      <div class="character-wrapper">
+        <img src="@/assets/ai-writing2.png" alt="AI 캐릭터" class="character-image" />
+      </div>
+      <!-- 오른쪽: AI 결과 -->
+      <div class="ai-result-box">
+        <form class="ai-form">
+          <div class="form-group">
+            <label>사건 제목</label>
+            <p>{{ aiData.title }}</p>
+          </div>
+          <div class="form-group">
+            <label>사건 한 줄 요약</label>
+            <p>{{ aiData.summary }}</p>
+          </div>
+          <div class="form-group scrollable-group">
+            <label>사건 개요</label>
+            <p class="scrollable-content">{{ aiData.fullText }}</p>
+          </div>
+          <div class="form-group scrollable-group">
+            <label>원하는 결과</label>
+            <p class="scrollable-content">{{ aiData.outcome }}</p>
+          </div>
+          <div class="form-group scrollable-group">
+            <label>사건에서 불리한 점</label>
+            <p class="scrollable-content">{{ aiData.disadvantage }}</p>
+          </div>
+          <div class="form-group scrollable-group">
+            <label style="display: flex; align-items: center; gap: 0.3rem;">
+              AI 추천 질문
+              <div class="tooltip-container">
+                <InformationCircleIcon class="info-icon" />
+                <div class="tooltip-text">
+                  AI상담을 기반으로 작성된<br />사건 경위서를 불러오실 수 있습니다.
+                </div>
+              </div>
+            </label>
+            <ul class="scrollable-content">
+              <li v-for="(q, idx) in aiData.recommendedQuestions" :key="idx">{{ q }}</li>
+            </ul>
+          </div>
+        </form>
+      </div>
+      <div class="right-buttons">
+        <button class="copy-btn" @click="copyToUserForm">복사해서 수정하기</button>
+        <button class="submit-btn" @click="emit('submit')">상담신청서 저장하기</button>
+      </div>
     </div>
   </div>
-  <button class="refresh-btn" @click="emit('regenerate')">AI로 정보 수정하기</button>
-  <div class="compare-buttons">
-    <button class="copy-btn" @click="copyToUserForm">복사해서 수정하기</button>
-    <button class="submit-btn" @click="emit('submit')">상담서 저장하기</button>
-  </div>
+
 </template>
 
 <script setup>
@@ -53,6 +70,7 @@ import { ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
 import ConsultationForm from './ConsultationForm.vue'
+import { InformationCircleIcon } from '@heroicons/vue/24/outline'
 
 const props = defineProps({
   userData: Object,
@@ -61,9 +79,9 @@ const props = defineProps({
 const route = useRoute()
 const router = useRouter()
 const localUserData = ref({ ...props.userData })
-
 const emit = defineEmits(['submit', 'back'])
 const questionsInput = ref(props.userData.recommendedQuestions?.join(', ') || '')
+
 
 const copyToUserForm = () => {
   if (!confirm('AI 상담서 내용을 사용자 입력 폼에 복사하시겠습니까?')) return
@@ -78,19 +96,20 @@ const copyToUserForm = () => {
 }
 
 const handleSubmit = async (formData) => {
-  const applicationId = route.params.id // 또는 props 등에서 ID 받기
+  const applicationId = route.params.id
 
   try {
     await axios.patch(`https://i13b204.p.ssafy.io/swagger-ui.html/api/applications/${applicationId}`, {
       ...formData,
     })
     alert('상담서가 저장되었습니다!')
-    router.push('/success') // 저장 후 이동
+    router.push('/success')
   } catch (err) {
     console.error(err)
     alert('저장 실패')
   }
 }
+
 
 </script>
 
@@ -100,9 +119,36 @@ const handleSubmit = async (formData) => {
   gap: 2rem;
   align-items: flex-start;
 }
-
+.left-box {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.left-button {
+  margin-top: 1rem;
+  width: 100%;
+  max-width: 900px;
+  display: flex;
+  justify-content: center;
+}
+.right-box {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.right-buttons {
+  margin-top: 1rem;
+  width: 100%;
+  max-width: 900px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
 .ai-result-box {
   flex: 1;
+  width: 100%;
   max-width: 900px;
   border: 1px solid #B9D0DF;
   border-radius: 12px;
@@ -134,20 +180,19 @@ p, ul {
   padding: 0.75rem;
   font-size: 1rem;
   line-height: 1.5;
+  color: #82A0B3;
 }
+
 .form-group ul {
   list-style: none;
 }
 
-/* 각 항목별 스크롤 영역 */
 .scrollable-group {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
 
-
-/* 공통 스크롤 스타일 (ex. 최대 높이 150px) */
 .scrollable-content {
   min-height: 100px;
   max-height: 150px;
@@ -158,27 +203,23 @@ p, ul {
   padding: 0.75rem;
   font-size: 1rem;
   line-height: 1.5;
-  resize: none; /* textarea에만 필요 */
+  resize: none;
 }
 
-
-.compare-buttons {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.75rem;
-  margin: 2rem 0;
-}
 .refresh-btn {
-  background-color: #E2E8F0;
-  color: #072D45;
+  background-color: #fff;
+  color: #82A0B3;
+  width: 80%;
+  border: 1px solid #B9D0DF;
+  border-radius: 8px;
+  padding: 0.5rem;
 }
 .refresh-btn:hover {
-  background-color: #CBD5E0;
+  background-color: #f4f9fc;
 }
 
 .copy-btn,
 .submit-btn {
-  padding: 0.5rem 1.2rem;
   border-radius: 8px;
   font-weight: 500;
   cursor: pointer;
@@ -186,15 +227,69 @@ p, ul {
 }
 
 .copy-btn {
-  background-color: #072D45;
-  color: white;
+  font-size: 0.8rem;
+  background-color: #fff;
+  color: #B9D0DF;
 }
 .copy-btn:hover {
-  background-color: #032133;
+  color: #82A0B3;
 }
 
 .submit-btn {
   background: #072D45;
   color: white;
+  padding: 0.5rem 1.2rem;
 }
+
+.character-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 900px;
+  height: 0;
+}
+
+.character-image {
+  position: absolute;
+  top: -70px;
+  right: -10px;
+  width: 120px;
+  z-index: 10;
+}
+
+.tooltip-container {
+  position: relative;
+  display: inline-block;
+}
+
+.info-icon {
+  width: 20px;
+  height: 20px;
+  color: #a0aec0;
+  cursor: pointer;
+}
+
+.tooltip-text {
+  display: none;
+  position: absolute;
+  top: 130%;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #fff;
+  color: #072D45;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  white-space: nowrap;
+  font-size: 0.85rem;
+  z-index: 10;
+  line-height: 1.4;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  text-align: center;
+  opacity: 0.9;
+}
+
+.tooltip-container:hover .tooltip-text {
+  display: block;
+}
+
+
 </style>

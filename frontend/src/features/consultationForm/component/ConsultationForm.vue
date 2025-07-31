@@ -105,8 +105,6 @@ const props = defineProps({
 const form = ref({ ...props.form })
 const questionsInput = ref(props.questionsInput || '')
 
-
-
 const submit = () => {
   // 쉼표 기준으로 분리
   form.value.recommendedQuestions = questionsInput.value
@@ -132,6 +130,7 @@ const handleSelect = (data) => {
   padding: 2rem 1rem 3rem 1rem;
   background-color: #fff;
   max-width: 900px;
+  width: 100%;
   margin: 0 auto;
   flex: 1;
 }
