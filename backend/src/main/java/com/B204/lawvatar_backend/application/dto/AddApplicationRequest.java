@@ -4,16 +4,19 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.List;
+
 @Getter @Setter
 @NoArgsConstructor
 public class AddApplicationRequest {
 
     // Field
-    String fullText;
-    String title;
-    String summary;
-    String content;
-    String outcome;
-    String disadvantage;
+    private String title;
+    private String summary;
+    private String content;
+    private String outcome;
+    private String disadvantage;
+    private String recommendedQuestion;
+    private List<Long> tags;
 
 }

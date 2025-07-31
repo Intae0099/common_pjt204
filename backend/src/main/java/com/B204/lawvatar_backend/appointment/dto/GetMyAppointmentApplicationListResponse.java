@@ -1,4 +1,4 @@
-package com.B204.lawvatar_backend.application.dto;
+package com.B204.lawvatar_backend.appointment.dto;
 
 import lombok.*;
 
@@ -9,7 +9,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class GetApplicationResponse {
+public class GetMyAppointmentApplicationListResponse {
 
     // Field
     private Long applicationId;

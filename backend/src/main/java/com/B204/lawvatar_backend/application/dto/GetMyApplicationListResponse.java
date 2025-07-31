@@ -22,6 +22,6 @@ public class GetMyApplicationListResponse {
     String recommendedQuestions;
     boolean isCompleted;
     LocalDateTime createdAt;
-    List<Integer> tags;
+    List<Long> tags;
 
 }

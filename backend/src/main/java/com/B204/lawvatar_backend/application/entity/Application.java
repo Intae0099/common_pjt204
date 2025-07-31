@@ -3,6 +3,7 @@ package com.B204.lawvatar_backend.application.entity;
 import com.B204.lawvatar_backend.user.client.entity.Client;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.Fetch;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -40,8 +41,7 @@ public class Application {
     @Column(columnDefinition = "text")
     private String disadvantage;
 
-    /*AI가 생성해주는 추천질문*/
-    // JSON으로 그대로 넘어올 예정
+    // 통 JSON으로 그대로 넘어올 예정
     @Column(columnDefinition = "json")
     private String recommendedQuestion;
 
@@ -51,6 +51,8 @@ public class Application {
     @Column(nullable = false)
     private LocalDateTime createdAt;
 
-    private List<Integer> tags = new ArrayList<>();
+    // ApplicationTag 테이블에서 applicationId가 이 applicationId와 같은 것들 조회해서 리스트로 가지고 있기
+    @OneToMany(mappedBy = "application", fetch = FetchType.LAZY)
+    private List<ApplicationTag> tags = new ArrayList<>();
 
 }
