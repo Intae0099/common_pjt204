@@ -1,5 +1,6 @@
 package com.B204.lawvatar_backend.user.lawyer.repository;
 
+import com.B204.lawvatar_backend.user.lawyer.entity.CertificationStatus;
 import com.B204.lawvatar_backend.user.lawyer.entity.Lawyer;
 import java.util.List;
 import java.util.Optional;
@@ -48,4 +49,6 @@ public interface LawyerRepository extends JpaRepository<Lawyer, Long> {
       @Param("tagCount") long tagCount,
       @Param("search") String search
   );
+
+  List<Lawyer> findByCertificationStatus(CertificationStatus status);
 }
