@@ -37,18 +37,20 @@ const applications = ref([])
 const selectedId = ref('')
 
 onMounted(async () => {
-  const res = await axios.get('/api/applications/me?isCompleted=false')
+  const res = await axios.get('https://i13b204.p.ssafy.io/swagger-ui.html/api/applications/me?isCompleted=false')
   applications.value = res.data
 })
 
 const confirm = () => {
   const selected = applications.value.find(app => app.applicationId === selectedId.value)
   emit('select', {
+    applicationId: selected.applicationId,
     title: selected.title,
     content: selected.content,
+    summary: selected.summary,
   })
-  emit('close')
-}
+    emit('close')
+  }
 </script>
 
 <style scoped>

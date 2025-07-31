@@ -1,34 +1,37 @@
 <!-- src/pages/case/CaseSearchPage.vue -->
 <template>
   <CaseLayout>
-    <!-- 여기부터 빨간 박스 내부 콘텐츠 -->
-      <div class="search-container">
-        <div class="search-bar">
-          <input
-          type="text"
-          v-model="query"
-          placeholder="궁금한 판례를 검색해보세요"
-          @keyup.enter="search"/>
-          <button @click="search">→</button>
+    <LayoutDefault>
+      <!-- 여기부터 빨간 박스 내부 콘텐츠 -->
+        <div class="search-container">
+          <div class="search-bar">
+            <input
+            type="text"
+            v-model="query"
+            placeholder="궁금한 판례를 검색해보세요"
+            @keyup.enter="search"/>
+            <button @click="search">→</button>
+          </div>
+          <select v-model="sortOption" class="sort-select">
+            <option value="accuracy">정확도 순</option>
+            <option value="recent">최신 순</option>
+          </select>
         </div>
-        <select v-model="sortOption" class="sort-select">
-          <option value="accuracy">정확도 순</option>
-          <option value="recent">최신 순</option>
-        </select>
+      <div class="case-list">
+        <CaseCard
+          v-for="item in caseList"
+          :key="item.id"
+          :data="item"
+        />
       </div>
-    <div class="case-list">
-      <CaseCard
-        v-for="item in caseList"
-        :key="item.id"
-        :data="item"
-      />
-    </div>
+    </LayoutDefault>
   </CaseLayout>
 </template>
 
 <script setup>
 import CaseLayout from '@/components/layout/CaseLayout.vue'
 import CaseCard from '@/features/cases/CaseCard.vue'
+import LayoutDefault from '@/components/layout/LayoutDefault.vue'
 import { ref } from 'vue'
 
 const sortOption = ref('accuracy')
