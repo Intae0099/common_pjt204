@@ -51,7 +51,7 @@ const getTagName = (id) => {
 }
 
 const fetchLawyers = async () => {
-  const res = await axios.get('/api/admin/lawyers/list')
+  const res = await axios.get('/api/lawyers/list')
   lawyers.value = res.data
 }
 

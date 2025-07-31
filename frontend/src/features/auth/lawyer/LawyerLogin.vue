@@ -67,9 +67,19 @@ export default {
         authStore.setUserType('LAWYER');         // ✅ userType 저장 (변호사)
 
         this.$router.push('/lawyer/mypage');     // ✅ 변호사 마이페이지로 이동
-      } catch (error) {
-        console.error('로그인 실패:', error);
-        alert('이메일 또는 비밀번호가 올바르지 않습니다.');
+      } catch (err) {
+        const status = err.response?.status;
+        const msg = err.response?.data?.error;
+
+        if (status === 403 && msg === '계정 승인 대기 중입니다.') {
+          this.$router.push('/pending-notice');
+        } else if (status === 401) {
+          this.errorMessage = '이메일 또는 비밀번호가 올바르지 않습니다.';
+        } else if (status === 404) {
+          this.errorMessage = '존재하지 않는 계정입니다.';
+        } else {
+          this.errorMessage = '알 수 없는 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
+        }
       }
     }
   }
