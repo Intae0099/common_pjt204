@@ -3,14 +3,13 @@ package com.B204.lawvatar_backend.application.controller;
 import com.B204.lawvatar_backend.application.dto.*;
 import com.B204.lawvatar_backend.application.entity.Application;
 import com.B204.lawvatar_backend.application.service.ApplicationService;
-import com.B204.lawvatar_backend.user.client.entity.Client;
+import com.B204.lawvatar_backend.common.principal.ClientPrincipal;
 import lombok.RequiredArgsConstructor;
-import org.apache.coyote.Response;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,9 +30,9 @@ public class ApplicationController {
      */
     @PostMapping
     // 이 메서드의 isCompleted 쿼리 스트링은 true/false로만 분기처리할 거라서 그냥 boolean으로 받음
-    public ResponseEntity<AddApplicationResponse> addApplicaiton(@RequestParam boolean isCompleted, @RequestBody AddApplicationRequest request) {
+    public ResponseEntity<AddApplicationResponse> addApplicaiton(@AuthenticationPrincipal ClientPrincipal currentClient, @RequestParam boolean isCompleted, @RequestBody AddApplicationRequest request) {
 
-        Long applicationId = applicationService.addApplication(1L, isCompleted, request); // 하드코딩
+        Long applicationId = applicationService.addApplication(currentClient.getId(), isCompleted, request); // 하드코딩
 
         AddApplicationResponse addApplicationResponse = AddApplicationResponse.builder().applicationId(applicationId).build();
 
@@ -46,12 +45,9 @@ public class ApplicationController {
      * @return 상담신청서 목록조회 결과를 응답
      */
     @GetMapping("/me")
-    public ResponseEntity<List<GetMyApplicationListResponse>> getMyApplicationList(@RequestParam(required = false) Boolean isCompleted) {
+    public ResponseEntity<List<GetMyApplicationListResponse>> getMyApplicationList(@AuthenticationPrincipal ClientPrincipal currentClient, @RequestParam(required = false) Boolean isCompleted) {
 
-        // 하드코딩
-        Client client = new Client(1L, "김싸피", "ssafy123@naver.com", "kakao", "kakao_dfdf522");
-
-        List<Application> applicationList = applicationService.getMyApplicationList(client.getId(), isCompleted);
+        List<Application> applicationList = applicationService.getMyApplicationList(currentClient.getId(), isCompleted);
         List<GetMyApplicationListResponse> result = new ArrayList<>();
 
         for(Application application : applicationList) {
@@ -81,9 +77,15 @@ public class ApplicationController {
      * @return 상담신청서 상세조회 결과를 응답
      */
     @GetMapping("/{applicationId}")
-    public ResponseEntity<GetApplicationResponse> getApplication(@PathVariable Long applicationId) {
+    public ResponseEntity<GetApplicationResponse> getApplication(@AuthenticationPrincipal ClientPrincipal currentClient, @PathVariable Long applicationId) {
 
         Application application = applicationService.getApplication(applicationId);
+
+        // 조회한 상담신청서의 작성자가 본인이 아니라면 403 Forbidden 에러 발생
+        if(!currentClient.getId().equals(application.getClient().getId())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
         GetApplicationResponse applicationResponse = GetApplicationResponse.builder()
                 .applicationId(application.getId())
                 .clientId(application.getClient().getId())
@@ -108,7 +110,14 @@ public class ApplicationController {
      * @return 수정 결과를 응답
      */
     @PatchMapping("/{applicationId}")
-    public ResponseEntity<Void> modifyApplication(@PathVariable Long applicationId, @RequestBody ModifyApplicationRequest request) {
+    public ResponseEntity<Void> modifyApplication(@AuthenticationPrincipal ClientPrincipal currentClient, @PathVariable Long applicationId, @RequestBody ModifyApplicationRequest request) {
+
+        Application application = applicationService.getApplication(applicationId);
+
+        // 수정하려는 상담신청서의 작성자가 본인이 아니라면 403 Forbidden 에러 발생
+        if(!currentClient.getId().equals(application.getClient().getId())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
 
         applicationService.modifyApplication(applicationId, request);
 
