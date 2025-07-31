@@ -39,18 +39,23 @@ client = OpenAI(
 )
 
 @retry(wait=wait_random_exponential(min=1, max=60), stop=stop_after_attempt(3))
-def call_gpt4o(messages, temperature=0.3, max_tokens=2048):
+def call_gpt4o(messages, temperature=0.3, max_tokens=2048, stream=False):
     """
     GMS를 통해 GPT-4o-mini 모델을 호출하는 함수입니다.
+    스트리밍 호출을 지원합니다.
     """
     try:
         response = client.chat.completions.create(
-            model=os.getenv("MODEL_NAME", "gpt-4o-mini"),  # GMS에서 사용하는 모델명이 다를 경우 수정 필요
+            model=os.getenv("MODEL_NAME", "gpt-4o-mini"),
             messages=messages,
             temperature=temperature,
             max_tokens=max_tokens,
+            stream=stream,
         )
-        return response.choices[0].message.content
+        if stream:
+            return response
+        else:
+            return response.choices[0].message.content
     except Exception as e:
         print(f"GMS API 호출 중 오류 발생: {e}", file=sys.stderr)
         raise

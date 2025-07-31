@@ -10,9 +10,10 @@ router = APIRouter()
 @router.post(
     "/chat/stream",
     status_code=status.HTTP_200_OK,
-    dependencies=[Depends(get_current_user)],
 )
-async def stream_chat_endpoint(request: ChatRequest):
+async def stream_chat_endpoint(
+    request: ChatRequest, user_id: str = Depends(get_current_user)
+):
     return StreamingResponse(
-        stream_chat_response(request), media_type="text/event-stream"
+        stream_chat_response(request, user_id), media_type="text/event-stream"
     )
