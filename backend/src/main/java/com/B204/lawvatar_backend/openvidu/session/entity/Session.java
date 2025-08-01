@@ -3,12 +3,13 @@ package com.B204.lawvatar_backend.openvidu.session.entity;
 import com.B204.lawvatar_backend.appointment.entity.Appointment;
 import com.B204.lawvatar_backend.openvidu.room.entity.Room;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Entity
-@Getter
+@Getter @Setter
 @NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Session {
 
     // Field
