@@ -4,12 +4,13 @@ import com.B204.lawvatar_backend.openvidu.room.entity.Room;
 import com.B204.lawvatar_backend.user.client.entity.Client;
 import com.B204.lawvatar_backend.user.lawyer.entity.Lawyer;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Entity
-@Getter
+@Getter @Setter
 @NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Participant {
 
     // Field
