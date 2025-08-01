@@ -21,8 +21,7 @@ public class Tag {
     private Long Id;
 
     private String name;
-
-    @OneToMany(mappedBy = "tag", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<LawyerTag> lawyerTags = new ArrayList<>();
+    
+    // Tag가 자기자신을 태그로 가지는 Lawyer 목록을 알 필요가 없을 거 같아서 lawyers 필드 삭제
 
 }

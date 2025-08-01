@@ -13,4 +13,8 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
   List<Appointment> findByClient(Client client);
 
   boolean existsByLawyerIdAndClientId(Long lawyerId, Long clientId);
+
+  List<Appointment> findByLawyerId(Long lawyerId);
+  
+  List<Appointment> findByApplicationId(Long applicationId);
 }
