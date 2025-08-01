@@ -29,6 +29,7 @@ import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -64,36 +65,29 @@ public class AppointmentController {
 
   @GetMapping("/me")
   public ResponseEntity<List<MyAppointmentDto>> getMyAppointments(
-      Authentication authentication,
+      @AuthenticationPrincipal Object principal,
       @RequestParam(value = "status", required = false) AppointmentStatus status
   ) {
-    Object principal = authentication.getPrincipal();
     List<Appointment> appts = List.of();
 
-    if (principal instanceof LawyerPrincipal lawyerPrincipal) {
-      // 변호사로 로그인 됐으면
+    if (principal instanceof LawyerPrincipal lawyerPrincipal) {       // 변호사로 로그인 됐으면
       Lawyer lawyer = lawyerRepo.findById(lawyerPrincipal.getId())
           .orElseThrow(() -> new UsernameNotFoundException("변호사 없음: " + lawyerPrincipal.getId()));
+
       appts = appointmentRepo.findByLawyer(lawyer);
 
-    } else if (principal instanceof ClientPrincipal clientPrincipal) {
-      // 의뢰인으로 로그인 됐으면
+    } else if (principal instanceof ClientPrincipal clientPrincipal) {        // 의뢰인으로 로그인 됐으면
       Client client = clientRepo.findById(clientPrincipal.getId())
           .orElseThrow(() -> new UsernameNotFoundException("의뢰인 없음: " + clientPrincipal.getId()));
+
       appts = appointmentRepo.findByClient(client);
 
-    } else {
-      throw new AccessDeniedException("올바르지 않은 사용자 타입입니다.");
     }
 
     if (status != null) {
       appts = appts.stream()
           .filter(a -> a.getAppointmentStatus() == status)
           .toList();
-    }
-
-    if (appts.isEmpty()) {
-      return ResponseEntity.ok(Collections.emptyList());
     }
 
     List<MyAppointmentDto> dtoList = appts.stream()
@@ -103,22 +97,14 @@ public class AppointmentController {
   }
 
   @PostMapping
+  @PreAuthorize("hasRole('CLIENT')")
   public ResponseEntity<AppointmentResponseDto> createAppointment(
-      Authentication authentication,
+      @AuthenticationPrincipal ClientPrincipal client,
       @Valid @RequestBody AppointmentRequestDto req
   ){
 
-    Long clientId;
-    if (authentication.getPrincipal() instanceof LawyerPrincipal) {
-      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "변호사는 상담 예약을 할 수 없습니다.");
-    } else if (authentication.getPrincipal() instanceof ClientPrincipal cp) {
-      clientId = cp.getId();
-    } else {
-      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "알 수 없는 사용자 타입입니다.");
-    }
-
     Appointment appt = appointmentService.create(
-        clientId,
+        client.getId(),
         req.getLawyerId(),
         req.getApplicationId(),
         req.getStartTime(),
@@ -126,6 +112,7 @@ public class AppointmentController {
     );
 
     AppointmentResponseDto body = AppointmentResponseDto.from(appt);
+
     // Location header: /api/appointments/{id}
     return ResponseEntity
         .created(URI.create("/api/appointments/" + appt.getId()))
@@ -136,33 +123,25 @@ public class AppointmentController {
     변호사가 자신에게 온 상담을 승인 / 거절
    */
   @PatchMapping("/{appointmentId}/status")
+  @PreAuthorize("hasRole('LAWYER')")
   public ResponseEntity<Void> updateAppointmentStatus(
       @PathVariable Long appointmentId,
       @Valid @RequestBody AppointmentStatusRequestDto dto,
-      Authentication authentication
+      @AuthenticationPrincipal LawyerPrincipal lawyer
   ) {
-
-    if (!(authentication.getPrincipal() instanceof LawyerPrincipal lp)) {
-      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "권한이 없습니다.");
-    }
-    Long lawyerId = lp.getId();
-
-    // 2) 서비스 호출 (내부에서 권한·상태 전환 검증)
+    Long lawyerId = lawyer.getId();
     appointmentService.updateStatus(appointmentId, lawyerId, dto.getAppointmentStatus());
 
     return ResponseEntity.ok().build();
   }
 
   @PatchMapping("/{appointmentId}/cancel")
+  @PreAuthorize("hasRole('LAWYER')")
   public ResponseEntity<Void> cancelAppointment(
     @PathVariable Long appointmentId,
-    Authentication authentication
+      @AuthenticationPrincipal LawyerPrincipal lawyer
   ){
-    if(!(authentication.getPrincipal() instanceof ClientPrincipal cp)){
-      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "취소할 권한이 없습니다.");
-    }
-
-    Long clientId = cp.getId();
+    Long clientId = lawyer.getId();
     appointmentService.cancel(appointmentId, clientId);
 
     return ResponseEntity.ok().build();
