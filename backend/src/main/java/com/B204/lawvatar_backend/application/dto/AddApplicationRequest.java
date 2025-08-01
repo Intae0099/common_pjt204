@@ -4,7 +4,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Getter @Setter
 @NoArgsConstructor
@@ -16,7 +18,7 @@ public class AddApplicationRequest {
     private String content;
     private String outcome;
     private String disadvantage;
-    private String recommendedQuestion;
+    private Map<String, String> recommendedQuestion = new HashMap<>();
     private List<Long> tags;
 
 }

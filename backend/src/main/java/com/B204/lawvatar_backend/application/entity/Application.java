@@ -4,10 +4,14 @@ import com.B204.lawvatar_backend.user.client.entity.Client;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Entity
 @Getter @Setter
@@ -43,7 +47,8 @@ public class Application {
 
     // 통 JSON으로 그대로 넘어올 예정
     @Column(columnDefinition = "json")
-    private String recommendedQuestion;
+    @JdbcTypeCode(SqlTypes.JSON)
+    private Map<String, String> recommendedQuestion = new HashMap<>();
 
     @Column(nullable = false)
     private boolean isCompleted;

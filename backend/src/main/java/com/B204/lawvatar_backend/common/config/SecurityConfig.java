@@ -150,7 +150,7 @@ public class SecurityConfig {
       res.setHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
 
       String redirectUrl = UriComponentsBuilder
-          .fromUriString("http://localhost:5173/oauth2/callback/kakao")
+          .fromUriString("http://localhost:8080/oauth2/callback/kakao")
           .queryParam("accessToken", accessToken)
           .build().toUriString();
 

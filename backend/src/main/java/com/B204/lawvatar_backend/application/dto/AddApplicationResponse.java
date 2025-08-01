@@ -9,6 +9,6 @@ import lombok.*;
 public class AddApplicationResponse {
 
     // Field
-    Long applicationId;
+    private Long applicationId;
 
 }

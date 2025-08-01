@@ -2,7 +2,6 @@ package com.B204.lawvatar_backend.appointment.controller;
 
 import com.B204.lawvatar_backend.application.entity.Application;
 import com.B204.lawvatar_backend.application.entity.ApplicationTag;
-import com.B204.lawvatar_backend.application.repository.ApplicationTagRepository;
 import com.B204.lawvatar_backend.appointment.dto.GetMyAppointmentApplicationListResponse;
 import com.B204.lawvatar_backend.appointment.service.AppointmentService;
 import com.B204.lawvatar_backend.common.principal.LawyerPrincipal;

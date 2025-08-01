@@ -3,18 +3,16 @@ package com.B204.lawvatar_backend.application.controller;
 import com.B204.lawvatar_backend.application.dto.*;
 import com.B204.lawvatar_backend.application.entity.Application;
 import com.B204.lawvatar_backend.application.entity.ApplicationTag;
+import com.B204.lawvatar_backend.application.repository.ApplicationRepository;
 import com.B204.lawvatar_backend.application.service.ApplicationService;
 import com.B204.lawvatar_backend.appointment.entity.Appointment;
 import com.B204.lawvatar_backend.appointment.repository.AppointmentRepository;
 import com.B204.lawvatar_backend.common.principal.ClientPrincipal;
 import com.B204.lawvatar_backend.common.principal.LawyerPrincipal;
-import com.B204.lawvatar_backend.user.client.repository.ClientRepository;
-import com.B204.lawvatar_backend.user.lawyer.repository.LawyerRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -29,8 +27,7 @@ public class ApplicationController {
     // Field
     private final ApplicationService applicationService;
     private final AppointmentRepository appointmentRepository;
-    private final LawyerRepository lawyerRepository;
-    private final ClientRepository clientRepository;
+    private final ApplicationRepository applicationRepository;
 
     // Method
     /**
@@ -81,6 +78,15 @@ public class ApplicationController {
             // 의뢰인이 맞다면 자신의 상담경위서 or 신청서 전체조회
             List<Application> applicationList = applicationService.getMyApplicationList(clientPrincipal.getId(), isCompleted);
 
+            // 반환할 DTO 만들고 응답
+            // 태그 목록은 따로 만들기
+            List<Long> tags = new ArrayList<>();
+            for(Application application : applicationList) {
+                for(ApplicationTag applicationTag : application.getTags()) {
+                    tags.add(applicationTag.getTag().getId());
+                }
+            }
+
             // 서비스에서 응답받은 상담신청서 목록을 DTO 배열로 변환해서 저장할 List 객체 선언
             List<GetMyApplicationListResponse> result = new ArrayList<>();
 
@@ -128,7 +134,7 @@ public class ApplicationController {
 
             // 조회한 상담신청서의 작성자가 본인이 아니라면 403 Forbidden 에러 발생
             if(!clientPrincipal.getId().equals(application.getClient().getId())) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "자신이 작성한 신청서만 열람할 수 있습니다.");
             }
 
             // 응답 dto 만들고 응답완료
@@ -158,17 +164,22 @@ public class ApplicationController {
 
         } else if(principal instanceof LawyerPrincipal lawyerPrincipal){ // 요청한 사용자가 변호사이면 본인이 담당한 상담에 대한 상담신청서일 때만 조회 가능하도록 하기
 
-            // Path Variable로 넘어온 applicationId로 상담신청서 객체 조회
-            Application application = applicationService.getApplication(applicationId);
-
-            // 조회한 상담신청서로 이루어진 상담 중 단 하나라도 자신이 담당 변호사가 아니라면 403 Forbidden 에러 발생
+            // 조회할 상담신청서로 이루어진 상담 중 현재 요청보낸 변호사가 맡은 건이 단 하나도 없다면 403 Forbidden 에러 발생
             List<Appointment> appointmentList = appointmentRepository.findByApplicationId(applicationId);
+            boolean isThisApplicationAccessibleByLawyer = false; // 플래그: 상담 리스트 중 하나라도 현재 요청보낸 변호사가 맡았다면 true가 됨
             for(Appointment appointment : appointmentList) {
                 if(lawyerPrincipal.getId().equals(appointment.getLawyer().getId())) {
+                    isThisApplicationAccessibleByLawyer = true;
                     break;
                 }
-                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "[ApplicationController - 001] 맡아서 진행한 상담의 신청서만 열람할 수 있습니다.");
             }
+
+            if(!isThisApplicationAccessibleByLawyer) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "[ApplicationController - 002] 맡아서 진행한 상담의 신청서만 열람할 수 있습니다.");
+            }
+
+            // Path Variable로 넘어온 applicationId로 상담신청서 객체 조회
+            Application application = applicationRepository.findById(applicationId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "[ApplicationController - 001] 해당 ID 값을 가지는 Application이 없습니다."));
 
             // 응답 dto 만들고 응답완료
             // 태그 리스트는 따로 만들기
@@ -196,7 +207,7 @@ public class ApplicationController {
             return ResponseEntity.status(HttpStatus.OK).body(applicationResponse);
 
         } else {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "[ApplicationController - 002] 유효하지 않은 Principal 입니다.");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "[ApplicationController - 003] 유효하지 않은 Principal 입니다.");
         }
     }
 
