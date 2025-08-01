@@ -48,9 +48,9 @@ public class RoomController {
         // 유저타입을 서비스에 넘겨주면서 비즈니스 로직 시작
         String token = null;
         if(principal instanceof ClientPrincipal clientPrincipal) {
-            token = roomService.createRoom(appointmentId, "CLIENT", clientPrincipal.getId());
+            token = roomService.participateRoom(appointmentId, "CLIENT", clientPrincipal.getId());
         } else if(principal instanceof LawyerPrincipal lawyerPrincipal) {
-            token = roomService.createRoom(appointmentId, "LAWYER", lawyerPrincipal.getId());
+            token = roomService.participateRoom(appointmentId, "LAWYER", lawyerPrincipal.getId());
         }
 
         ParticipateRoomResponse participateRoomResponse = ParticipateRoomResponse.builder().token(token).build();

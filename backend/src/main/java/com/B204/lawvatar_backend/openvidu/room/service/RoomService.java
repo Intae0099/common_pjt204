@@ -33,7 +33,7 @@ import java.util.Map;
 public class RoomService {
 
     // Field
-    private static final String MY_OPENVIDU_SERVER_URL = "https://i13b204.p.ssafy.io/openvidu/api/sessions";
+    private static final String MY_OPENVIDU_SERVER_URL = "https://i13b204.p.ssafy.io/openvidu/api/sessions/";
     private static final String OPENVIDU_SECRET_KEY = "ssafy204openvidulawaid";
 
     private final RoomRepository roomRepository;
@@ -148,7 +148,7 @@ public class RoomService {
 
         // 이제 sessionId 알고있으니깐(새로 생성됐으면 sessionId 리턴됐을거고, 이미 있는 customSessionId라 409 Conflict 발생했으면 그냥 기존에 알고있던 customSessionId를 sessionId로 쓰면 됨)
         // 그 sessionId 들고 sessions/{sessionId}/connections가서 토큰얻어오기
-        String url = MY_OPENVIDU_SERVER_URL + openviduSessionId + "/connections";
+        String url = MY_OPENVIDU_SERVER_URL + openviduSessionId + "/connection";
         System.out.println("사용 url: " + url);
         HttpHeaders headers = createHeaders();
 
