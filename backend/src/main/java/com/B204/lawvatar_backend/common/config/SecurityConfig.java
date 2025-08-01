@@ -19,6 +19,7 @@ import java.util.Map;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseCookie;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -228,7 +229,25 @@ public class SecurityConfig {
 
         // URL 접근 제한
         .authorizeHttpRequests(auth -> auth
-            // swagger 추가
+            // 의뢰인 로그인
+            .requestMatchers(
+                "/login/oauth2/**",
+                "/oauth2/authorization/**",
+                "/oauth2/callback/**"
+            ).permitAll()
+            // 변호사 로그인
+            .requestMatchers(
+                "/api/lawyers/signup",
+                "/api/lawyers/emails/check",
+                "/api/lawyers/login"
+            ).permitAll()
+
+            // refreshToken 발급
+            .requestMatchers(
+                "/api/auth/**"
+            ).permitAll()
+
+            // swagger
             .requestMatchers(
                 "/v3/api-docs/**",
                 "/swagger-ui.html",
@@ -236,12 +255,11 @@ public class SecurityConfig {
                 "/swagger-ui/index.html",
                 "/webjars/**"
             ).permitAll()
-            .requestMatchers( "/login/oauth2/**").permitAll()
-            .requestMatchers("/.well-known/**").permitAll()
-            .requestMatchers("/api/lawyers/signup", "/api/lawyers/login").permitAll()
-            .requestMatchers("/api/protected/**").authenticated()
-            .requestMatchers("/clients/**").authenticated()
-            .anyRequest().permitAll()
+
+//            .requestMatchers("/.well-known/**").permitAll()
+//            .requestMatchers("/api/protected/**").authenticated()
+            .requestMatchers(HttpMethod.OPTIONS).permitAll()
+            .anyRequest().authenticated()
         );
 
     return http.build();
