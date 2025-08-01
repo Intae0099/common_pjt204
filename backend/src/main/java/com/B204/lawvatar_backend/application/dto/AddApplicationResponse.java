@@ -2,13 +2,13 @@ package com.B204.lawvatar_backend.application.dto;
 
 import lombok.*;
 
-@Getter @Setter
+@Getter
 @NoArgsConstructor
-@AllArgsConstructor
-@Builder
 public class AddApplicationResponse {
-
-    // Field
     private Long applicationId;
 
+    @Builder
+    public AddApplicationResponse(Long applicationId) {
+        this.applicationId = applicationId;
+    }
 }
