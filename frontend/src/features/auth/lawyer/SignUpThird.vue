@@ -16,6 +16,14 @@
     <!-- 3단계 폼 -->
     <form @submit.prevent="handleSubmit">
       <div>
+        <label>프로필 사진 (필수)</label>
+        <input type="file" accept="image/*" @change="handleImageUpload" />
+        <div v-if="form.photoPreview">
+          <img :src="form.photoPreview" alt="사진 미리보기" style="width: 150px; height: 150px; object-fit: cover; border-radius: 8px; margin-top: 8px;" />
+        </div>
+      </div>
+
+      <div>
         <label>소개글 (필수)</label>
         <textarea
           v-model="form.introduction"
@@ -63,7 +71,8 @@ export default {
     return {
       form: {
         introduction: '',
-        tags: [] // 숫자 ID 배열
+        tags: [], // 숫자 ID 배열
+        photo: ''
       },
       // ID ↔ 이름 매핑 테이블
       tagMap: [
@@ -97,6 +106,19 @@ export default {
         this.form.tags.push(tagId);
       }
     },
+    handleImageUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const base64String = e.target.result.split(',')[1]; // 'data:image/jpeg;base64,...'에서 뒤쪽만 추출
+        this.form.photo = base64String;
+        this.form.photoPreview = `data:image/jpeg;base64,${base64String}`;
+      };
+      reader.readAsDataURL(file);
+    },
+
     async handleSubmit() {
       // 1) Store에 값 병합
       this.authStore.updateSignup({

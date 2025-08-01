@@ -5,6 +5,11 @@
     <!-- ✅ 프로필 정보 -->
     <section v-if="lawyer">
       <h3>👤 프로필 정보</h3>
+      <img
+        :src="lawyer.photo || 'https://via.placeholder.com/150'"
+        alt="변호사 프로필 사진"
+        class="profile-photo"
+      />
       <p><strong>이름:</strong> {{ lawyer.name }}</p>
       <p><strong>이메일:</strong> {{ lawyer.loginEmail }}</p>
       <p><strong>소개:</strong> {{ lawyer.introduction }}</p>
