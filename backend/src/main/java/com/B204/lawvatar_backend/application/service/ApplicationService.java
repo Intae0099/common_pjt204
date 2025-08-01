@@ -1,5 +1,118 @@
 package com.B204.lawvatar_backend.application.service;
 
+import com.B204.lawvatar_backend.application.dto.AddApplicationRequest;
+import com.B204.lawvatar_backend.application.entity.Application;
+import com.B204.lawvatar_backend.application.entity.ApplicationTag;
+import com.B204.lawvatar_backend.application.repository.ApplicationRepository;
+import com.B204.lawvatar_backend.application.repository.ApplicationTagRepository;
+import com.B204.lawvatar_backend.appointment.repository.AppointmentRepository;
+import com.B204.lawvatar_backend.common.entity.Tag;
+import com.B204.lawvatar_backend.common.repository.TagRepository;
+import com.B204.lawvatar_backend.user.client.entity.Client;
+
+import com.B204.lawvatar_backend.user.client.repository.ClientRepository;
+import org.springframework.http.*;
+import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+@Service
+@RequiredArgsConstructor
+@Transactional
 public class ApplicationService {
 
+    // Field
+    private final ApplicationRepository applicationRepository;
+    private final ApplicationTagRepository applicationTagRepository;
+    private final ClientRepository clientRepository;
+    private final AppointmentRepository appointmentRepository;
+    private final TagRepository tagRepository;
+
+    // Method
+    /**
+     * @param clientId  상담신청서를 작성한 의뢰인 DB 고유번호
+     * @param isCompleted   false=상담경위서 저장 / true=상담신청서 저장
+     * @param request   상담신청서가 담겨져 있는 DTO
+     * @return  저장한 상담신청서의 DB 고유번호
+     */
+    public Long addApplication(Long clientId, boolean isCompleted, AddApplicationRequest request) {
+
+        // Application 객체 만들고 DB에 저장하기 위해 Client 객체 가져오기
+        Client client = clientRepository.findById(clientId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "[ApplicationService - 001] 해당 ID 값을 가지는 Client가 없습니다."));
+
+        if (isCompleted) { // isCompleted가 true이면 Application 필드 꽉 채워서 상담신청서 저장
+            // Application 객체 만들고 저장
+            Application application = Application.builder()
+                    .client(client)
+                    .title(request.getTitle())
+                    .summary(request.getSummary())
+                    .content(request.getContent())
+                    .outcome(request.getOutcome())
+                    .disadvantage(request.getDisadvantage())
+                    .recommendedQuestion(request.getRecommendedQuestion())
+                    .isCompleted(true)
+                    .createdAt(LocalDateTime.now())
+                    .build();
+
+            applicationRepository.save(application);
+
+            // 태그는 별도로 ApplicationTagRepository 사용해서 저장
+            List<Long> tags = request.getTags();
+            for (Long tagId : tags) {
+                // ApplicationTag 객체 만들어서 DB에 저장하기 위해 Tag 객체 가져오기
+                Tag tag = tagRepository.findById(tagId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "[ApplicationService - 002] 해당 ID 값을 가지는 Tag가 없습니다."));
+
+                // ApplicationTag 객체 만들고 저장
+                ApplicationTag applicationTag = ApplicationTag.builder().application(application).tag(tag).build();
+                applicationTagRepository.save(applicationTag);
+            }
+
+            return application.getId();
+
+        } else { // isCompleted가 false이면 Application 필드 상담경위서 부분만 채워서 저장
+
+            // Application 객체 만들고 저장
+            Application application = Application.builder()
+                    .client(client)
+                    .title(request.getTitle())
+                    .summary(request.getSummary())
+                    .content(request.getContent())
+                    .outcome(request.getOutcome())
+                    .createdAt(LocalDateTime.now())
+                    .build();
+
+            applicationRepository.save(application);
+
+            // 상담경위서에는 아직 태그가 안달려있으므로 태그 저장은 안해도 됨
+
+            return application.getId();
+        }
+    }
+
+    /**
+     * @param clientId 상담신청서 목록 전체조회하려는 의뢰인의 DB 고유번호
+     * @param isCompleted true=상담신청서만 전체조회, false=상담경위서만 전체조회, null=상담경위서 or 신청서 모두 전체조회
+     * @return 조회한 상담신청서 목록 반환
+     */
+    public List<Application> getMyApplicationList(Long clientId, Boolean isCompleted) {
+        if (isCompleted == null) {
+            return applicationRepository.findByClientId(clientId);
+        } else if (isCompleted) {
+            return applicationRepository.findByClientIdAndIsCompletedTrue(clientId);
+        } else {
+            return applicationRepository.findByClientIdAndIsCompletedFalse(clientId);
+        }
+    }
+
+    /**
+     * @param applicationId 조회하고자 하는 상담신청서 DB 고유번호
+     * @return 조회한 상담신청서 객체 반환
+     */
+    public Application getApplication(Long applicationId) {
+        return applicationRepository.findById(applicationId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "[ApplicationService - 003] 해당 ID 값을 가지는 Application이 없습니다."));
+    }
 }

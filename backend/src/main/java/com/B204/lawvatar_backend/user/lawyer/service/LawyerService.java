@@ -9,7 +9,7 @@ import com.B204.lawvatar_backend.user.lawyer.repository.LawyerRepository;
 import com.B204.lawvatar_backend.user.lawyer.repository.LawyerTagRepository;
 import com.B204.lawvatar_backend.user.lawyer.repository.TagRepository;
 import jakarta.persistence.EntityNotFoundException;
-import jakarta.validation.Valid;
+
 import java.util.Base64;
 import java.util.List;
 import org.springframework.security.authentication.BadCredentialsException;
