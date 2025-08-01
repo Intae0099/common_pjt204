@@ -99,16 +99,9 @@ public class SecurityConfig {
     public void onAuthenticationSuccess(HttpServletRequest req,
         HttpServletResponse res,
         Authentication authentication) throws IOException {
-      System.out.println("▶▶▶ OAuth2JwtSuccessHandler#onAuthenticationSuccess 호출됨!");
 
       OAuth2AuthenticationToken oauthToken = (OAuth2AuthenticationToken) authentication;
       String regId = oauthToken.getAuthorizedClientRegistrationId();
-      String principal = oauthToken.getName();
-
-      // 여기서 소셜 토큰 꺼내기
-      OAuth2AuthorizedClient authorizedClient = authorizedClientService.loadAuthorizedClient(regId, principal);
-      String socialAccessToken  = authorizedClient.getAccessToken().getTokenValue();
-      String socialRefreshToken = authorizedClient.getRefreshToken().getTokenValue();
 
       OAuth2User oauthUser = oauthToken.getPrincipal();
       ClientRegistration reg = clientRegRepo.findByRegistrationId(regId);
@@ -129,17 +122,15 @@ public class SecurityConfig {
               new Client(rawId.toString(), nickname, regId)
           ));
 
-      // 4) 서버용 JWT Access Token 생성
       String accessToken = jwtUtil.generateAccessToken(
           client.getOauthIdentifier(),
           List.of("ROLE_USER"),
           "CLIENT"
       );
-      // 5) 서버용 Refresh Token 생성·저장
+
       String refreshToken = jwtUtil.generateRefreshToken(client.getOauthIdentifier());
       refreshTokenService.createForClient(client, refreshToken);
 
-      // RefreshToken to Response Cookie
       ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", refreshToken)
           .httpOnly(true)
           .secure(true)
@@ -149,16 +140,13 @@ public class SecurityConfig {
           .build();
       res.setHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
 
+      // BE 개발 편의를 위해 8080으로 변경 (-> front 서버 결합 시 5173으로 변경 필요)
       String redirectUrl = UriComponentsBuilder
           .fromUriString("http://localhost:8080/oauth2/callback/kakao")
           .queryParam("accessToken", accessToken)
           .build().toUriString();
 
-      // Map<String, String> responseBody = Map.of("accessToken", accessToken);
-
-      // res.setStatus(HttpServletResponse.SC_OK);
       res.sendRedirect(redirectUrl);
-      // res.getWriter().write(new ObjectMapper().writeValueAsString(responseBody));
     }
   }
 
@@ -173,7 +161,6 @@ public class SecurityConfig {
 
     // 로컬 로그인 성공 핸들러 → JWT 발급
     AuthenticationSuccessHandler lawyerLoginSuccessHandler = (req, res, auth) -> {
-      String username = auth.getName();
       List<String> roles = auth.getAuthorities().stream()
           .map(a -> a.getAuthority())
           .toList();
@@ -223,9 +210,6 @@ public class SecurityConfig {
         // 2) CORS 활성화 (기본 CorsConfigurationSource 빈을 사용하려면 withDefaults())
         .cors(Customizer.withDefaults())
 
-        // CSRF 비활성화
-        .csrf(csrf -> csrf.disable())
-
         // 로컬 로그인 설정 (formLogin)
         .formLogin(form -> form
             .loginProcessingUrl("/auth/login") // POST 요청
@@ -254,6 +238,14 @@ public class SecurityConfig {
 
         // URL 접근 제한
         .authorizeHttpRequests(auth -> auth
+            // swagger 추가
+            .requestMatchers(
+                "/v3/api-docs/**",
+                "/swagger-ui.html",
+                "/swagger-ui/**",
+                "/swagger-ui/index.html",
+                "/webjars/**"
+            ).permitAll()
             .requestMatchers( "/login/oauth2/**").permitAll()
             .requestMatchers("/.well-known/**").permitAll()
             .requestMatchers("/api/lawyers/signup", "/api/lawyers/login").permitAll()
