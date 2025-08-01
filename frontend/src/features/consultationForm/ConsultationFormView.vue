@@ -62,7 +62,7 @@ const handleFormSubmit = async (formData) => {
 
   try {
     // 1단계: application 먼저 생성
-    const createRes = await axios.post('https://i13b204.p.ssafy.io/swagger-ui.html/api/applications', {
+    const createRes = await axios.post('https://i13b204.p.ssafy.io/api/applications', {
       title: formData.title,
       summary: formData.summary,
       content: formData.content,
@@ -72,7 +72,7 @@ const handleFormSubmit = async (formData) => {
     applicationId.value = createRes.data.applicationId
 
     // 2단계: outcome + disadvantage 채워서 AI 요청 포함 PATCH
-    const patchRes = await axios.patch(`https://i13b204.p.ssafy.io/swagger-ui.html/api/applications/${applicationId.value}`, {
+    const patchRes = await axios.patch(`https://i13b204.p.ssafy.io/api/applications/${applicationId.value}`, {
       outcome: formData.outcome,
       disadvantage: formData.disadvantage,
     })
@@ -91,7 +91,7 @@ const handleFormSubmit = async (formData) => {
 }
 const handleFinalSubmit = async (formData) => {
   try {
-    await axios.patch(`https://i13b204.p.ssafy.io/swagger-ui.html/api/applications/${applicationId.value}`, {
+    await axios.patch(`https://i13b204.p.ssafy.io/api/applications/${applicationId.value}`, {
       ...formData,
     })
     showSaveModal.value = true

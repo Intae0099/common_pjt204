@@ -47,7 +47,7 @@
         <hr />
 
         <!-- 상담내역 -->
-        <div class="text-wrapper-9">상담내역</div>
+        <div class="text-wrapper-9" @click="$router.push('/consult-history')">상담내역</div>
         <hr />
 
         <!-- 회원탈퇴 -->
@@ -107,7 +107,7 @@ onMounted(async () => {
     user.value = userRes.data
     appointments.value = appointmentRes.data
     applications.value = formRes.data
-    // lawyerId → name 매핑
+
     const map = {}
     lawyerListRes.data.forEach(lawyer => {
       map[String(lawyer.lawyerId)] = lawyer.name
@@ -117,8 +117,8 @@ onMounted(async () => {
   } catch (err) {
     console.error('마이페이지 데이터 로딩 실패:', err)
   }
-  console.log('✅ lawyerMap:', JSON.stringify(lawyerMap.value, null, 2))
-  console.log('✅ appointments:', JSON.stringify(appointments.value, null, 2))
+  console.log('lawyerMap:', JSON.stringify(lawyerMap.value, null, 2))
+  console.log('appointments:', JSON.stringify(appointments.value, null, 2))
 
 
 })
