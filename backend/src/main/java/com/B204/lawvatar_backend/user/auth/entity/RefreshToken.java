@@ -3,10 +3,9 @@ package com.B204.lawvatar_backend.user.auth.entity;
 import com.B204.lawvatar_backend.user.client.entity.Client;
 import com.B204.lawvatar_backend.user.lawyer.entity.Lawyer;
 import jakarta.persistence.*;
+import java.time.Duration;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
-import lombok.extern.apachecommons.CommonsLog;
 
 import java.time.LocalDateTime;
 
@@ -42,23 +41,30 @@ public class RefreshToken {
     private LocalDateTime revokedAt;
 
     // 생성자 및 편의 메서드
-    public static RefreshToken ofForClient(Client client, String token, LocalDateTime issuedAt) {
+    public static RefreshToken ofForClient(
+        Client client,
+        String token,
+        LocalDateTime issuedAt,
+        long refreshExpirationMs) {
+
         RefreshToken rt = new RefreshToken();
         rt.client = client;
         rt.refreshToken = token;
         rt.issuedAt = issuedAt;
+        rt.revokedAt = issuedAt.plus(Duration.ofMillis(refreshExpirationMs));
         return rt;
     }
 
-    public static RefreshToken ofForLawyer(Lawyer lawyer, String token, LocalDateTime issuedAt) {
+    public static RefreshToken ofForLawyer(
+        Lawyer lawyer,
+        String token,
+        LocalDateTime issuedAt,
+        long refreshExpirationMs) {
         RefreshToken rt = new RefreshToken();
         rt.lawyer = lawyer;
         rt.refreshToken = token;
         rt.issuedAt = issuedAt;
+        rt.revokedAt = issuedAt.plus(Duration.ofMillis(refreshExpirationMs));
         return rt;
-    }
-
-    public void revoke(LocalDateTime when) {
-        this.revokedAt = when;
     }
 }

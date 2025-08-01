@@ -7,10 +7,8 @@ import com.B204.lawvatar_backend.user.client.entity.Client;
 import com.B204.lawvatar_backend.user.client.repository.ClientRepository;
 import com.B204.lawvatar_backend.user.client.service.ClientService;
 import com.B204.lawvatar_backend.user.lawyer.entity.Lawyer;
-import com.B204.lawvatar_backend.user.lawyer.repository.LawyerRepository;
 import com.B204.lawvatar_backend.user.lawyer.service.LawyerService;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.servlet.Filter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -18,7 +16,6 @@ import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import org.springframework.boot.autoconfigure.graphql.GraphQlProperties.Http;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpHeaders;
@@ -35,60 +32,53 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.client.InMemoryOAuth2AuthorizedClientService;
-import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
-import org.springframework.security.oauth2.client.web.OAuth2LoginAuthenticationFilter;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.stereotype.Component;
-import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
 
-  private final ClientService clientService;
-  private final LawyerService lawyerService;
   private final JwtUtil jwtUtil;
-  private final RefreshTokenService refreshTokenService;
-  private LawyerRepository lawyerRepository;
-  private ClientRepository clientRepository;
   private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
-  public SecurityConfig(ClientService clientService,
-      LawyerService lawyerService,
+  private final ClientService clientService;
+  private final RefreshTokenService refreshTokenService;
+
+  public SecurityConfig(
       JwtUtil jwtUtil,
-      RefreshTokenService refreshTokenService, JwtAuthenticationFilter jwtAuthenticationFilter
+      JwtAuthenticationFilter jwtAuthenticationFilter,
+      ClientService clientService,
+      RefreshTokenService refreshTokenService
   ) {
-    this.clientService = clientService;
-    this.lawyerService = lawyerService;
     this.jwtUtil = jwtUtil;
-    this.refreshTokenService = refreshTokenService;
     this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+    this.clientService = clientService;
+    this.refreshTokenService = refreshTokenService;
   }
 
   @Component
   public static class OAuth2JwtSuccessHandler implements AuthenticationSuccessHandler {
 
-    private final OAuth2AuthorizedClientService authorizedClientService;
     private final ClientRepository clientRepository;
     private final JwtUtil jwtUtil;
     private final RefreshTokenService refreshTokenService;
     private final ClientRegistrationRepository clientRegRepo; // UserNameAttributeName 조회용
 
     public OAuth2JwtSuccessHandler(
-        OAuth2AuthorizedClientService authorizedClientService,
         ClientRepository clientRepository,
         JwtUtil jwtUtil,
         RefreshTokenService refreshTokenService, ClientRegistrationRepository clientRegRepo
     ) {
-      this.authorizedClientService = authorizedClientService;
       this.clientRepository = clientRepository;
       this.jwtUtil = jwtUtil;
       this.refreshTokenService = refreshTokenService;
@@ -124,7 +114,7 @@ public class SecurityConfig {
 
       String accessToken = jwtUtil.generateAccessToken(
           client.getOauthIdentifier(),
-          List.of("ROLE_USER"),
+          List.of("ROLE_CLIENT"),
           "CLIENT"
       );
 
@@ -156,11 +146,17 @@ public class SecurityConfig {
       LawyerService lawyerService) throws Exception {
 
     // OAuth2 로그인 실패 핸들러
-    AuthenticationFailureHandler oauth2FailureHandler = (req, res, ex) ->
+    AuthenticationFailureHandler oauth2FailureHandler = (
+        req,
+        res,
+        ex) ->
         res.sendError(HttpServletResponse.SC_UNAUTHORIZED, "OAuth2 Login Failed");
 
     // 로컬 로그인 성공 핸들러 → JWT 발급
-    AuthenticationSuccessHandler lawyerLoginSuccessHandler = (req, res, auth) -> {
+    AuthenticationSuccessHandler lawyerLoginSuccessHandler = (
+        req,
+        res,
+        auth) -> {
       List<String> roles = auth.getAuthorities().stream()
           .map(a -> a.getAuthority())
           .toList();
@@ -198,11 +194,6 @@ public class SecurityConfig {
       res.getWriter().flush();
     };
 
-    // DaoAuthenticationProvider (Lawyer 전용)
-    DaoAuthenticationProvider daoProvider = new DaoAuthenticationProvider();
-    daoProvider.setUserDetailsService(lawyerService);
-    daoProvider.setPasswordEncoder(passwordEncoder());
-
     http
         // 1) CSRF 비활성화
         .csrf(csrf -> csrf.disable())
@@ -227,14 +218,13 @@ public class SecurityConfig {
         )
 
         // 세션 설정 (기존 유지: OAuth2용 state 저장 가능)
-        .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
+        .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
         // 인증 Provider 등록 (Lawyer 전용)
         .authenticationProvider(lawyerAuthProvider(lawyerService))
 
-
         // JWT 필터: OAuth2 로그인 이후에 추가
-        .addFilterAfter(jwtAuthenticationFilter, OAuth2LoginAuthenticationFilter.class)
+        .addFilterAfter(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
 
         // URL 접근 제한
         .authorizeHttpRequests(auth -> auth
@@ -249,7 +239,6 @@ public class SecurityConfig {
             .requestMatchers( "/login/oauth2/**").permitAll()
             .requestMatchers("/.well-known/**").permitAll()
             .requestMatchers("/api/lawyers/signup", "/api/lawyers/login").permitAll()
-            .requestMatchers("/api/lawyers/**").permitAll()
             .requestMatchers("/api/protected/**").authenticated()
             .requestMatchers("/clients/**").authenticated()
             .anyRequest().permitAll()
@@ -267,7 +256,6 @@ public class SecurityConfig {
 
 
   // 이 아래로 로컬 로그인 @@@@@@@@@@@@@@@@@@@@@@@
-
   @Bean
   public PasswordEncoder passwordEncoder(){
     return new BCryptPasswordEncoder() ;
