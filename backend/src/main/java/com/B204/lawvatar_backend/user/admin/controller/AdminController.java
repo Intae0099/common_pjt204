@@ -1,5 +1,8 @@
 package com.B204.lawvatar_backend.user.admin.controller;
 
+import com.B204.lawvatar_backend.appointment.dto.AppointmentResponseDto;
+import com.B204.lawvatar_backend.appointment.entity.Appointment;
+import com.B204.lawvatar_backend.appointment.repository.AppointmentRepository;
 import com.B204.lawvatar_backend.user.client.dto.ClientAdminDto;
 import com.B204.lawvatar_backend.user.client.entity.Client;
 import com.B204.lawvatar_backend.user.client.repository.ClientRepository;
@@ -28,8 +31,8 @@ public class AdminController {
 
   private final LawyerService lawyerService;
 
-  private final LawyerRepository lawyerRepo;
   private final ClientRepository clientRepo;
+  private final AppointmentRepository appointmentRepo;
 
   @GetMapping("/lawyers/certifications")
   public ResponseEntity<List<LawyerAdminDto>> getLawyersByCertificationStatus(@RequestParam CertificationStatus status){
@@ -46,7 +49,7 @@ public class AdminController {
     return ResponseEntity.ok(res);
   }
 
-  @GetMapping("/clients/list")
+  @GetMapping("/clients")
   public ResponseEntity<List<ClientAdminDto>> getAllClients(){
     List<Client> clients = clientRepo.findAll();
     if(clients.isEmpty()){
@@ -96,6 +99,21 @@ public class AdminController {
       return ResponseEntity.status(HttpStatus.BAD_REQUEST)
           .body(Map.of("error", e.getMessage()));
     }
+  }
+
+  @GetMapping("/appointments")
+  public ResponseEntity<List<AppointmentResponseDto>> getAllAppointments(){
+    List<Appointment> appts = appointmentRepo.findAll();
+
+    if(appts.isEmpty()){
+      return ResponseEntity.noContent().build();
+    }
+
+    List<AppointmentResponseDto> res = appts.stream()
+        .map(AppointmentResponseDto::from)
+        .toList();
+
+    return ResponseEntity.ok(res);
   }
 
 }
