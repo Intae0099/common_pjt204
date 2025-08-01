@@ -1,9 +1,12 @@
 package com.B204.lawvatar_backend.appointment.controller;
 
+import com.B204.lawvatar_backend.application.entity.Application;
+import com.B204.lawvatar_backend.application.entity.ApplicationTag;
 import com.B204.lawvatar_backend.application.repository.ApplicationRepository;
 import com.B204.lawvatar_backend.appointment.dto.AppointmentRequestDto;
 import com.B204.lawvatar_backend.appointment.dto.AppointmentResponseDto;
 import com.B204.lawvatar_backend.appointment.dto.AppointmentStatusRequestDto;
+import com.B204.lawvatar_backend.appointment.dto.GetMyAppointmentApplicationListResponse;
 import com.B204.lawvatar_backend.appointment.dto.MyAppointmentDto;
 import com.B204.lawvatar_backend.appointment.entity.Appointment;
 import com.B204.lawvatar_backend.appointment.entity.AppointmentStatus;
@@ -20,6 +23,7 @@ import io.jsonwebtoken.Claims;
 import jakarta.validation.Valid;
 import java.net.URI;
 import java.nio.file.attribute.UserPrincipal;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import org.springframework.http.HttpStatus;

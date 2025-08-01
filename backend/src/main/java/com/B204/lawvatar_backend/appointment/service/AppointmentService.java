@@ -9,6 +9,8 @@ import com.B204.lawvatar_backend.user.client.repository.ClientRepository;
 import com.B204.lawvatar_backend.user.lawyer.repository.LawyerRepository;
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
