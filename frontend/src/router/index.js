@@ -92,6 +92,11 @@ const router = createRouter({
       name: 'LawyerProfileUpdate',
       component: LawyerProfileUpdate
     },
+    {
+      path: '/consult-history',
+      name: 'ConsultHistory',
+      component: () => import('@/features/profile/user/UserConsultHistory.vue')
+    },
     //판례검색
     {
       path: '/cases/search',

@@ -37,7 +37,7 @@ const applications = ref([])
 const selectedId = ref('')
 
 onMounted(async () => {
-  const res = await axios.get('https://i13b204.p.ssafy.io/swagger-ui.html/api/applications/me?isCompleted=false')
+  const res = await axios.get('https://i13b204.p.ssafy.io/api/applications/me?isCompleted=false')
   applications.value = res.data
 })
 
