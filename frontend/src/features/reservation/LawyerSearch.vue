@@ -52,7 +52,10 @@ const getTagName = (id) => {
 
 const fetchLawyers = async () => {
   const res = await axios.get('/api/lawyers/list')
-  lawyers.value = res.data
+  lawyers.value = res.data.map(l => ({
+    ...l,
+    id: String(l.lawyerId)  // router params로 쓸 수 있게 string 변환
+  }))
 }
 
 onMounted(fetchLawyers)
