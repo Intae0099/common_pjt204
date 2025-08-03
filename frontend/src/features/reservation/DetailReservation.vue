@@ -95,7 +95,7 @@ const tagMap = [
 ]
 
 const getTagName = (id) => {
-  const tag = tagMap.find(t => t.id === Number(id))
+  const tag = tagMap.find(t => String(t.id) === String(id))  // 문자열 매핑 안전하게
   return tag ? tag.name : '알 수 없음'
 }
 
@@ -106,8 +106,16 @@ onMounted(async () => {
 })
 
 const fetchLawyerInfo = async () => {
-  const res = await axios.get(`/api/admin/lawyers/list`)
-  lawyer.value = res.data.find(l => l.lawyerId == lawyerId)
+  const res = await axios.get(`/api/lawyers/list`)
+  const found = res.data.find(l => String(l.lawyerId) === lawyerId)
+
+  if (found) {
+    lawyer.value = {
+      ...found,
+      lawyerId: String(found.lawyerId),
+      tags: found.tags.map(tagId => String(tagId)) // 숫자 → 문자열 변환
+    }
+  }
 }
 
 const fetchUnavailableSlots = async () => {

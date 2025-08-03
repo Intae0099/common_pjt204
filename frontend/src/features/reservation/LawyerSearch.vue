@@ -1,7 +1,29 @@
 <template>
   <div>
-    <input v-model="searchQuery" placeholder="이름 or 상담 분야" />
-    <div v-for="lawyer in filteredLawyers" :key="lawyer.id">
+    <!-- 태그 필터 UI -->
+    <div class="tag-filter-wrapper">
+      <button
+        v-for="tag in tagMap"
+        :key="tag.id"
+        @click="toggleTag(tag.id)"
+        :class="{ selected: selectedTags.includes(tag.id) }"
+      >
+        #{{ tag.name }}
+      </button>
+    </div>
+
+    <!-- 이름 검색창 -->
+    <input
+      v-model="searchQuery"
+      placeholder="이름을 검색해주세요"
+      @keyup.enter="applyFilters"
+    />
+    <!-- <button @click="applyFilters">
+      🔍 검색
+    </button> -->
+
+
+    <div v-for="lawyer in lawyers" :key="lawyer.id">
       <div>
         <img
           v-if="lawyer.photo"
@@ -20,12 +42,14 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from '@/lib/axios'
 
 const lawyers = ref([])
 const searchQuery = ref('')
+const selectedTags = ref([])
+
 const router = useRouter()
 
 const isLawyer = localStorage.getItem('user_type') === 'LAWYER' // JWT 파싱 or 저장된 사용자 정보 이용
@@ -49,22 +73,42 @@ const getTagName = (id) => {
   const tag = tagMap.find(t => t.id === Number(id))
   return tag ? tag.name : '알 수 없음'
 }
-
-const fetchLawyers = async () => {
-  const res = await axios.get('/api/lawyers/list')
-  lawyers.value = res.data.map(l => ({
-    ...l,
-    id: String(l.lawyerId)  // router params로 쓸 수 있게 string 변환
-  }))
+// 태그 선택 토글
+const toggleTag = (tagId) => {
+  if (selectedTags.value.includes(tagId)) {
+    selectedTags.value = selectedTags.value.filter(id => id !== tagId)
+  } else {
+    selectedTags.value.push(tagId)
+  }
+  applyFilters()
 }
 
-onMounted(fetchLawyers)
+watch(searchQuery, () => {
+  applyFilters()
+})
 
-const filteredLawyers = computed(() =>
-  lawyers.value.filter(l =>
-    l.name.includes(searchQuery.value) || l.tags.some(tag => tag.includes(searchQuery.value))
-  )
-)
+// 필터 적용 후 API 호출
+const applyFilters = async () => {
+  try {
+    const params = new URLSearchParams()
+    selectedTags.value.forEach(tagId => params.append('tags', tagId))
+    if (searchQuery.value.trim() !== '') {
+      params.append('search', searchQuery.value.trim())
+    }
+
+    const res = await axios.get(`/api/lawyers/list?${params.toString()}`)
+
+    lawyers.value = res.data.map(l => ({
+      ...l,
+      id: String(l.lawyerId)
+    }))
+  } catch (err) {
+    console.error('변호사 조회 실패:', err)
+  }
+}
+
+onMounted(applyFilters)
+
 
 const goToReservation = (lawyer) => {
   const userType = localStorage.getItem('user_type')
@@ -76,3 +120,18 @@ const goToReservation = (lawyer) => {
   router.push({ name: 'DetailReservation', params: { id: lawyer.id } })
 }
 </script>
+
+<style scoped>
+.selected {
+  background-color: #5A45FF;
+  color: white;
+  border-radius: 20px;
+  padding: 5px 10px;
+}
+
+.tag-filter-wrapper {
+  margin-top: 60px; /* NavBar 높이만큼 여백 확보 */
+  position: relative;
+  z-index: 10;  /* NavBar 아래로 내려왔기 때문에 클릭 OK */
+}
+</style>

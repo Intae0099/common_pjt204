@@ -64,10 +64,15 @@ const submitReservation = async () => {
   try {
     const startTime = `${props.selectedDate}T${props.selectedTime}:00`  // ISO 형식 조합
 
+    const end = new Date(`${props.selectedDate}T${props.selectedTime}:00`)
+    end.setMinutes(end.getMinutes() + 30)
+    const endTime = end.toISOString().split('.')[0].replace('T', ' ')  // "YYYY-MM-DD HH:MM:SS"
+
     await axios.post('/api/appointments', {
       lawyerId: props.lawyerId,
       applicationId: selectedApplicationId.value,
-      startTime: startTime
+      startTime: startTime.replace('T', ' '),  // 백엔드가 공백 포맷 기대 시
+      endTime: endTime
     })
     alert('예약이 완료되었습니다!')
     emit('close')
