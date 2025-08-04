@@ -44,7 +44,7 @@ public class RoomController {
             } catch(IllegalStateException e) {
                 // dto 만들고 응답
                 CreateRoomResponse createRoomResponse = CreateRoomResponse.builder()
-                        .isSuccess(false)
+                        .success(false)
                         .message(e.getMessage())
                         .build();
 
@@ -52,7 +52,7 @@ public class RoomController {
             } catch(NoSuchElementException e) {
                 // dto 만들고 응답
                 CreateRoomResponse createRoomResponse = CreateRoomResponse.builder()
-                        .isSuccess(false)
+                        .success(false)
                         .message(e.getMessage())
                         .build();
 
@@ -64,7 +64,7 @@ public class RoomController {
             } catch(IllegalStateException e) {
                 // dto 만들고 응답
                 CreateRoomResponse createRoomResponse = CreateRoomResponse.builder()
-                        .isSuccess(false)
+                        .success(false)
                         .message(e.getMessage())
                         .build();
 
@@ -72,7 +72,7 @@ public class RoomController {
             } catch(NoSuchElementException e) {
                 // dto 만들고 응답
                 CreateRoomResponse createRoomResponse = CreateRoomResponse.builder()
-                        .isSuccess(false)
+                        .success(false)
                         .message(e.getMessage())
                         .build();
 
@@ -81,7 +81,7 @@ public class RoomController {
         }
 
         CreateRoomResponse createRoomResponse = CreateRoomResponse.builder()
-                .isSuccess(true)
+                .success(true)
                 .message("[RoomController - 001] 화상상담방 생성 성공")
                 .data(CreateRoomResponse.Data.builder().openviduToken(openviduToken).build())
                 .build();
@@ -96,7 +96,7 @@ public class RoomController {
      * @return
      */
     @PostMapping("/{appointmentId}/participants")
-    public ResponseEntity<ParticipateRoomResponse> participateRoome(Authentication authentication, @PathVariable Long appointmentId) throws Exception {
+    public ResponseEntity<ParticipateRoomResponse> participateRoom(Authentication authentication, @PathVariable Long appointmentId) throws Exception {
 
         // Principal 객체 얻기
         Object principal = authentication.getPrincipal();
@@ -109,7 +109,7 @@ public class RoomController {
             } catch(NoSuchElementException e) {
                 // dto 만들고 응답
                 ParticipateRoomResponse participateRoomResponse = ParticipateRoomResponse.builder()
-                        .isSuccess(false)
+                        .success(false)
                         .message(e.getMessage())
                         .build();
 
@@ -121,7 +121,7 @@ public class RoomController {
             } catch(NoSuchElementException e) {
                 // dto 만들고 응답
                 ParticipateRoomResponse participateRoomResponse = ParticipateRoomResponse.builder()
-                        .isSuccess(false)
+                        .success(false)
                         .message(e.getMessage())
                         .build();
 
@@ -130,7 +130,7 @@ public class RoomController {
         }
 
         ParticipateRoomResponse participateRoomResponse = ParticipateRoomResponse.builder()
-                .isSuccess(true)
+                .success(true)
                 .message("[RoomController - 002] 화상상담방 참가토큰 생성 성공")
                 .data(ParticipateRoomResponse.Data.builder().openviduToken(openviduToken).build())
                 .build();
@@ -157,7 +157,7 @@ public class RoomController {
             } catch(NoSuchElementException e) {
                 // dto 만들고 응답
                 LeaveRoomResponse leaveRoomResponse = LeaveRoomResponse.builder()
-                        .isSuccess(false)
+                        .success(false)
                         .message(e.getMessage())
                         .build();
 
@@ -169,7 +169,7 @@ public class RoomController {
             } catch(NoSuchElementException e) {
                 // dto 만들고 응답
                 LeaveRoomResponse leaveRoomResponse = LeaveRoomResponse.builder()
-                        .isSuccess(false)
+                        .success(false)
                         .message(e.getMessage())
                         .build();
 
@@ -178,7 +178,7 @@ public class RoomController {
         }
 
         LeaveRoomResponse leaveRoomResponse = LeaveRoomResponse.builder()
-                .isSuccess(true)
+                .success(true)
                 .message("[RoomController - 003] 화상상담방 나가기 성공")
                 .build();
 

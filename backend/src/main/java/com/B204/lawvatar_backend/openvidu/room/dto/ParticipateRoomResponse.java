@@ -9,7 +9,7 @@ import lombok.*;
 public class ParticipateRoomResponse {
 
     // Field
-    private boolean isSuccess;
+    private boolean success;
     private String message;
     private Data data;
 

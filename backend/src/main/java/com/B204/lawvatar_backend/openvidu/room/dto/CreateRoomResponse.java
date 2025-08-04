@@ -9,7 +9,7 @@ import lombok.*;
 public class CreateRoomResponse {
 
     // Field
-    private boolean isSuccess;
+    private boolean success;
     private String message;
     private Data data;
 
