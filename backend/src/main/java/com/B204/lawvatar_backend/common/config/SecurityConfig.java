@@ -134,7 +134,7 @@ public class SecurityConfig {
 
       // BE 개발 편의를 위해 8080으로 변경 (-> front 서버 결합 시 5173으로 변경 필요) -> 배포 환경으로 변경
       String redirectUrl = UriComponentsBuilder
-          .fromUriString("http://localhost:5173/user/mypage")
+          .fromUriString("http://localhost:5173/oauth2/callback/kakao")
           .queryParam("accessToken", accessToken)
           .build().toUriString();
 
