@@ -2,11 +2,11 @@
   <div class="preview-camera">
     <video ref="videoRef" autoplay playsinline muted></video>
     <div class="controls">
-      <button @click="toggleAudio">
-        {{ isAudioOn ? '🔈 마이크 끄기' : '🔇 마이크 켜기' }}
+      <button @click="toggleAudio" :class="{ off: !isAudioOn }">
+        <component :is="isAudioOn ? Mic : MicOff" class="icon" />
       </button>
-      <button @click="toggleVideo">
-        {{ isVideoOn ? '📷 카메라 끄기' : '🚫 카메라 켜기' }}
+      <button @click="toggleVideo" :class="{ off: !isVideoOn }">
+        <component :is="isVideoOn ? Video : VideoOff" class="icon" />
       </button>
     </div>
   </div>
@@ -15,12 +15,14 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { OpenVidu } from 'openvidu-browser'
+import { Mic, MicOff, Video, VideoOff } from 'lucide-vue-next'
+
 
 const OV = ref(null)
 const publisher = ref(null)
 const videoRef = ref(null)
 
-const isAudioOn = ref(false) // 초기에는 음소거 상태
+const isAudioOn = ref(false)
 const isVideoOn = ref(true)
 
 onMounted(async () => {
@@ -63,7 +65,7 @@ onBeforeUnmount(() => {
 <style scoped>
 .preview-camera {
   width: 100%;
-  height: 450px;
+  height: 400px;
   border-radius: 10px;
   background-color: #ddd;
   display: flex;
@@ -83,17 +85,28 @@ video {
 .controls {
   position: absolute;
   bottom: 15px;
+  left: 17px;
   display: flex;
-  gap: 1rem;
+  gap: 0.5rem;
 }
 
 button {
-  background-color: rgba(0, 0, 0, 0.7);
-  color: white;
+  background-color: rgba(0, 0, 0, 0.6);
   border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
+  padding: 0.5rem;
+  border-radius: 50%;
   cursor: pointer;
-  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.3s;
+}
+button:hover {
+  background-color: rgba(0, 0, 0, 0.8);
+}
+.icon {
+  width: 24px;
+  height: 24px;
+  color: white;
 }
 </style>

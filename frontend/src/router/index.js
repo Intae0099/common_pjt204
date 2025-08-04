@@ -31,6 +31,8 @@ import ConsultationFormView from '@/features/consultationForm/ConsultationFormVi
 import PreviewUserView from '@/features/videoconference/user/PreviewUserView.vue';
 import PreviewLawyerView from '@/features/videoconference/lawyer/PreviewLawyerView.vue';
 import MeetingRoom from '@/features/videoconference/MeetingRoom.vue';
+import ChatbotView from '@/features/chatting/ChatbotView.vue';
+import RealtimeChatView from '@/features/chatting/RealtimeChatView.vue';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -144,6 +146,16 @@ const router = createRouter({
       path: '/meeting',
       name: 'MeetingRoom',
       component: MeetingRoom
+    },
+    {
+      path: '/chat/chatbot',
+      name: 'ChatbotView',
+      component: ChatbotView
+    },
+    {
+      path: '/chat/realtimechat',
+      name: 'RealtimeChatView',
+      component: RealtimeChatView
     },
 
   ],
