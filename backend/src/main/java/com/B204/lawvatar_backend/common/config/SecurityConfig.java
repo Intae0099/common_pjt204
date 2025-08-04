@@ -203,6 +203,7 @@ public class SecurityConfig {
     };
 
     http
+
         // 1) CSRF 비활성화
         .csrf(csrf -> csrf.disable())
 

@@ -1,13 +1,14 @@
 package com.B204.lawvatar_backend.user.lawyer.entity;
 
 import jakarta.persistence.*;
+import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
 @Entity
-@Getter
+@Data
 @NoArgsConstructor
 public class UnavailabilitySlot {
 
