@@ -9,7 +9,7 @@
             id="email"
             type="email"
             v-model="form.loginEmail"
-            placeholder="예시) lawyer@ex.com"
+            placeholder="예시) lawyer@example.com"
             required
           />
         </div>
