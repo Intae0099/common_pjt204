@@ -16,8 +16,10 @@ import com.B204.lawvatar_backend.user.lawyer.entity.Lawyer;
 import com.B204.lawvatar_backend.user.lawyer.repository.LawyerRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.autoconfigure.graphql.GraphQlProperties;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -174,6 +176,51 @@ public class RoomService {
         }
     }
 
+    public HttpStatusCode removeRoom(Long appointmentId) {
+
+        // 화상상담방을 파괴하고 싶은 Appointment 객체 얻기
+        Appointment appointment = appointmentRepository.findById(appointmentId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "[RoomService - 00] 해당 ID 값을 가지는 Appointment가 없습니다."));
+
+        // 이 Appointment에 해당하는 Session 객체 얻기
+        Session session = sessionRepository.findByAppointmentId(appointmentId);
+
+        // 이 Appointment에 대해 활성화된 세션이 없다면, 404 NotFound 에러 응답
+        if(session == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "[RoomService - 00] 해당 상담은 화상상담방이 열려있지 않습니다.");
+        }
+
+        // 이 Session이 참조중인 Room 객체 얻어내고 Session 데이터 DB에서 삭제하기
+        Room room = session.getRoom();
+        sessionRepository.delete(session);
+
+        // sessionId 알아내고 Room 데이터도 DB에서 삭제하기
+        String openviduSessionId = room.getOpenviduSessionId();
+
+        // openVidu 서버에 강제종료 요청보내기
+        String url = MY_OPENVIDU_SERVER_URL + "/openvidu/api/sessions/" + openviduSessionId;
+
+        /// ///////////////////////////////////////////////////////
+        System.out.println("세션 종료시킬 때 사용한 url: " + url);
+        /// ///////////////////////////////////////////////////////
+
+        HttpHeaders headers = createHeaders();
+        HttpEntity<Void> httpEntity = new HttpEntity<>(headers);
+
+        try {
+            ResponseEntity<Void> httpResponse = restTemplate.exchange(
+                    url,
+                    HttpMethod.DELETE,
+                    httpEntity,
+                    Void.class
+            );
+
+            return httpResponse.getStatusCode();
+
+        } catch(HttpClientErrorException e) {
+            return e.getStatusCode();
+        }
+    }
+
     private HttpHeaders createHeaders() {
         String auth = "OPENVIDUAPP:" + OPENVIDU_SECRET_KEY;
         String encodedAuth = Base64.getEncoder().encodeToString(auth.getBytes(StandardCharsets.UTF_8));
@@ -220,5 +267,4 @@ public class RoomService {
 
         return openviduConnectionResponse.getBody().getToken(); // 토큰을 리턴해야함
     }
-
 }
