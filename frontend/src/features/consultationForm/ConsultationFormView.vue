@@ -18,6 +18,7 @@
       <ConsultationForm
         v-else-if="!showCompareView"
         @submitted="handleFormSubmit"
+        @application-selected="(id) => applicationId.value = id"
       />
 
       <ConsultationCompareResult
@@ -61,25 +62,25 @@ const handleFormSubmit = async (formData) => {
   userInput.value = formData
 
   try {
-    // 1단계: application 먼저 생성
-    const createRes = await axios.post('https://i13b204.p.ssafy.io/api/applications', {
-      title: formData.title,
-      summary: formData.summary,
-      content: formData.content,
-      outcome: null,
-      disadvantage: null,
-    })
-    applicationId.value = createRes.data.applicationId
-
-    // 2단계: outcome + disadvantage 채워서 AI 요청 포함 PATCH
-    const patchRes = await axios.patch(`https://i13b204.p.ssafy.io/api/applications/${applicationId.value}`, {
-      outcome: formData.outcome,
-      disadvantage: formData.disadvantage,
+    const res = await axios.post('https://i13b204.p.ssafy.io/api/consult/application', {
+      case: {
+        title: formData.title,
+        summary: formData.summary,
+        fullText: formData.content,
+      },
+      desiredOutcome: formData.outcome,
+      weakPoints: formData.disadvantage,
     })
 
+    const app = res.data.data.application
     aiResult.value = {
-      fullText: patchRes.data.application.case.fullText,
-      recommendedQuestions: JSON.parse(patchRes.data.questions),
+      title: app.data.case.title,
+      summary: app.data.case.summary,
+      fullText: app.data.case.fullText,
+      outcome: app.desiredOutcome,
+      disadvantage: app.weakPoints,
+      recommendedQuestions: JSON.parse(res.data.data.questions),
+      tags: res.data.data.tags, // 실제 저장용에 사용
     }
 
     showCompareView.value = true
@@ -89,17 +90,43 @@ const handleFormSubmit = async (formData) => {
     isLoading.value = false
   }
 }
+
 const handleFinalSubmit = async (formData) => {
+  const hasPreviousApplication = applicationId.value !== null
+
   try {
-    await axios.patch(`https://i13b204.p.ssafy.io/api/applications/${applicationId.value}`, {
-      ...formData,
-    })
+    if (hasPreviousApplication) {
+      await axios.patch(`https://i13b204.p.ssafy.io/api/applications/${applicationId.value}`, {
+        ...formData,
+        recommendedQuestion: {
+          question1: formData.recommendedQuestions[0] || '',
+          question2: formData.recommendedQuestions[1] || '',
+        },
+        tags: aiResult.value.tags,
+      })
+    } else {
+      const res = await axios.post('https://i13b204.p.ssafy.io/api/applications?isCompleted=true', {
+        title: formData.title,
+        summary: formData.summary,
+        content: formData.content,
+        outcome: formData.outcome,
+        disadvantage: formData.disadvantage,
+        recommendedQuestion: {
+          question1: formData.recommendedQuestions[0] || '',
+          question2: formData.recommendedQuestions[1] || '',
+        },
+        tags: aiResult.value.tags,
+      })
+      applicationId.value = res.data.applicationId
+    }
+
     showSaveModal.value = true
   } catch (err) {
-    console.error('저장 실패:', err)
+    console.error('상담서 저장 실패:', err)
     alert('저장에 실패했습니다.')
   }
 }
+
 </script>
 
 <style scoped>
