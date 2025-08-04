@@ -9,6 +9,18 @@ import lombok.*;
 public class ParticipateRoomResponse {
 
     // Field
-    private String token;
+    private boolean isSuccess;
+    private String message;
+    private Data data;
 
+    // Nested Class
+    @Getter @Setter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class Data {
+
+        // Field
+        private String openviduToken;
+    }
 }

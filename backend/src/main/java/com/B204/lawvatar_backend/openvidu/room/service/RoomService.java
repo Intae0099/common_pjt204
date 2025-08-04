@@ -129,10 +129,16 @@ public class RoomService {
         return openviduToken;
     }
 
-    public void leaveRoom(Long appointmentId, String userType, Long userId) {
+    public void leaveRoom(Long appointmentId, String userType, Long userId) throws Exception{
 
         // appointmentId 기준으로 세션 객체 얻기
         Session session = sessionRepository.findByAppointment_Id(appointmentId);
+
+        // session 객체가 없다면, 에러 발생
+        if(session == null) {
+            throw new NoSuchElementException("[RoomService - 007] 해당 ID 값을 가지는 Appointment는 열려있는 화상상담방이 없습니다.");
+        }
+
 
         // 세션에서 나간다면 남는 인원수
         int participantCount = session.getParticipantCount() - 1;
@@ -183,14 +189,14 @@ public class RoomService {
     public HttpStatusCode removeRoom(Long appointmentId) {
 
         // 화상상담방을 파괴하고 싶은 Appointment 객체 얻기
-        Appointment appointment = appointmentRepository.findById(appointmentId).orElseThrow(() -> new NoSuchElementException("[RoomService - 00] 해당 ID 값을 가지는 Appointment가 없습니다."));
+        Appointment appointment = appointmentRepository.findById(appointmentId).orElseThrow(() -> new NoSuchElementException("[RoomService - 008] 해당 ID 값을 가지는 Appointment가 없습니다."));
 
         // 이 Appointment에 해당하는 Session 객체 얻기
         Session session = sessionRepository.findByAppointment_Id(appointmentId);
 
         // 이 Appointment에 대해 활성화된 세션이 없다면, 404 NotFound 에러 응답
         if(session == null) {
-            throw new NoSuchElementException("[RoomService - 00] 해당 상담은 화상상담방이 열려있지 않습니다.");
+            throw new NoSuchElementException("[RoomService - 009] 해당 상담은 화상상담방이 열려있지 않습니다.");
         }
 
         // 이 Session이 참조중인 Room 객체 얻어내고 Session 데이터 DB에서 삭제하기

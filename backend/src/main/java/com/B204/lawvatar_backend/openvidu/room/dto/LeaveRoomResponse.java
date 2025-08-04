@@ -6,7 +6,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class CreateRoomResponse {
+public class LeaveRoomResponse {
 
     // Field
     private boolean isSuccess;
@@ -19,8 +19,5 @@ public class CreateRoomResponse {
     @AllArgsConstructor
     @Builder
     public static class Data {
-
-        // Field
-        private String openviduToken;
     }
 }
