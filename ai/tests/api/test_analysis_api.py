@@ -66,9 +66,7 @@ def test_analyze_case_success(mock_case_analysis_service):
                 "references": {},
                 "tags": [],
                 "recommendedLawyers": []
-            },
-            "tags": [],
-            "recommendedLawyers": []
+            }
         }
     }
     mock_case_analysis_service.analyze_case.assert_called_once_with(user_query="Test fullText")
