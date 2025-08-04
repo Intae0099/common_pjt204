@@ -1,24 +1,24 @@
 <template>
-  <!-- 이전 버튼 -->
-  <div class="back-button" @click="$router.back()">
-    <span class="arrow-icon">←</span> <span>이전</span>
-  </div>
 
   <div class="reservation-wrapper">
+    <div class="back-button" @click="$router.back()">
+      <span class="arrow-icon">←</span> <span>이전</span>
+    </div>
+
+    <!-- ✅ 2. 두 박스는 같은 선상 수평 정렬 -->
     <div class="reservation-page">
-      <!-- 좌측 프로필 -->
-      <div class="profile-box">
-        <img
-          v-if="lawyer?.photo"
-          :src="`data:image/jpeg;base64,${lawyer.photo}`"
-          alt="변호사 프로필"
-        />
-        <h2>{{ lawyer?.name }} 변호사</h2>
-        <p>{{ lawyer?.introduction }}</p>
-        <div class="profile-tags">
-          <span v-for="tag in lawyer?.tags" :key="tag">#{{ getTagName(tag) }}</span>
+      <!-- 좌측 프로필 박스 -->
+      <div class="left-column">
+        <div class="profile-box">
+          <img v-if="lawyer?.photo" :src="`data:image/jpeg;base64,${lawyer.photo}`" alt="변호사 프로필" />
+          <h2>{{ lawyer?.name }} 변호사</h2>
+          <p>{{ lawyer?.introduction }}</p>
+          <div class="profile-tags">
+            <span v-for="tag in lawyer?.tags" :key="tag">#{{ getTagName(tag) }}</span>
+          </div>
         </div>
       </div>
+
 
       <!-- 우측 스케줄 -->
       <div class="schedule-box">
@@ -38,14 +38,14 @@
           <button
             v-for="time in allTimeSlots"
             :key="time"
-            :disabled="!selectedDate || unavailableSlots.includes(time)"
+            :disabled="!selectedDate || unavailableSlots.includes(time) || isPastTime(time)"
             :class="[
               'btn',
-              !selectedDate || unavailableSlots.includes(time) ? 'disabled' : '',
+              (!selectedDate || unavailableSlots.includes(time) || isPastTime(time)) ? 'disabled' : '',
               selectedTime === time ? 'selected' : ''
             ]"
             @click="() => {
-              if (selectedDate && !unavailableSlots.includes(time)) selectedTime = time
+              if (selectedDate && !unavailableSlots.includes(time) && !isPastTime(time)) selectedTime = time
             }"
           >
             {{ time }}
@@ -120,6 +120,7 @@ onMounted(async () => {
   selectedDate.value = today
   await fetchLawyerInfo()
   await fetchUnavailableSlots()
+  window.scrollTo(0, 0)   // 페이지 진입 시 최상단 이동
 })
 
 const fetchLawyerInfo = async () => {
@@ -152,6 +153,16 @@ const fetchUnavailableSlots = async () => {
   unavailableSlots.value = unavailableTimes
 }
 
+const isPastTime = (time) => {
+  if (selectedDate.value !== today) return false  // 오늘만 비교
+
+  const [hour, minute] = time.split(':').map(Number)
+  const now = new Date()
+  const selectedTimeDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hour, minute)
+
+  return selectedTimeDate < now  // 과거 시간이면 true 반환
+}
+
 const openModal = () => {
   console.log('✅ 모달 열림 시도', selectedDate.value, selectedTime.value)
   showModal.value = true
@@ -162,27 +173,17 @@ const openModal = () => {
 <style>
 /* 최상위 여백 적용 */
 .reservation-wrapper {
-  margin-top: 100px;  /* 이전 버튼과 거리 확보 */
-  padding: 0 80px;
-  min-height: 100vh;
+  padding: 120px 20px 0 20px;  /* 위쪽 패딩 추가 + 좌우 20px 유지 */
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
-/* '이전' 버튼 디자인 */
-.back-button {
-  position: fixed;  /* 화면 기준 고정 */
-  top: 80px;
-  left: 400px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  color: #506176;
-  font-size: 16px;
-  gap: 4px;
-  z-index: 1000; /* 겹침 방지 */
-}
-
-.arrow-icon {
-  font-size: 16px;
+/* 웹 기준 좌우 여백 확장 */
+@media (min-width: 1024px) {
+  .reservation-wrapper {
+    padding: 120px 80px 0 80px;  /* ← 넉넉하게 여백 줌 */
+  }
 }
 
 /* 레이아웃 */
@@ -191,8 +192,39 @@ const openModal = () => {
   justify-content: center;
   align-items: flex-start;
   gap: 80px;
-  margin-top: 160px;
 }
+
+/* 왼쪽 열: 이전 버튼 + 프로필 */
+.left-column {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+/* '이전' 버튼 디자인 */
+.back-button {
+  margin-bottom: 32px;
+  color: #506176;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  margin-left: 0;
+}
+
+/* ✅ 웹 기준 강력 이동 */
+@media (min-width: 1024px) {
+  .back-button {
+    margin-left: 160px; /* 프로필 시작선 딱 맞춤 */
+  }
+}
+
+.arrow-icon {
+  font-size: 16px;
+}
+
+
 
 /* 프로필 영역 */
 .profile-box {

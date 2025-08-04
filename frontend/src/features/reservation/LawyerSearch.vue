@@ -165,7 +165,10 @@ const applyFilters = async () => {
   }
 }
 
-onMounted(applyFilters)
+onMounted(() => {
+  applyFilters()
+  window.scrollTo(0, 0)   // 페이지 진입 시 최상단 이동
+})
 
 const expandedCards = ref([])
 
@@ -190,7 +193,10 @@ const goToReservation = (lawyer) => {
 
 <style scoped>
 .lawyer-page-container {
-  padding: 0 20px;
+  padding-top: 60px; /* navbar 높이 + 여유 공간 */
+  /* 기존 padding 유지 */
+  padding-left: 20px;
+  padding-right: 20px;
   max-width: 1200px;
   margin: 0 auto;
 }
