@@ -88,7 +88,7 @@ const saveChanges = async () => {
   }
 
   try {
-    await axios.patch('/api/lawyers/me/edit', payload)
+    await axios.patch('/api/lawyers/me', payload)
     alert('수정 완료!')
     router.back()
   } catch (err) {
