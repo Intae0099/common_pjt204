@@ -1,71 +1,79 @@
 <template>
-  <div>
+  <div class="signup-wrapper">
     <!-- 상단 제목 -->
-    <div>
-      <h2>변호사 회원가입</h2>
-      <p>회원정보를 입력해주세요</p>
+    <div class="signup-header">
+      <h2 class="signup-title">변호사 회원가입</h2>
+      <p class="signup-subtitle">회원정보를 입력해주세요</p>
     </div>
 
     <!-- 페이지 단계 표시 -->
-    <div>
-      <span>1</span>
-      <span>2</span>
-      <span>3</span>
+    <div class="step-indicator">
+      <span class="step active">1</span>
+      <span class="dot">···</span>
+      <span class="step">2</span>
+      <span class="dot">···</span>
+      <span class="step">3</span>
     </div>
 
     <!-- 회원가입 폼 -->
-    <form @submit.prevent="handleSubmit">
-      <div>
-        <label>성함</label>
-        <input type="text" placeholder="예시) 홍길동" v-model="form.name" required />
-      </div>
+    <div class="signup-box">
+      <form @submit.prevent="handleSubmit" class="form-area">
+        <div class="form-group">
+          <label>성함</label>
+          <input type="text" placeholder="예시) 홍길동" v-model="form.name" required />
+        </div>
 
-      <!-- 이메일 입력 섹션 -->
-      <div>
-        <label>이메일</label>
-        <div class="email-input-wrapper">
+        <div class="form-group">
+          <label>이메일</label>
+          <div class="email-input-wrapper">
+            <input
+              class="inline-email"
+              type="email"
+              placeholder="예시) honggildong@naver.com"
+              v-model="form.loginEmail"
+              :disabled="emailDisabled"
+              @blur="validateEmailFormat"
+              required
+            />
+            <button
+              type="button"
+              v-if="showDuplicateCheckButton"
+              @click="checkEmailDuplicate"
+              class="duplicate-check-btn"
+            >
+              중복검사
+            </button>
+          </div>
+          <p v-if="!isEmailValid" class="error-message">이메일 형식으로 입력해주세요.</p>
+          <p v-if="isEmailChecked" class="success-message">사용 가능한 이메일입니다.</p>
+        </div>
+
+        <div class="form-group">
+          <label>비밀번호</label>
           <input
-            type="email"
-            placeholder="예시) honggildong@naver.com"
-            v-model="form.loginEmail"
-            :disabled="emailDisabled"
-            @blur="validateEmailFormat"
+            type="password"
+            placeholder="영문, 숫자 포함 8자리 이상"
+            v-model="form.password"
             required
           />
-          <!-- v-if를 사용해 조건에 따라 중복검사 버튼 표시 -->
-          <button
-            type="button"
-            v-if="showDuplicateCheckButton"
-            @click="checkEmailDuplicate"
-            class="duplicate-check-btn"
-          >
-            중복검사
-          </button>
         </div>
-        <!-- 이메일 유효성 및 중복 확인 메시지 -->
-        <p v-if="!isEmailValid" class="error-message">이메일 형식으로 입력해주세요.</p>
-        <p v-if="isEmailChecked" class="success-message">사용 가능한 이메일입니다.</p>
-      </div>
 
-      <div>
-        <label>비밀번호</label>
-        <input type="password" placeholder="영문, 숫자 포함 8자리 이상" v-model="form.password" required />
-      </div>
+        <div class="form-group">
+          <label>비밀번호 확인</label>
+          <input type="password" v-model="form.passwordConfirm" required />
+        </div>
 
-      <div>
-        <label>비밀번호 확인</label>
-        <input type="password" v-model="form.passwordConfirm" required />
-      </div>
-
-      <button type="submit">다음</button>
-    </form>
+        <button type="submit" class="next-btn">다음</button>
+      </form>
+    </div>
 
     <!-- 하단 링크 -->
-    <div>
+    <div class="footer-links">
       <router-link to="/">메인화면으로</router-link>
     </div>
   </div>
 </template>
+
 
 <script>
 import { useAuthStore } from '@/stores/auth';
@@ -166,35 +174,157 @@ export default {
 </script>
 
 <style scoped>
-/* 이메일 유효성 검사 임시 CSS */
-/* 이메일 입력창과 버튼을 한 줄에 배치하기 위한 스타일 */
+*{
+  font-family: 'Noto Sans KR', sans-serif;
+}
+.signup-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 120px;
+  font-family: 'Pretendard', sans-serif;
+}
+
+.signup-header {
+  text-align: center;
+}
+
+.signup-title {
+  font-size: 25px;
+  font-weight: bold;
+}
+
+.signup-subtitle {
+  font-size: 14px;
+  color: #82A0B3;
+  margin-top: 6px;
+}
+
+.step-indicator {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin: 20px 0px 30px 0px;
+}
+
+.step {
+  line-height: 40px;
+  text-align: center;
+  border-radius: 50%;
+  font-weight: bold;
+  color: #B9D0DF;
+}
+
+.step.active {
+  line-height: 35px;
+  width: 40px;
+  height: 40px;
+  background-color: #0c2c46;
+  color: white;
+  border: none;
+  font-size: 1.5rem;
+}
+.dot {
+  color: #B9D0DF;
+  font-size: 1.5rem;
+  display: flex;
+  align-items: center;
+  letter-spacing: 0.2rem;
+}
+
+
+.signup-box {
+  width: 400px;
+  background-color: white;
+  border: 1px solid #E4EEF5;
+  border-radius: 10px;
+  padding: 40px 30px;
+  box-shadow: 0 1px 5px #E4EEF5;
+}
+
+.form-area {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+
+}
+
+.form-group label {
+  font-size: 14px;
+  margin-bottom: 6px;
+  font-weight: bold;
+  color: #072D45;
+}
+
+.form-group input:not(.inline-email) {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.email-input-wrapper input.inline-email {
+  flex-grow: 1;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
 .email-input-wrapper {
   display: flex;
   align-items: center;
+  gap: 8px;
+  width: 100%;
 }
-
 .email-input-wrapper input {
-  flex-grow: 1; /* 입력창이 남은 공간을 모두 차지하도록 함 */
+  flex-grow: 1;
 }
 
-/* 중복검사 버튼 스타일 */
 .duplicate-check-btn {
-  margin-left: 8px; /* 입력창과의 간격 */
   padding: 8px 12px;
-  flex-shrink: 0; /* 버튼 크기가 줄어들지 않도록 함 */
+  background-color: #f2f2f2;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
 }
 
-/* 에러 메시지 스타일 */
+.next-btn {
+  background-color: #0c2c46;
+  color: white;
+  border: none;
+  padding: 12px;
+  width: 100%;
+  border-radius: 6px;
+  font-weight: bold;
+  font-size: 15px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+.footer-links {
+  margin-top: 20px;
+  font-size: 13px;
+  color: #777;
+}
 .error-message {
   color: red;
   font-size: 0.8rem;
   margin-top: 4px;
 }
-
-/* 성공 메시지 스타일 */
 .success-message {
   color: green;
   font-size: 0.8rem;
   margin-top: 4px;
 }
+
 </style>
