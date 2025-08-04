@@ -1,8 +1,12 @@
 package com.B204.lawvatar_backend.common.filter;
 
+import com.B204.lawvatar_backend.common.principal.AdminPrincipal;
 import com.B204.lawvatar_backend.common.principal.ClientPrincipal;
 import com.B204.lawvatar_backend.common.principal.LawyerPrincipal;
 import com.B204.lawvatar_backend.common.util.JwtUtil;
+import com.B204.lawvatar_backend.user.admin.entity.Admin;
+import com.B204.lawvatar_backend.user.admin.repository.AdminRepository;
+import com.B204.lawvatar_backend.user.admin.service.AdminService;
 import com.B204.lawvatar_backend.user.client.entity.Client;
 import com.B204.lawvatar_backend.user.client.repository.ClientRepository;
 import com.B204.lawvatar_backend.user.lawyer.entity.Lawyer;
@@ -31,13 +35,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
   private final JwtUtil jwtUtil;
   private final LawyerRepository lawyerRepo;
   private final ClientRepository clientRepo;
+  private final AdminRepository adminRepo;
 
   public JwtAuthenticationFilter(
       JwtUtil jwtUtil,
       LawyerRepository lawyerRepo,
-      ClientRepository clientRepo) { this.jwtUtil = jwtUtil;
+      ClientRepository clientRepo,
+      AdminRepository adminRepo) { this.jwtUtil = jwtUtil;
     this.lawyerRepo = lawyerRepo;
     this.clientRepo = clientRepo;
+    this.adminRepo = adminRepo;
   }
 
   @Override
@@ -60,7 +67,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         || path.startsWith("/api/auth/")
 
         // 관리자 기능 Test용
-        // || path.startsWith("/api/admin")
+        || path.startsWith("/api/admin/login")
 
         // Swagger/OpenAPI
         || path.startsWith("/v3/api-docs")
@@ -108,11 +115,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
           res.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid subject for LAWYER token");
           return;
         }
-
       } else if ("CLIENT".equalsIgnoreCase(userType)) {
         Client client = clientRepo.findByOauthIdentifier(subject)
             .orElseThrow(() -> new UsernameNotFoundException("No client with oauthIdentifier: " + subject));
         principal = new ClientPrincipal(client);
+      }  else if ("ADMIN".equalsIgnoreCase(userType)) {
+        String email = subject.startsWith("ADMIN:")
+            ? subject.substring("ADMIN:".length())
+            : subject;
+        Admin admin = adminRepo.findByLoginEmail(email)
+            .orElseThrow(() ->
+                new UsernameNotFoundException("No admin with email: " + email));
+        principal = new AdminPrincipal(admin);
+
       } else {
         res.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid userType");
         return;

@@ -40,6 +40,7 @@ public class Lawyer {
     private String registrationNumber;
 
     @Enumerated(EnumType.STRING)
+    @Column(name = "certification_status", nullable = false)
     private CertificationStatus certificationStatus = CertificationStatus.PENDING;
 
     @Column(columnDefinition = "int unsigned", nullable = false)
