@@ -11,6 +11,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.NoSuchElementException;
+
 @RestController
 @RequestMapping("/api/rooms")
 @RequiredArgsConstructor
@@ -35,9 +37,25 @@ public class RoomController {
         // 유저타입을 서비스에 넘겨주면서 비즈니스 로직 시작
         String token = null;
         if(principal instanceof ClientPrincipal clientPrincipal) {
-            token = roomService.createRoom(appointmentId, "CLIENT", clientPrincipal.getId());
+            try {
+                token = roomService.createRoom(appointmentId, "CLIENT", clientPrincipal.getId());
+            } catch(IllegalStateException e) {
+                e.getStackTrace();
+                return ResponseEntity.status(HttpStatus.CONFLICT).build();
+            } catch(NoSuchElementException e) {
+                e.getStackTrace();
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            }
         } else if(principal instanceof LawyerPrincipal lawyerPrincipal) {
-            token = roomService.createRoom(appointmentId, "LAWYER", lawyerPrincipal.getId());
+            try {
+                token = roomService.createRoom(appointmentId, "LAWYER", lawyerPrincipal.getId());
+            } catch(IllegalStateException e) {
+                e.getStackTrace();
+                return ResponseEntity.status(HttpStatus.CONFLICT).build();
+            } catch(NoSuchElementException e) {
+                e.getStackTrace();
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            }
         }
 
         CreateRoomResponse createRoomResponse = CreateRoomResponse.builder().token(token).build();
