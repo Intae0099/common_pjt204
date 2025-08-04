@@ -65,7 +65,7 @@ onBeforeUnmount(() => {
 <style scoped>
 .preview-camera {
   width: 100%;
-  height: 450px;
+  height: 400px;
   border-radius: 10px;
   background-color: #ddd;
   display: flex;
@@ -87,13 +87,13 @@ video {
   bottom: 15px;
   left: 17px;
   display: flex;
-  gap: 1rem;
+  gap: 0.5rem;
 }
 
 button {
   background-color: rgba(0, 0, 0, 0.6);
   border: none;
-  padding: 0.6rem;
+  padding: 0.5rem;
   border-radius: 50%;
   cursor: pointer;
   display: flex;
@@ -104,7 +104,6 @@ button {
 button:hover {
   background-color: rgba(0, 0, 0, 0.8);
 }
-
 .icon {
   width: 24px;
   height: 24px;
