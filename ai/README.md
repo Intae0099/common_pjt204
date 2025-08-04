@@ -14,7 +14,7 @@ ALaw 플랫폼은 법률 상담의 진입장벽을 낮추기 위해 기획되었
 
 - **사건 구조화 AI**: 사용자의 사건 개요(자유 텍스트)를 LLM과의 대화를 통해 법률적으로 유의미한 표준 스키마(사건 경위서)로 정제합니다. (`services/structuring_service.py`)
 - **AI 법률 분석**:
-    - **유사 판례/법령 검색**: 구조화된 사건을 기반으로 `Faiss` 벡터 DB에서 관련성 높은 판례 및 법령을 검색하고, Cross-encoder로 재정렬하여 정확도를 높입니다. (`services/search_service.py`)
+    - **유사 판례/법령 검색**: 구조화된 사건을 기반으로 벡터 DB에서 관련성 높은 판례 및 법령을 검색하고, Cross-encoder로 재정렬하여 정확도를 높입니다. (`services/search_service.py`)
     - **법률 쟁점 도출 및 초기 법률 소견 제공**: 검색된 자료와 사건 경위서를 `LangChain`과 `GPT-4o`를 이용해 종합, 법률적 쟁점을 분석하고 초기 법률 소견을 생성합니다. (`services/case_analysis_service.py`)
 - **상담 신청서 생성 AI**: 분석된 사건 내용과 사용자 추가 정보를 결합하여 정형화된 상담 신청서를 생성하고, 변호사를 위한 핵심 질문을 자동으로 도출합니다. (`services/consultation_service.py`)
 - **실시간 법률 챗봇**: `FastAPI`의 SSE(Server-Sent Events)를 활용하여 법률 도메인 특화 AI 챗봇과의 실시간 스트리밍 대화를 지원합니다. (`services/chat_service.py`)
