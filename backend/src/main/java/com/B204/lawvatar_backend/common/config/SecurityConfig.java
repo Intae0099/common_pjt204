@@ -37,6 +37,7 @@ import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
+import org.springframework.security.oauth2.client.web.OAuth2LoginAuthenticationFilter;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
@@ -133,7 +134,7 @@ public class SecurityConfig {
 
       // BE 개발 편의를 위해 8080으로 변경 (-> front 서버 결합 시 5173으로 변경 필요)
       String redirectUrl = UriComponentsBuilder
-          .fromUriString("http://localhost:8080/oauth2/callback/kakao")
+          .fromUriString("http://localhost:5173/user/mypage")
           .queryParam("accessToken", accessToken)
           .build().toUriString();
 
@@ -204,32 +205,40 @@ public class SecurityConfig {
 
         // 로컬 로그인 설정 (formLogin)
         .formLogin(form -> form
+            .loginPage("/auth/login")
             .loginProcessingUrl("/auth/login") // POST 요청
             .usernameParameter("loginEmail")
             .passwordParameter("password")
             .successHandler(lawyerLoginSuccessHandler)
             .failureHandler(lawyerLoginFailureHandler)
+            .permitAll()
         )
 
         // OAuth2 로그인 설정
         .oauth2Login(oauth -> oauth
+            .authorizationEndpoint(authz -> authz.baseUri("/oauth2/authorization"))
+            .redirectionEndpoint(redir -> redir.baseUri("/login/oauth2/code/*"))
             .userInfoEndpoint(u -> u.userService(clientService))
             .successHandler(oauth2JwtSuccessHandler)
             .failureHandler(oauth2FailureHandler)
         )
 
         // 세션 설정 (기존 유지: OAuth2용 state 저장 가능)
-        .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+        .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
 
         // 인증 Provider 등록 (Lawyer 전용)
         .authenticationProvider(lawyerAuthProvider(lawyerService))
 
         // JWT 필터: OAuth2 로그인 이후에 추가
-        .addFilterAfter(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+        .addFilterAfter(jwtAuthenticationFilter, OAuth2LoginAuthenticationFilter.class)
 
         // URL 접근 제한
         .authorizeHttpRequests(auth -> auth
             // 의뢰인 로그인
+            .requestMatchers(HttpMethod.GET, "/auth/login").permitAll()
+            .requestMatchers("/login/oauth2/code/*").permitAll()
+            .requestMatchers("/oauth2/callback/*").permitAll()
+
             .requestMatchers(
                 "/login/oauth2/**",
                 "/oauth2/authorization/**",
@@ -256,8 +265,9 @@ public class SecurityConfig {
                 "/webjars/**"
             ).permitAll()
 
-//            .requestMatchers("/.well-known/**").permitAll()
-//            .requestMatchers("/api/protected/**").authenticated()
+            // .requestMatchers("/.well-known/**").permitAll()
+            // .requestMatchers("/api/protected/**").authenticated()
+
             .requestMatchers(HttpMethod.OPTIONS).permitAll()
             .anyRequest().authenticated()
         );

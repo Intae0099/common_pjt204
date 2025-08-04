@@ -28,6 +28,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Direction;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
@@ -173,10 +175,11 @@ public class LawyerController {
   @GetMapping("/list")
   public ResponseEntity<List<LawyerSearchDto>> getLawyers(
     @RequestParam(value = "tags" , required = false) List<Long> tagIds,
-    @RequestParam(value = "search", required = false) String search
+    @RequestParam(value = "search", required = false) String search,
+      @RequestParam(value = "sortBy", defaultValue = "name") String sortBy
     ){
 
-    List<Lawyer> lawyers = lawyerService.findLawyers(tagIds, search);
+    List<Lawyer> lawyers = lawyerService.findLawyers(tagIds, search, sortBy);
 
     List<LawyerSearchDto> result = lawyers.stream()
         .map(LawyerSearchDto::from)

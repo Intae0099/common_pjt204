@@ -19,6 +19,8 @@ import java.util.Base64;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.coyote.BadRequestException;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Direction;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -207,26 +209,35 @@ public class LawyerService implements UserDetailsService {
     lawyerRepo.deleteById(id);
   }
 
-  public List<Lawyer> findLawyers(List<Long> tagIds, String search) {
+  public List<Lawyer> findLawyers(
+      List<Long> tagIds,
+      String search,
+      String sortBy
+  ) {
 
     boolean hasTags = tagIds != null && !tagIds.isEmpty();
     boolean hasSearch = search != null && !search.isEmpty();
 
+    // sort 객체 생성
+    Sort sort = "name".equals(sortBy)
+        ? Sort.by(Direction.ASC, "name")
+        : Sort.by(Direction.DESC, "consultationCount");
+
     if (hasTags && hasSearch) {
       // 모든 태그 + 이름 검색
       return lawyerRepo.findByAllTagIdsAndNameContainingIgnoreCase(
-          tagIds, tagIds.size(), search);
+          tagIds, tagIds.size(), search, sort);
     }
     if (hasTags) {
       // 모든 태그만
-      return lawyerRepo.findByAllTagIds(tagIds, tagIds.size());
+      return lawyerRepo.findByAllTagIds(tagIds, tagIds.size(), sort);
     }
     if (hasSearch) {
       // 이름만 검색
-      return lawyerRepo.findByNameContainingIgnoreCase(search);
+      return lawyerRepo.findByNameContainingIgnoreCase(search, sort);
     }
     // 둘 다 없으면 전체
-    return lawyerRepo.findAll();
+    return lawyerRepo.findAll(sort);
 
   }
 
