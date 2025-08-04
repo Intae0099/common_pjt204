@@ -33,7 +33,7 @@ import java.util.Map;
 public class RoomService {
 
     // Field
-    private static final String MY_OPENVIDU_SERVER_URL = "https://i13b204.p.ssafy.io/openvidu/api/sessions/";
+    private static final String MY_OPENVIDU_SERVER_URL = "https://i13b204.p.ssafy.io";
     private static final String OPENVIDU_SECRET_KEY = "ssafy204openvidulawaid";
 
     private final RoomRepository roomRepository;
@@ -46,16 +46,15 @@ public class RoomService {
     private final RestTemplate restTemplate;
 
     // Method
-    public String createRoom(Long appointmentId, String userType, Long id) throws Exception{
+    public String createRoom(Long appointmentId, String userType, Long userId) {
 
         String openviduCustomSessionId = Room.generateCustomSessionId();
 
         // 생성한 customSessionId 들고 sessionId 얻으러 가기
-        OpenViduSessionResponse openViduSessionResponse = getSessionId(openviduCustomSessionId);
-        String openviduSessionId = openViduSessionResponse.getId();
+        String openviduSessionId = getSessionId(openviduCustomSessionId);
 
         /// ///////////////////////////////////////////////////////
-        System.out.println("얻어온 세션아이디:" + openviduSessionId);
+        System.out.println("sessionId 획득 성공! " + openviduSessionId);
         /// ///////////////////////////////////////////////////////
 
         // openvidu 관련 데이터들 가지고 Room 객체 생성해서 DB에 저장하기
@@ -63,33 +62,33 @@ public class RoomService {
         roomRepository.save(room);
 
         // sessionId 들고 connections 가서 토큰 얻어오기
-        String token = getToken(openviduSessionId).getToken();
+        String openviduToken = getToken(openviduSessionId);
 
         /// ///////////////////////////////////////////////////////
-        System.out.println("생성 토큰 획득 성공!" + token);
+        System.out.println("token 획득 성공! " + openviduToken);
         /// ///////////////////////////////////////////////////////
 
         // Participant 테이블에 참가정보 저장하기
         // 유저타입에 따라 Participant 객체 만들어서 DB에 저장
         if(userType.equals("CLIENT")) {
-            Client client = clientRepository.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "[RoomService - 00] 해당 ID 값을 가지는 Client가 없습니다."));
+            Client client = clientRepository.findById(userId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "[RoomService - 001] 해당 ID 값을 가지는 Client가 없습니다."));
             Participant participant = Participant.builder().client(client).room(room).build();
             participantRepository.save(participant);
         } else if(userType.equals("LAWYER")) {
-            Lawyer lawyer = lawyerRepository.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "[RoomService - 00] 해당 ID 값을 가지는 Lawyer가 없습니다."));
+            Lawyer lawyer = lawyerRepository.findById(userId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "[RoomService - 002] 해당 ID 값을 가지는 Lawyer가 없습니다."));
             Participant participant = Participant.builder().lawyer(lawyer).room(room).build();
             participantRepository.save(participant);
         }
 
         // Session 테이블에 세션정보 저장하기
-        Appointment appointment = appointmentRepository.findById(appointmentId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "[RoomService - 00] 해당 ID 값을 가지는 Appointment가 없습니다."));
+        Appointment appointment = appointmentRepository.findById(appointmentId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "[RoomService - 003] 해당 ID 값을 가지는 Appointment가 없습니다."));
         Session session = Session.builder().appointment(appointment).room(room).participantCount(1).build();
         sessionRepository.save(session);
 
-        return token;
+        return openviduToken;
     }
 
-    public String participateRoom(Long appointmentId, String userType, Long id) throws Exception {
+    public String participateRoom(Long appointmentId, String userType, Long userId) {
 
         // 이 Appointment 객체에 대한 Session 객체와 Room 객체 얻기
         Session session = sessionRepository.findByAppointmentId(appointmentId);
@@ -98,11 +97,11 @@ public class RoomService {
         // Participant 테이블에 참가정보 저장하기
         // 유저타입에 따라 Participant 객체 만들어서 DB에 저장
         if(userType.equals("CLIENT")) {
-            Client client = clientRepository.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "[RoomService - 00] 해당 ID 값을 가지는 Client가 없습니다."));
+            Client client = clientRepository.findById(userId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "[RoomService - 004] 해당 ID 값을 가지는 Client가 없습니다."));
             Participant participant = Participant.builder().client(client).room(room).build();
             participantRepository.save(participant);
         } else if(userType.equals("LAWYER")) {
-            Lawyer lawyer = lawyerRepository.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "[RoomService - 00] 해당 ID 값을 가지는 Lawyer가 없습니다."));
+            Lawyer lawyer = lawyerRepository.findById(userId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "[RoomService - 005] 해당 ID 값을 가지는 Lawyer가 없습니다."));
             Participant participant = Participant.builder().lawyer(lawyer).room(room).build();
             participantRepository.save(participant);
         }
@@ -115,13 +114,64 @@ public class RoomService {
         String openviduSessionId = room.getOpenviduSessionId();
 
         // sessionId 들고 토큰 받으러 가기
-        String token = getToken(openviduSessionId).getToken();
+        String openviduToken = getToken(openviduSessionId);
 
         /// ///////////////////////////////////////////////////////
-        System.out.println("참가 토큰 획득 성공!" + token);
+        System.out.println("token 획득 성공! " + openviduToken);
         /// ///////////////////////////////////////////////////////
 
-        return token;
+        return openviduToken;
+    }
+
+    public void leaveRoom(Long appointmentId, String userType, Long userId) {
+
+        // appointmentId 기준으로 세션 객체 얻기
+        Session session = sessionRepository.findByAppointmentId(appointmentId);
+
+        // 세션에서 나간다면 남는 인원수
+        int participantCount = session.getParticipantCount() - 1;
+
+        // userType이 CLIENT일 때와 LAWYER일 때를 분기처리
+        if(userType.equals("CLIENT")) {
+            // 남는 인원수가 1명 이상일 때와 0명일 때를 분기처리
+            // 1명 이상일 때는 참가 인원수 -1 하고, 참가정보(Participant)만 삭제하면 됨
+            if(participantCount >= 1) {
+                // 해당 세션 참가자수 -1
+                session.setParticipantCount(participantCount);
+
+                // 이 의뢰인의 참가정보 삭제
+                participantRepository.deleteByClientId(userId);
+
+            } else if(participantCount == 0) { // 0명일 때는 세션정보(Session)와 openvidu 관련정보(Room)도 삭제해야 함
+
+                // 이 화상상담방의 openvidu 관련정보 삭제해야 해서 해당하는 Room 객체 얻어놓기
+                Room room = sessionRepository.findByAppointmentId(appointmentId).getRoom();
+
+                // 해당 세션을 삭제
+                sessionRepository.delete(session);
+
+                // 이 의뢰인의 참가정보 삭제
+                participantRepository.deleteByClientId(userId);
+
+                // 이 화상상담방의 openvidu 관련정보 삭제
+                roomRepository.delete(room);
+
+            }
+        } else if(userType.equals("LAWYER")) { // userType이 LAWYER 일 때도 똑같이 반복ㅠ
+
+            if(participantCount >= 1) {
+
+                session.setParticipantCount(participantCount);
+                participantRepository.deleteByLawyerId(userId);
+
+            } else if(participantCount == 0) {
+
+                Room room = sessionRepository.findByAppointmentId(appointmentId).getRoom();
+                sessionRepository.delete(session);
+                participantRepository.deleteByLawyerId(userId);
+                roomRepository.delete(room);
+            }
+        }
     }
 
     private HttpHeaders createHeaders() {
@@ -133,29 +183,42 @@ public class RoomService {
         return headers;
     }
 
-    private OpenViduSessionResponse getSessionId(String openviduCustomSessionId) throws Exception{
+    private String getSessionId(String openviduCustomSessionId) {
 
         // customSessionId 들고 sessions 가서 openvidu 내부 sessionId 얻어오기
+        String url = MY_OPENVIDU_SERVER_URL + "/openvidu/api/sessions";
+
+        /// ///////////////////////////////////////////////////////
+        System.out.println("sessionId 발급받을 때 사용한 url: " + url);
+        /// ///////////////////////////////////////////////////////
+
         HttpHeaders headers = createHeaders();
         Map<String, String> body = Map.of("customSessionId", openviduCustomSessionId);
 
         HttpEntity<Map<String, String>> httpEntity = new HttpEntity<>(body, headers);
 
-        return restTemplate.postForEntity(MY_OPENVIDU_SERVER_URL, httpEntity, OpenViduSessionResponse.class).getBody();
+        ResponseEntity<OpenViduSessionResponse> openviduSessionResponse = restTemplate.postForEntity(url, httpEntity, OpenViduSessionResponse.class);
+
+        return openviduSessionResponse.getBody().getId();
     }
 
-    private OpenViduConnectionResponse getToken(String openviduSessionId) {
+    private String getToken(String openviduSessionId) {
 
         // 이제 sessionId 알고있으니깐(새로 생성됐으면 sessionId 리턴됐을거고, 이미 있는 customSessionId라 409 Conflict 발생했으면 그냥 기존에 알고있던 customSessionId를 sessionId로 쓰면 됨)
         // 그 sessionId 들고 sessions/{sessionId}/connections가서 토큰얻어오기
-        String url = MY_OPENVIDU_SERVER_URL + openviduSessionId + "/connection";
-        System.out.println("사용 url: " + url);
+        String url = MY_OPENVIDU_SERVER_URL + "/openvidu/api/sessions/" + openviduSessionId + "/connection";
+
+        /// ///////////////////////////////////////////////////////
+        System.out.println("token 발급받을 때 사용한 url: " + url);
+        /// ///////////////////////////////////////////////////////
+
         HttpHeaders headers = createHeaders();
 
         HttpEntity<Void> httpEntity = new HttpEntity<>(headers);
 
-        ResponseEntity<OpenViduConnectionResponse> connectionResponse = restTemplate.postForEntity(url, httpEntity, OpenViduConnectionResponse.class);
+        ResponseEntity<OpenViduConnectionResponse> openviduConnectionResponse = restTemplate.postForEntity(url, httpEntity, OpenViduConnectionResponse.class);
 
-        return connectionResponse.getBody(); // 토큰을 리턴해야함
+        return openviduConnectionResponse.getBody().getToken(); // 토큰을 리턴해야함
     }
+
 }
