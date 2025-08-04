@@ -37,8 +37,6 @@ async def analyze_case_endpoint(
 
     data = AnalysisResponseData(
         report=case_analysis_report,
-        tags=getattr(case_analysis_report, "tags", []) or [],
-        recommendedLawyers=getattr(case_analysis_report, "recommendedLawyers", []) or [],
     )
     # 공통 응답 규격으로 반환
     return {"success": True, "data": data}
