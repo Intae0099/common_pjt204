@@ -1,5 +1,6 @@
 package com.B204.lawvatar_backend.user.auth.repository;
 
+import com.B204.lawvatar_backend.user.admin.entity.Admin;
 import com.B204.lawvatar_backend.user.auth.entity.RefreshToken;
 import com.B204.lawvatar_backend.user.client.entity.Client;
 import com.B204.lawvatar_backend.user.lawyer.entity.Lawyer;
@@ -17,6 +18,8 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long
 
   void deleteByLawyer(Lawyer lawyer);
 
+  void deleteByAdmin(Admin admin);
+
   @Modifying
   @Query("DELETE FROM RefreshToken rt WHERE rt.lawyer.id = :lawyerId")
   void deleteByLawyerId(@Param("lawyerId") Long lawyerId);
@@ -24,4 +27,8 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long
   @Modifying @Transactional
   @Query("DELETE FROM RefreshToken rt WHERE rt.client.id = :clientId")
   void deleteByClientId(@Param("clientId") Long clientId);
+
+  @Modifying @Transactional
+  @Query("DELETE FROM RefreshToken rt WHERE rt.admin.id = :adminId")
+  void deleteByAdminId(@Param("adminId") Long adminId);
 }

@@ -19,6 +19,7 @@ import java.util.Base64;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.coyote.BadRequestException;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.http.ResponseCookie;
@@ -131,6 +132,13 @@ public class LawyerService implements UserDetailsService {
   public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
     Lawyer lawyer = lawyerRepo.findByLoginEmail(username)
         .orElseThrow(() -> new UsernameNotFoundException("변호사 계정이 없습니다이"));
+
+    // 🔍 진짜 비교 상태 확인
+    System.out.println("✅ [DEBUG] loginEmail = " + lawyer.getLoginEmail());
+    System.out.println("✅ [DEBUG] certStatus (Enum) = " + lawyer.getCertificationStatus());
+    System.out.println("✅ [DEBUG] certStatus name = " + lawyer.getCertificationStatus().name());
+    System.out.println("✅ [DEBUG] certStatus equals APPROVED? = " + (lawyer.getCertificationStatus() == CertificationStatus.APPROVED));
+
 
     if(lawyer.getCertificationStatus() != CertificationStatus.APPROVED) {
       throw new BadCredentialsException("인증되지 않은 계정입니다. 관리자에게 문의하세요.");
