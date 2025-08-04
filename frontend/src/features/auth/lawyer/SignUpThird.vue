@@ -15,41 +15,18 @@
       <span class="step active">3</span>
     </div>
 
-<<<<<<< HEAD
-    <!-- 3단계 폼 -->
-    <form @submit.prevent="handleSubmit">
-      <div>
-        <label>프로필 사진 (필수)</label>
-        <input type="file" accept="image/*" @change="handleImageUpload" />
-        <div v-if="form.photoPreview">
-          <img :src="form.photoPreview" alt="사진 미리보기" style="width: 150px; height: 150px; object-fit: cover; border-radius: 8px; margin-top: 8px;" />
-        </div>
-      </div>
-
-      <div>
-        <label>소개글 (필수)</label>
-        <textarea
-          v-model="form.introduction"
-          placeholder="의뢰인들에게 나를 소개하는 글을 작성해주세요."
-        ></textarea>
-      </div>
-
-      <div>
-        <label>태그 선택 (1개 이상 필수 선택)</label>
-        <div>
-          <button
-            v-for="tag in tagMap"
-            :key="tag.id"
-            type="button"
-            :class="{ selected: form.tags.includes(tag.id) }"
-            @click="toggleTag(tag.id)"
-          >
-            {{ tag.name }}
-          </button>
-=======
     <!-- 회원가입 폼 -->
     <div class="signup-box">
       <form @submit.prevent="handleSubmit" class="form-area">
+        <!-- 프로필 사진 -->
+        <div class="form-group">
+          <label>프로필 사진 (필수)</label>
+          <input type="file" accept="image/*" @change="handleImageUpload" />
+          <div v-if="form.photoPreview">
+            <img :src="form.photoPreview" alt="사진 미리보기" class="profile-preview" />
+          </div>
+        </div>
+
         <!-- 소개글 -->
         <div class="form-group">
           <label>소개글 (필수)</label>
@@ -59,7 +36,6 @@
             class="textarea-input"
             rows="4"
           ></textarea>
->>>>>>> account
         </div>
 
         <!-- 태그 선택 -->
@@ -79,7 +55,7 @@
           </div>
         </div>
 
-        <button type="submit" class="next-btn">확인</button>
+        <button type="submit" class="next-btn" :disabled="form.tags.length === 0">가입하기</button>
       </form>
     </div>
 
@@ -105,10 +81,10 @@ export default {
     return {
       form: {
         introduction: '',
-        tags: [], // 숫자 ID 배열
-        photo: ''
+        tags: [],
+        photo: '',
+        photoPreview: ''
       },
-      // ID ↔ 이름 매핑 테이블
       tagMap: [
         { id: 1, name: '형사 분야' },
         { id: 2, name: '교통·사고·보험' },
@@ -123,7 +99,7 @@ export default {
         { id: 11, name: '의료·생명·개인정보' },
         { id: 12, name: '금융·증권·기업' }
       ],
-      showModal: false,
+      showModal: false
     };
   },
   computed: {
@@ -143,29 +119,21 @@ export default {
     handleImageUpload(event) {
       const file = event.target.files[0];
       if (!file) return;
-
       const reader = new FileReader();
       reader.onload = (e) => {
-        const base64String = e.target.result.split(',')[1]; // 'data:image/jpeg;base64,...'에서 뒤쪽만 추출
+        const base64String = e.target.result.split(',')[1];
         this.form.photo = base64String;
         this.form.photoPreview = `data:image/jpeg;base64,${base64String}`;
       };
       reader.readAsDataURL(file);
     },
-
     async handleSubmit() {
-      // 1) Store에 값 병합
       this.authStore.updateSignup({
         introduction: this.form.introduction,
-        tags: this.form.tags
+        tags: this.form.tags,
+        photo: this.form.photo
       });
-
-
-      // 2) Proxy를 풀어서 plain Object로 복사
       const payload = { ...this.authStore.signupData };
-
-      console.log('payload to send:', payload);
-
       try {
         await axios.post('/api/lawyers/signup', payload);
         this.showModal = true;
@@ -184,10 +152,7 @@ export default {
 </script>
 
 <style scoped>
-* {
-  font-family: 'Noto Sans KR', sans-serif;
-}
-
+/* 기존 스타일 유지 */
 .signup-wrapper {
   display: flex;
   flex-direction: column;
@@ -195,29 +160,24 @@ export default {
   margin-top: 120px;
   font-family: 'Pretendard', sans-serif;
 }
-
 .signup-header {
   text-align: center;
 }
-
 .signup-title {
   font-size: 25px;
   font-weight: bold;
 }
-
 .signup-subtitle {
   font-size: 14px;
   color: #82A0B3;
   margin-top: 6px;
 }
-
 .step-indicator {
   display: flex;
   justify-content: center;
   gap: 15px;
   margin: 20px 0 30px 0;
 }
-
 .step {
   line-height: 40px;
   text-align: center;
@@ -225,7 +185,6 @@ export default {
   font-weight: bold;
   color: #B9D0DF;
 }
-
 .step.active {
   width: 40px;
   height: 40px;
@@ -234,7 +193,6 @@ export default {
   border: none;
   font-size: 1.5rem;
 }
-
 .dot {
   color: #B9D0DF;
   font-size: 1.5rem;
@@ -242,7 +200,6 @@ export default {
   align-items: center;
   letter-spacing: 0.2rem;
 }
-
 .signup-box {
   width: 400px;
   background-color: white;
@@ -251,26 +208,22 @@ export default {
   padding: 40px 30px;
   box-shadow: 0 1px 5px #E4EEF5;
 }
-
 .form-area {
   display: flex;
   flex-direction: column;
   gap: 20px;
 }
-
 .form-group {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
 }
-
 .form-group label {
   font-size: 14px;
   margin-bottom: 6px;
   font-weight: bold;
   color: #072D45;
 }
-
 .textarea-input {
   width: 100%;
   padding: 10px;
@@ -279,13 +232,18 @@ export default {
   border: 1px solid #ccc;
   resize: none;
 }
-
+.profile-preview {
+  width: 150px;
+  height: 150px;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-top: 8px;
+}
 .tag-list {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
 }
-
 .tag-btn {
   padding: 6px 12px;
   border-radius: 20px;
@@ -296,13 +254,11 @@ export default {
   cursor: pointer;
   transition: all 0.2s;
 }
-
 .tag-btn.selected {
   background-color: #0c2c46;
   color: white;
   border-color: #0c2c46;
 }
-
 .next-btn {
   background-color: #0c2c46;
   color: white;
@@ -315,10 +271,9 @@ export default {
   cursor: pointer;
   margin-top: 10px;
 }
-
-.footer-links {
-  margin-top: 20px;
-  font-size: 13px;
-  color: #777;
+button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+  opacity: 0.7;
 }
 </style>
