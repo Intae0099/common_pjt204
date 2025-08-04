@@ -157,8 +157,12 @@ const enterMeeting = async (appointmentId) => {
 
 .preview-right {
   width: 35%;
-  .right-title {
+  h3 {
+    margin-left: 5px;
     margin-bottom: 1rem;
+    color: #072D45;
+    font-size: 1rem;
+    font-weight: bold;
   }
 
   .appointment-wrapper {
