@@ -60,7 +60,7 @@ public class RoomService {
         String openviduSessionId = getSessionId(openviduCustomSessionId);
 
         /// ///////////////////////////////////////////////////////
-        System.out.println("sessionId 획득 성공! " + openviduSessionId);
+        System.out.println("sessionId 획득 성공");
         /// ///////////////////////////////////////////////////////
 
         // openvidu 관련 데이터들 가지고 Room 객체 생성해서 DB에 저장하기
@@ -71,7 +71,7 @@ public class RoomService {
         String openviduToken = getToken(openviduSessionId);
 
         /// ///////////////////////////////////////////////////////
-        System.out.println("token 획득 성공! " + openviduToken);
+        System.out.println("token 획득 성공!");
         /// ///////////////////////////////////////////////////////
 
         // Participant 테이블에 참가정보 저장하기
@@ -123,7 +123,7 @@ public class RoomService {
         String openviduToken = getToken(openviduSessionId);
 
         /// ///////////////////////////////////////////////////////
-        System.out.println("token 획득 성공! " + openviduToken);
+        System.out.println("token 획득 성공!");
         /// ///////////////////////////////////////////////////////
 
         return openviduToken;
@@ -203,10 +203,6 @@ public class RoomService {
         // openVidu 서버에 강제종료 요청보내기
         String url = MY_OPENVIDU_SERVER_URL + "/openvidu/api/sessions/" + openviduSessionId;
 
-        /// ///////////////////////////////////////////////////////
-        System.out.println("세션 종료시킬 때 사용한 url: " + url);
-        /// ///////////////////////////////////////////////////////
-
         HttpHeaders headers = createHeaders();
         HttpEntity<Void> httpEntity = new HttpEntity<>(headers);
 
@@ -239,10 +235,6 @@ public class RoomService {
         // customSessionId 들고 sessions 가서 openvidu 내부 sessionId 얻어오기
         String url = MY_OPENVIDU_SERVER_URL + "/openvidu/api/sessions";
 
-        /// ///////////////////////////////////////////////////////
-        System.out.println("sessionId 발급받을 때 사용한 url: " + url);
-        /// ///////////////////////////////////////////////////////
-
         HttpHeaders headers = createHeaders();
         Map<String, String> body = Map.of("customSessionId", openviduCustomSessionId);
 
@@ -258,10 +250,6 @@ public class RoomService {
         // 이제 sessionId 알고있으니깐(새로 생성됐으면 sessionId 리턴됐을거고, 이미 있는 customSessionId라 409 Conflict 발생했으면 그냥 기존에 알고있던 customSessionId를 sessionId로 쓰면 됨)
         // 그 sessionId 들고 sessions/{sessionId}/connections가서 토큰얻어오기
         String url = MY_OPENVIDU_SERVER_URL + "/openvidu/api/sessions/" + openviduSessionId + "/connection";
-
-        /// ///////////////////////////////////////////////////////
-        System.out.println("token 발급받을 때 사용한 url: " + url);
-        /// ///////////////////////////////////////////////////////
 
         HttpHeaders headers = createHeaders();
 
