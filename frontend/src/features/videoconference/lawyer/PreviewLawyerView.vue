@@ -84,7 +84,7 @@ const enterMeeting = async (appointmentId) => {
       console.log('방 생성 실패 또는 이미 존재함', err.response?.data || err)
     })
     const res = await axios.post(`/api/rooms/${appointmentId}/participants`)
-    const token = res.data.openviduToken
+    const token = res.data.data.openviduToken
 
     router.push({
       name: 'MeetingRoom',

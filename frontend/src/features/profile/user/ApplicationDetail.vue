@@ -95,7 +95,7 @@ defineEmits(['close'])
   position: relative;
   background: #F7FCFF;
   border-radius: 12px;
-  padding: 2rem 0 3rem 0;
+  padding: 3rem 0 3rem 0;
   width: 800px;
   max-height: 90vh;
 }
@@ -103,7 +103,7 @@ defineEmits(['close'])
 .modal-scroll-area {
   overflow-y: auto;
   max-height: 80vh;
-  padding: 0 2rem 2rem 2rem;
+  padding: 0 1rem 2rem 2rem;
 }
 .modal-scroll-area::-webkit-scrollbar,
 .scrollable-content::-webkit-scrollbar {
@@ -182,8 +182,8 @@ textarea:focus {
 }
 .close-btn {
   position: absolute;
-  top: 1.5rem;
-  right: 1.5rem;
+  top: 1rem;
+  right: 1rem;
   background: none;
   border: none;
   cursor: pointer;
