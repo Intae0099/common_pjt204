@@ -28,7 +28,9 @@ class TestOpenAIClient(unittest.TestCase):
             model="gpt-4o-mini",
             messages=messages,
             temperature=0.3,
-            max_tokens=2048
+            max_tokens=2048,
+            stream=False
+            
         )
 
     @patch('llm.clients.openai_client.client.chat.completions.create')
