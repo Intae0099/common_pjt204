@@ -1,134 +1,117 @@
-# AI 서비스 모듈 README
+# ALaw AI-Backend
 
-## 1. 개요
-이 레포지토리는 ‘미정’ AI 기반 화상 법률 상담 플랫폼 중 **AI 파트**만을 담당합니다.  
-LLM(LLM + LangChain)을 활용한 사전 상담 문서 자동 생성, 판례·법령 검색, 법률 분석, 챗봇 응답의 핵심 로직을 포함합니다.
+> AI 기반 화상 법률 상담 플랫폼 'ALaw'의 핵심 AI 백엔드 서비스입니다.
 
----
-
-## 2. 폴더 구조
-
-```
-
-legal-ai-platform/
-│
-├── app/                    # FastAPI 엔트리 & 라우터
-│   ├── main.py             # 서버 실행, 전역 미들웨어
-│   └── routes.py           # 단일 라우터 모듈 (v1)
-│
-├── services/               # 비즈니스 서비스 (기능 1:1 대응)
-│   ├── structuring.py      # 2-1 사건 구조화
-│   ├── analysis.py         # 3-1~3-4 법률 분석
-│   ├── application.py      # 4-X 상담 신청서
-│   ├── search.py           # 5·6 판례·법령 검색
-│   └── chat.py             # 7 챗봇
-│
-├── llm/                    # LLM & RAG 계층
-│   ├── model.py            # OpenAI 싱글턴
-│   ├── prompts.py          # 모든 프롬프트 정의
-│   ├── chains.py           # LangChain 체인 래퍼
-│   ├── chroma.py           # ChromaDB 초기화·검색 Helper
-│   └── models/             # 임베딩 및 크로스인코더 모델 정의 및 로딩
-│       ├── embedding_model.py    # 임베딩 모델 클래스
-│       ├── cross_encoder_model.py # 크로스인코더 모델 클래스
-│       └── model_loader.py       # 모델 로딩 및 싱글턴 관리
-│
-├── db/                     # ORM & 마이그레이션
-│   ├── models.py           # SQLAlchemy ORM
-│   └── alembic/            # (필요 시) 마이그레이션 스크립트
-│
-├── scripts/                # CLI 유틸
-│   ├── preprocess_cases.py # 원본 → 정제
-│   └── build_index.py      # Chroma 인덱스 재생성
-│
-├── tests/                  # **Service 계층 전용 테스트**
-│   └── test_*.py
-│
-├── data/                   # raw / processed / chroma_index
-└── README.md
-
-````
+본 리포지토리는 사용자의 사건 개요를 분석하고, 법률 정보를 검색하며, 변호사와의 상담을 효율적으로 지원하는 AI 기반 API 서버의 소스 코드를 관리합니다.
 
 ---
 
-## 3. API 응답 규격
+## 1. 프로젝트 개요
 
-### 성공 응답
+ALaw 플랫폼은 법률 상담의 진입장벽을 낮추기 위해 기획되었습니다. 그중 AI 백엔드는 복잡한 법률 문제를 기술적으로 해결하는 핵심 엔진 역할을 수행합니다. 사용자가 입력한 자연어 형태의 사건 내용을 구조화하고, 방대한 판례 데이터베이스에서 유사 사례를 찾아내며, 법률적 쟁점을 분석하여 초기 법률 소견까지 제공하는 것을 목표로 합니다.
 
-```json
-{
-  "success": true,
-  "data": { ... }
-}
-```
+## 2. 핵심 기능 (Features)
 
-### 실패 응답
+- **사건 구조화 AI**: 사용자의 사건 개요(자유 텍스트)를 LLM과의 대화를 통해 법률적으로 유의미한 표준 스키마(사건 경위서)로 정제합니다. (`services/structuring_service.py`)
+- **AI 법률 분석**:
+    - **유사 판례/법령 검색**: 구조화된 사건을 기반으로 `Faiss` 벡터 DB에서 관련성 높은 판례 및 법령을 검색하고, Cross-encoder로 재정렬하여 정확도를 높입니다. (`services/search_service.py`)
+    - **법률 쟁점 도출 및 초기 법률 소견 제공**: 검색된 자료와 사건 경위서를 `LangChain`과 `GPT-4o`를 이용해 종합, 법률적 쟁점을 분석하고 초기 법률 소견을 생성합니다. (`services/case_analysis_service.py`)
+- **상담 신청서 생성 AI**: 분석된 사건 내용과 사용자 추가 정보를 결합하여 정형화된 상담 신청서를 생성하고, 변호사를 위한 핵심 질문을 자동으로 도출합니다. (`services/consultation_service.py`)
+- **실시간 법률 챗봇**: `FastAPI`의 SSE(Server-Sent Events)를 활용하여 법률 도메인 특화 AI 챗봇과의 실시간 스트리밍 대화를 지원합니다. (`services/chat_service.py`)
 
-```json
-{
-  "success": false,
-  "error": {
-    "code": "ERROR_CODE",
-    "message": "에러 메시지"
-  },
-  "details": { ... } // (선택적) 상세 정보
-}
-```
+## 3. 기술 스택 (Tech Stack)
 
-### 공통 오류 코드
+- **Language**: Python 3.10+
+- **Framework**: FastAPI, Pydantic
+- **AI & LLM**: LangChain, OpenAI GPT-4o, Sentence-Transformers
+- **API & Database**: SQLAlchemy, PostgreSQL
+- **Testing**: Pytest
+- **Deployment**: Docker, Uvicorn
 
-| 코드 | 설명 |
-|---|---|
-| `INVALID_PARAM` | 필수 값 누락, 형식 오류 등 |
-| `UNAUTHORIZED` | 토큰 없음, 만료, 권한 부족 |
-| `NOT_FOUND` | 요청한 리소스를 찾을 수 없음 |
-| `SERVER_ERROR` | 예기치 못한 서버 오류 |
+## 4. 설치 및 실행 방법 (Getting Started)
 
----
+### 4.1. 사전 요구사항
 
-## 4. 설치 & 실행
+- Python 3.10 이상
+- Conda 또는 venv 가상 환경
 
-1. Conda 환경 생성  
-   ```bash
-   conda env create -f environment.yml
-   conda activate legal-ai-platform
+### 4.2. 설치 (Conda)
+
+1.  **리포지토리 클론**
+    ```bash
+    git clone https://github.com/your-repo/ALaw-AI-Backend.git
+    cd ALaw-AI-Backend
     ```
 
-2. `.env` 파일 설정
+2.  **Conda 가상환경 생성 및 활성화**
+    `environment.yml` 파일을 사용하여 Conda 환경을 생성하고 활성화합니다.
+    ```bash
+    conda env create -f environment.yml
+    conda activate alaw-ai
+    ```
 
-   ```
-   OPENAI_API_KEY=your_key
-   CHROMA_DB_PATH=/path/to/chroma_index
-   ```
-3. 인덱스 초기화 (최초 1회)
+3.  **환경 변수 설정**
+    `config/.env.example` 파일을 `config/.env`로 복사하고, 내부에 OpenAI API 키 등 필요한 환경 변수를 설정합니다.
 
-   ```bash
-   python scripts/build_index.py
-   ```
-4. FastAPI 실행
-
-   ```bash
-   uvicorn app.main:app --reload
-   ```
-
-   — AI 서비스는 `/api/v1/…` 엔드포인트를 통해 호출합니다.
-
----
-
-## 5. 모델 로딩
-
-임베딩 및 크로스인코더 모델은 서버 시작 시 `llm/models/model_loader.py`를 통해 메모리에 미리 로드됩니다. 이는 FastAPI의 `lifespan` 이벤트를 활용하여 애플리케이션 시작 시점에 단 한 번만 모델을 초기화하고, 이후 모든 요청에서 동일한 인스턴스를 재사용하도록 합니다. 이를 통해 불필요한 모델 로딩 오버헤드를 줄여 성능을 향상시키고, 모델 관리의 일관성을 유지합니다.
-
----
-
-## 6. 테스트
+### 4.3. 로컬 서버 실행
 
 ```bash
-pytest tests/
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-* **서비스 계층** 함수 단위로 성공/예외 흐름만 검증합니다.
-* 외부 호출(OpenAI, ChromaDB, DB)은 `pytest-mock` 으로 모킹하세요.
+### 4.4. 설치 및 실행 (Docker)
+
+현재 프로젝트는 `PostgreSQL` 데이터베이스를 Docker 컨테이너로 실행할 수 있습니다.
+
+1.  **데이터베이스 실행**
+    `db` 디렉토리로 이동하여 `docker-compose`를 실행합니다.
+    ```bash
+    cd db
+    docker-compose up -d
+    ```
+
+2.  **애플리케이션 실행**
+    데이터베이스가 실행된 후, Conda 환경에서 로컬 서버를 실행합니다.
+    ```bash
+    # (Root directory)
+    conda activate alaw-ai
+    uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    ```
+
+## 5. 테스트 방법 (Test)
+
+프로젝트 루트 디렉토리에서 다음 명령어를 실행하여 모든 테스트를 수행할 수 있습니다.
+
+```bash
+pytest
+```
 
 ---
 
+## 6. 나의 역할 및 기여 (My Role & Contributions)
+
+-   **역할**: AI 백엔드 개발자
+-   **주요 책임 및 기여**:
+    -   **AI 서비스 API 아키텍처 설계 및 구현**: `FastAPI`를 기반으로 AI 기능들을 모듈화하여 비동기 처리 REST API 서버 전체를 설계하고 구현했습니다. 각 기능은 `services` 디렉토리 내의 서비스 클래스로 분리하여 관리의 용이성을 확보했습니다.
+    -   **RAG 파이프라인 구축 및 최적화**: `LangChain`, `Faiss`, `Sentence-Transformers`를 활용하여 유사 판례 검색을 위한 RAG 파이프라인을 구축했습니다. 사용자의 질의를 임베딩하여 벡터 DB에서 유사 문서를 찾고, Cross-Encoder 모델로 재정렬하는 2단계 검색 과정을 구현하여 검색 정확도를 높였습니다.
+    -   **LLM 기반 법률 분석 기능 개발**: `OpenAI GPT-4o` 모델과 `LangChain`을 연동하여, 정제된 사건 내용과 검색된 판례를 바탕으로 법률적 쟁점을 도출하고 초기 법률 소견을 생성하는 `CaseAnalysisService`를 개발했습니다.
+    -   **실시간 챗봇 스트리밍 구현**: 사용자와의 상호작용을 높이기 위해 `FastAPI`의 Server-Sent Events (SSE)를 활용, `ChatService`에서 LLM의 답변을 토큰 단위로 스트리밍하는 기능을 구현했습니다.
+    -   **테스트 자동화**: `Pytest`를 사용하여 각 API 엔드포인트와 서비스 로직에 대한 단위/통합 테스트 코드를 작성(`tests/` 디렉토리)하여 코드의 안정성과 신뢰성을 확보했습니다.
+
+-   **성과**:
+    -   법률 상담의 핵심 프로세스(사건접수 → 분석 → 상담준비)를 자동화하는 AI 백엔드 시스템을 성공적으로 구축했습니다.
+    -   복잡한 AI 로직을 서비스 단위로 명확하게 분리하고, 각 서비스가 독립적으로 테스트될 수 있는 확장성 높은 구조를 설계했습니다.
+
+## 7. 현재의 기술적 과제 (Current Challenges)
+
+-   **RAG 정확도 문제**: 특정 법률 용어나 복잡한 사건 맥락에서 관련성이 낮은 판례가 검색되는 경우가 있어, 임베딩 모델의 미세조정(Fine-tuning)이나 하이브리드 검색(키워드+벡터) 도입을 통한 검색 품질 개선이 필요합니다.
+-   **임베딩 검색 속도**: `Faiss`를 사용함에도 불구하고 대규모 데이터셋에서 초기 유사 벡터 검색 시 응답 지연이 발생하고 있어, 인덱스 구조 최적화나 근사 탐색(ANN) 파라미터 튜닝이 요구됩니다.
+-   **챗봇 대화의 일관성 유지**: 다수의 동시 사용자가 각자의 대화 맥락을 독립적으로 유지하며 일관성 있는 답변을 받도록 현재의 인메모리 기반 대화 기록 방식을 `Redis`와 같은 외부 세션 저장소로 확장하는 방안을 검토 중입니다.
+
+## 8. 라이선스 (License)
+
+MIT License
+
+## 9. 작성자 (Author)
+
+-   **GitHub**: [GitHub](https://github.com/grayson1999)
