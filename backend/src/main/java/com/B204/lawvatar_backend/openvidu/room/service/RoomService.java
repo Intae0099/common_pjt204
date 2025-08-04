@@ -16,18 +16,15 @@ import com.B204.lawvatar_backend.user.lawyer.entity.Lawyer;
 import com.B204.lawvatar_backend.user.lawyer.repository.LawyerRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.boot.autoconfigure.graphql.GraphQlProperties;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 
 @Service
 @RequiredArgsConstructor
@@ -48,12 +45,12 @@ public class RoomService {
     private final RestTemplate restTemplate;
 
     // Method
-    public String createRoom(Long appointmentId, String userType, Long userId) {
+    public String createRoom(Long appointmentId, String userType, Long userId) throws Exception{
 
         // 이 appointmentId에 대해 이미 생성돼있는 화상상담방이 있으면 409 에러 응답하기
         Session existingSession = sessionRepository.findByAppointment_Id(appointmentId);
         if(existingSession != null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "[RoomService - 001] 이미 화상상담방이 존재하는 상담입니다.");
+            throw new IllegalStateException("[RoomService - 001] 이미 화상상담방이 존재하는 상담입니다.");
         }
 
         // customSessionId 만들기
@@ -80,17 +77,17 @@ public class RoomService {
         // Participant 테이블에 참가정보 저장하기
         // 유저타입에 따라 Participant 객체 만들어서 DB에 저장
         if(userType.equals("CLIENT")) {
-            Client client = clientRepository.findById(userId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "[RoomService - 002] 해당 ID 값을 가지는 Client가 없습니다."));
+            Client client = clientRepository.findById(userId).orElseThrow(() -> new NoSuchElementException("[RoomService - 002] 해당 ID 값을 가지는 Client가 없습니다."));
             Participant participant = Participant.builder().client(client).room(room).build();
             participantRepository.save(participant);
         } else if(userType.equals("LAWYER")) {
-            Lawyer lawyer = lawyerRepository.findById(userId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "[RoomService - 003] 해당 ID 값을 가지는 Lawyer가 없습니다."));
+            Lawyer lawyer = lawyerRepository.findById(userId).orElseThrow(() -> new NoSuchElementException("[RoomService - 003] 해당 ID 값을 가지는 Lawyer가 없습니다."));
             Participant participant = Participant.builder().lawyer(lawyer).room(room).build();
             participantRepository.save(participant);
         }
 
         // Session 테이블에 세션정보 저장하기
-        Appointment appointment = appointmentRepository.findById(appointmentId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "[RoomService - 004] 해당 ID 값을 가지는 Appointment가 없습니다."));
+        Appointment appointment = appointmentRepository.findById(appointmentId).orElseThrow(() -> new NoSuchElementException("[RoomService - 004] 해당 ID 값을 가지는 Appointment가 없습니다."));
         Session session = Session.builder().appointment(appointment).room(room).participantCount(1).build();
         sessionRepository.save(session);
 
@@ -106,11 +103,11 @@ public class RoomService {
         // Participant 테이블에 참가정보 저장하기
         // 유저타입에 따라 Participant 객체 만들어서 DB에 저장
         if(userType.equals("CLIENT")) {
-            Client client = clientRepository.findById(userId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "[RoomService - 005] 해당 ID 값을 가지는 Client가 없습니다."));
+            Client client = clientRepository.findById(userId).orElseThrow(() -> new NoSuchElementException("[RoomService - 005] 해당 ID 값을 가지는 Client가 없습니다."));
             Participant participant = Participant.builder().client(client).room(room).build();
             participantRepository.save(participant);
         } else if(userType.equals("LAWYER")) {
-            Lawyer lawyer = lawyerRepository.findById(userId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "[RoomService - 006] 해당 ID 값을 가지는 Lawyer가 없습니다."));
+            Lawyer lawyer = lawyerRepository.findById(userId).orElseThrow(() -> new NoSuchElementException("[RoomService - 006] 해당 ID 값을 가지는 Lawyer가 없습니다."));
             Participant participant = Participant.builder().lawyer(lawyer).room(room).build();
             participantRepository.save(participant);
         }
@@ -186,14 +183,14 @@ public class RoomService {
     public HttpStatusCode removeRoom(Long appointmentId) {
 
         // 화상상담방을 파괴하고 싶은 Appointment 객체 얻기
-        Appointment appointment = appointmentRepository.findById(appointmentId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "[RoomService - 00] 해당 ID 값을 가지는 Appointment가 없습니다."));
+        Appointment appointment = appointmentRepository.findById(appointmentId).orElseThrow(() -> new NoSuchElementException("[RoomService - 00] 해당 ID 값을 가지는 Appointment가 없습니다."));
 
         // 이 Appointment에 해당하는 Session 객체 얻기
         Session session = sessionRepository.findByAppointment_Id(appointmentId);
 
         // 이 Appointment에 대해 활성화된 세션이 없다면, 404 NotFound 에러 응답
         if(session == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "[RoomService - 00] 해당 상담은 화상상담방이 열려있지 않습니다.");
+            throw new NoSuchElementException("[RoomService - 00] 해당 상담은 화상상담방이 열려있지 않습니다.");
         }
 
         // 이 Session이 참조중인 Room 객체 얻어내고 Session 데이터 DB에서 삭제하기
