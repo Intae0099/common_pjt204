@@ -102,6 +102,7 @@ public class AppointmentController {
       @AuthenticationPrincipal ClientPrincipal client,
       @Valid @RequestBody AppointmentRequestDto req
   ){
+    System.out.println(req);
 
     Appointment appt = appointmentService.create(
         client.getId(),
@@ -136,12 +137,12 @@ public class AppointmentController {
   }
 
   @PatchMapping("/{appointmentId}/cancel")
-  @PreAuthorize("hasRole('LAWYER')")
+  @PreAuthorize("hasRole('CLIENT')")
   public ResponseEntity<Void> cancelAppointment(
     @PathVariable Long appointmentId,
-      @AuthenticationPrincipal LawyerPrincipal lawyer
+      @AuthenticationPrincipal ClientPrincipal client
   ){
-    Long clientId = lawyer.getId();
+    Long clientId = client.getId();
     appointmentService.cancel(appointmentId, clientId);
 
     return ResponseEntity.ok().build();
