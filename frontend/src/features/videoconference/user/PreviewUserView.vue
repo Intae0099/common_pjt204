@@ -84,6 +84,11 @@
         </button>
       </div>
     </div>
+    <ApplicationDetail
+      v-if="showDetailModal"
+      :data="selectedApplicationData"
+      @close="showDetailModal = false"
+    />
   </div>
 </template>
 
@@ -93,12 +98,14 @@ import PreviewCamera from '../components/PreviewCamera.vue'
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from '@/lib/axios'
+import ApplicationDetail from '@/features/profile/user/ApplicationDetail.vue'
 import { Smile, MoveRight } from 'lucide-vue-next'
 
 const appointments = ref([])
 const defaultImage = '/default-profile.png'
 const router = useRouter()
-
+const showDetailModal = ref(false)
+const selectedApplicationData = ref(null)
 const tagMap = {
   1: '이혼',
   2: '형사',
@@ -217,20 +224,54 @@ onMounted(async () => {
 })
 
 
-const goToApplication = (applicationId) => {
-  router.push({ name: 'ApplicationDetail', params: { applicationId } })
+const goToApplication = async (applicationId) => {
+  try {
+  // 📌 백엔드 연결 안 됐을 때 사용할 더미
+    const dummyDetail = {
+      applicationId,
+      title: '사건예시제목1',
+      summary: 'Lorem ipsum dolor sit amet consectetur. Purus quam semper quis pretium egestas',
+      content: `Lorem ipsum dolor sit amet consectetur. Purus quam semper quis pretium egestas orci in nunc amet.
+        Sociis et pharetra est augue. Ornare leo elementum egestas consequat et cursus lectus tellus a.
+        Volutpat suspendisse urna urna neque egestas ultricies et morbi urna.`,
+      outcome: `Lorem ipsum dolor sit amet consectetur. Purus quam semper quis pretium egestas orci in nunc amet.
+        Sociis et pharetra est augue. Ornare leo elementum egestas consequat et cursus lectus tellus a.
+        Volutpat suspendisse urna urna neque egestas ultricies et morbi urna.`,
+      disadvantage: `Lorem ipsum dolor sit amet consectetur. Purus quam semper quis pretium egestas orci in nunc amet.
+        Sociis et pharetra est augue. Ornare leo elementum egestas consequat et cursus lectus tellus a.
+        Volutpat suspendisse urna urna neque egestas ultricies et morbi urna.`,
+      recommendedQuestions: [
+        'Lorem ipsum dolor sit amet consectetur.',
+        'Purus quam semper quis pretium egestas orci in nunc amet.',
+        'Sociis et pharetra est augue'
+      ]
+    }
+
+    // const { data } = await axios.get(`/api/applications/${applicationId}`)
+    // const questions = Object.values(data.recommendedQuestion || {})
+
+    // selectedApplicationData.value = {
+    //   ...data,
+    //   recommendedQuestions: questions
+    // }
+    selectedApplicationData.value = dummyDetail
+    showDetailModal.value = true
+  } catch (err) {
+    console.error('상담신청서 상세 조회 실패:', err)
+    alert('상담신청서를 불러오는 데 실패했습니다.')
+  }
 }
 
 const enterMeeting = async (appointmentId) => {
   try {
     const res = await axios.post(`/api/rooms/${appointmentId}`)
-    const token = res.data.openviduToken
+    const token = res.data.data.openviduToken
     router.push({ name: 'MeetingRoom', query: { token, appointmentId } })
   } catch (err) {
     if (err.response?.status === 409) {
       try {
         const res = await axios.post(`/api/rooms/${appointmentId}/participants`)
-        const token = res.data.openviduToken
+        const token = res.data.data.openviduToken
         router.push({ name: 'MeetingRoom', query: { token, appointmentId } })
       } catch (err2) {
         console.error('방 참가 실패:', err2)
@@ -242,6 +283,8 @@ const enterMeeting = async (appointmentId) => {
     }
   }
 }
+
+
 </script>
 
 <style scoped>
