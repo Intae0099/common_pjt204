@@ -60,8 +60,10 @@ import BottomActionBar from './components/BottomActionBar.vue'
 import SuggestModal from './components/SuggestModal.vue'
 import VerdictFindingBox from './components/VerdictFindingBox.vue'
 import LawyerRecommendList from './components/LawyerRecommendList.vue'
-import axios from 'axios'
 import LoadingDots from './components/LoadingDots.vue'
+// import axios from 'axios'
+import { fastapiApiClient } from '@/lib/axios';
+
 
 const userInput = ref('')
 const aiResponse = ref(null)
@@ -77,14 +79,20 @@ const showRecommendList = ref(false)       // 변호사 추천 리스트 보여�
 const handleUserInput = async (text) => {
   userInput.value = text
   aiResponse.value = null
+  verdictResult.value = null
   isLoading.value = true
 
   try {
-    const { data } = await axios.post('/api/ai/pre-consultation', {
-      content: text,
+    const { data } = await fastapiApiClient.post('/cases/structuring', {
+      freeText: text,
     })
 
-    aiResponse.value = data // 전체 json 저장
+    if (data.success) {
+      aiResponse.value = data.data.case // aiResponse에는 case 객체가 할당됩니다.
+    } else {
+      console.error('API 응답 오류:', data.error.message)
+      alert(data.error.message)
+    }
   } catch (error) {
     console.error('AI 응답 실패:', error)
   } finally {
@@ -93,34 +101,41 @@ const handleUserInput = async (text) => {
 }
 
 
-const handlePredictVerdict = () => {
-  const token = localStorage.getItem('access_token') // 또는 적절한 로그인 상태 체크 방식
-  if (!token) {
-    alert('로그인이 필요합니다. 로그인 페이지로 이동합니다.')
-    router.push('/login') // 실제 로그인 경로에 맞게 수정
+const handlePredictVerdict = async () => {
+  // const token = localStorage.getItem('access_token') // 또는 적절한 로그인 상태 체크 방식
+  // if (!token) {
+  //   alert('로그인이 필요합니다. 로그인 페이지로 이동합니다.')
+  //   router.push('/login') // 실제 로그인 경로에 맞게 수정
+  //   return
+  // }
+
+  if (!aiResponse.value) {
+    alert('먼저 사건 내용을 입력하고 분석을 받아야 합니다.')
     return
   }
 
   isFindingVerdict.value = true
-  setTimeout(() => {
-    try {
-      const report = aiResponse.value?.report
-      verdictResult.value = {
-        issues: report.issues,
-        opinion: report.opinion,
-        sentencePrediction: report.sentencePrediction,
-        confidence: report.confidence,
-        references: report.references,
+  try {
+    const { data } = await fastapiApiClient.post('/analysis', {
+      case: aiResponse.value // 첫 번째 API의 결과를 요청 본문에 담아 보냄
+    })
 
-      }
-      lawyers.value = aiResponse.value.recommendedLawyers
+    if (data.success) {
+      // API 응답에 맞춰 state 업데이트
+      verdictResult.value = data.data.report
+      lawyers.value = data.data.recommendedLawyers
       canShowRecommendBtn.value = true
-    } catch (err) {
-      console.error('예측 데이터 파싱 실패:', err)
-    } finally {
-      isFindingVerdict.value = false
+    } else {
+      console.error('판례 분석 API 오류:', data.error.message)
+      alert(data.error.message)
     }
-  }, 500) // 로딩 표시용 약간의 delay
+
+  } catch (err) {
+    console.error('판례 분석 실패:', err)
+    alert('판례를 분석하는 중 오류가 발생했습니다.')
+  } finally {
+    isFindingVerdict.value = false
+  }
 }
 
 
