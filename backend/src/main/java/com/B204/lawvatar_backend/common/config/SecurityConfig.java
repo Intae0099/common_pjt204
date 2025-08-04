@@ -132,7 +132,7 @@ public class SecurityConfig {
           .build();
       res.setHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
 
-      // BE 개발 편의를 위해 8080으로 변경 (-> front 서버 결합 시 5173으로 변경 필요)
+      // BE 개발 편의를 위해 8080으로 변경 (-> front 서버 결합 시 5173으로 변경 필요) -> 배포 환경으로 변경
       String redirectUrl = UriComponentsBuilder
           .fromUriString("http://localhost:5173/user/mypage")
           .queryParam("accessToken", accessToken)
