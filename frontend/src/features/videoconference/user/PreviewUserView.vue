@@ -89,20 +89,34 @@ const goToApplication = (applicationId) => {
 
 const enterMeeting = async (appointmentId) => {
   try {
-    await axios.post(`/api/rooms/${appointmentId}`).catch((err) => {
-      console.log('방 생성 실패 또는 이미 존재함', err.response?.data || err)
-    })
-    const res = await axios.post(`/api/rooms/${appointmentId}/participants`)
+    // 1. 방 생성 요청
+    const res = await axios.post(`/api/rooms/${appointmentId}`)
     const token = res.data.openviduToken
     router.push({
       name: 'MeetingRoom',
       query: { token, appointmentId }
     })
-  } catch (error) {
-    console.error('화상상담 입장 실패:', error)
-    alert('화상상담 방 입장에 실패했습니다.')
+  } catch (err) {
+    // 2. 방이 이미 존재하면 참가 요청
+    if (err.response?.status === 409) {
+      try {
+        const res = await axios.post(`/api/rooms/${appointmentId}/participants`)
+        const token = res.data.openviduToken
+        router.push({
+          name: 'MeetingRoom',
+          query: { token, appointmentId }
+        })
+      } catch (err2) {
+        console.error('방 참가 실패:', err2)
+        alert('화상상담 입장에 실패했습니다.')
+      }
+    } else {
+      console.error('방 생성 실패:', err)
+      alert('화상상담 방 생성에 실패했습니다.')
+    }
   }
 }
+
 </script>
 
 <style scoped>
