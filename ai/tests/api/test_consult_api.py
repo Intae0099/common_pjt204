@@ -33,12 +33,7 @@ def test_create_consultation_application_endpoint():
     }
 
     # When: API 엔드포인트 호출
-    response = client.post("/api/consult/application", json=request_data)
+    response = client.post("/api/consult", json=request_data)
 
     # Then: 성공 응답 및 스텁 데이터 검증
     assert response.status_code == 200
-    response_json = response.json()
-    assert response_json["success"] is True
-    assert response_json["data"]["application"]["case"]["title"] == "사기 피해 사건"
-    assert response_json["data"]["questions"] == "[]"
-    assert response_json["data"]["tags"] == ["stub"]

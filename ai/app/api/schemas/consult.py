@@ -28,7 +28,7 @@ class ApplicationData(BaseModel):
 class ConsultationData(BaseModel):
     """최종 응답의 데이터 필드 모델"""
     application: ApplicationData
-    questions: str
+    questions: List[str]
     tags: List[str]
 
 class ConsultationResponse(BaseModel):

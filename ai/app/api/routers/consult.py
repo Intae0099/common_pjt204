@@ -5,7 +5,7 @@ from app.api.dependencies import get_consultation_service
 
 router = APIRouter()
 
-@router.post("/consult/application", response_model=ConsultationResponse)
+@router.post("/consult", response_model=ConsultationResponse)
 async def create_consultation_application(
     request: ConsultationRequest,
     service: ConsultationService = Depends(get_consultation_service)
