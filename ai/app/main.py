@@ -11,7 +11,7 @@ from app.api.handlers import (
     http_error_handler,
 )
 from app.api.exceptions import APIException
-from app.api.routers import analysis, structuring, search, chat
+from app.api.routers import analysis, structuring, search, chat, consult
 from llm.models.model_loader import ModelLoader
 from utils.logger import setup_logger, get_logger
 from fastapi.middleware.cors import CORSMiddleware
@@ -53,6 +53,7 @@ app.include_router(analysis.router, prefix="/api", tags=["analysis"])
 app.include_router(structuring.router, prefix="/api", tags=["structuring"])
 app.include_router(search.router, prefix="/api", tags=["Search"])
 app.include_router(chat.router, prefix="/api/ai", tags=["Chat"])
+app.include_router(consult.router, prefix="/api", tags=["Consultation"])
 
 @app.get("/")
 def read_root():
