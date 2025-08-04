@@ -2,6 +2,7 @@
 
 <template>
   <CaseLayout>
+    <LayoutDefault>
     <!-- 검색 UI는 변경 없음 -->
     <div class="search-container">
       <div class="search-bar">
@@ -70,12 +71,14 @@
     <div v-else class="status-message">
       <p>{{ searchPerformed ? '검색 결과가 없습니다.' : '판례를 검색해 보세요.' }}</p>
     </div>
+    </LayoutDefault>
   </CaseLayout>
 </template>
 
 <script setup>
 import CaseLayout from '@/components/layout/CaseLayout.vue';
 import CaseCard from '@/features/cases/CaseCard.vue';
+import LayoutDefault from '@/components/layout/LayoutDefault.vue'
 import { useCasesStore } from '@/stores/cases';
 import { storeToRefs } from 'pinia';
 

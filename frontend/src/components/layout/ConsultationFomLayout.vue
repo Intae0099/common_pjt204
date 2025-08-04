@@ -1,13 +1,15 @@
 <!-- src/components/layout/CaseLayout.vue -->
 <template>
-  <div>
+  <div class="case-layout">
     <!-- 배너 영역 -->
-    <div class="banner">
-      <img src="@/assets/banner-bg2.png" alt="배경" class="banner-bg" />
-      <div class="banner-text">
-        <p><span class="highlight">AI기반</span> 변호사 상담,<br />쉽고 빠르게 신청하세요!</p>
-      </div>
-    </div>
+     <div class="banner-wrapper">
+       <div class="banner">
+         <img src="@/assets/banner-bg2.png" alt="배경" class="banner-bg" />
+         <div class="banner-text">
+           <p><span class="highlight">AI기반</span> 변호사 상담,<br />쉽고 빠르게 신청하세요!</p>
+         </div>
+       </div>
+     </div>
 
     <!-- 하위 콘텐츠 슬롯 -->
     <div class="content-wrapper">
@@ -21,16 +23,27 @@
 </script>
 
 <style scoped>
-.banner {
-  position: relative;
+.case-layout {
+  overflow-x: hidden;
+}
+.banner-wrapper {
   width: 100vw;
-  height: 250px;
-  margin-left: calc(-50vw + 50%);
+  position: relative;
+  left: 50%;
+  right: 50%;
+  margin-left: -50vw;
+  margin-right: -50vw;
+  max-width: 100vw;
   overflow: hidden;
 }
 
-.banner-bg,
-.banner-character {
+.banner {
+  width: 100vw;
+  height: 250px;
+  position: relative;
+}
+
+.banner-bg {
   position: absolute;
   top: 0;
   left: 0;
@@ -55,9 +68,8 @@
 }
 
 .content-wrapper {
-  max-width: 1000px;
   margin: 0 auto;
-  padding: 40px 20px;
+  padding: 40px 0px;
   background: white;
   border-radius: 8px;
 }

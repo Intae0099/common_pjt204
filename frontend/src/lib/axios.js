@@ -2,7 +2,8 @@ import axios from 'axios'
 import { useAuthStore } from '@/stores/auth'
 
 const instance = axios.create({
-  baseURL: 'http://localhost:8080',
+  baseURL: 'https://i13b204.p.ssafy.io/',
+  // baseURL: 'http://localhost:5173/',
   withCredentials: true      // ← 이걸 켜야 CORS 구문에서 쿠키 허용이 됩니다
 })
 

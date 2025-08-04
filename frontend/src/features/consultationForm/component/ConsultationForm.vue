@@ -23,49 +23,66 @@
       />
     </div>
 
+    <!-- 사건 한 줄 요약 (읽기 전용) -->
+    <div class="form-group">
+      <label for="summary">사건 한 줄 요약</label>
+      <input
+        id="summary"
+        v-model="form.summary"
+        type="text"
+        placeholder="불러오기를 통해 요약을 불러올 수 있습니다."
+        readonly
+        style="background-color: #f9fafb; color: #6b7280; cursor: not-allowed;"
+      />
+    </div>
+
     <!-- 사건 개요 -->
-     <div class="form-group">
+     <div class="form-group scrollable-group">
        <label for="content">사건 개요</label>
        <textarea
          id="content"
          v-model="form.content"
+         class="scrollable-content"
          placeholder="사건 개요를 입력해주세요"
          required
        />
      </div>
 
     <!-- 원하는 결과 -->
-    <div class="form-group">
+    <div class="form-group scrollable-group">
       <label for="outcome">원하는 결과</label>
       <textarea
         id="outcome"
         v-model="form.outcome"
+        class="scrollable-content"
         placeholder="원하시는 결과를 적어주세요"
       />
     </div>
 
     <!-- 불리한 점 -->
-    <div class="form-group">
+    <div class="form-group scrollable-group">
       <label for="disadvantage">사건에서 불리한 점</label>
       <textarea
         id="disadvantage"
         v-model="form.disadvantage"
+        class="scrollable-content"
         placeholder="불리한 점을 적어주세요"
       />
     </div>
 
     <!-- 변호사에게 궁금한 점 -->
-    <div class="form-group">
+    <div class="form-group scrollable-group">
       <label for="questions">변호사에게 궁금한 점 (쉼표로 구분)</label>
       <textarea
         id="questions"
         v-model="questionsInput"
+        class="scrollable-content"
         placeholder="예: 무죄 가능할까요?, 운전자 바꿔치기 괜찮을까요?"
       />
     </div>
 
     <!-- 제출 버튼 -->
-    <button type="submit">AI 상담서 작성하기</button>
+    <button v-if="!props.hideSubmitButton" type="submit">AI 상담서 작성하기</button>
   </form>
   <IncidentSelect v-if="showModal" @select="handleSelect" @close="showModal = false" />
 </template>
@@ -77,16 +94,16 @@ import { InformationCircleIcon } from '@heroicons/vue/24/outline'
 
 const emit = defineEmits(['submitted'])
 const showModal = ref(false)
-
-const form = ref({
-  title: '',
-  content: '',
-  outcome: '',
-  disadvantage: '',
-  recommendedQuestions: [],
+const props = defineProps({
+  form: Object,
+  questionsInput: String,
+  hideSubmitButton: {
+    type: Boolean,
+    default: false
+  }
 })
-
-const questionsInput = ref('') // 쉼표로 입력받기
+const form = ref({ ...props.form })
+const questionsInput = ref(props.questionsInput || '')
 
 const submit = () => {
   // 쉼표 기준으로 분리
@@ -110,10 +127,12 @@ const handleSelect = (data) => {
   gap: 2rem;
   border: 1px solid #cfdfe9;
   border-radius: 12px;
-  padding: 2rem;
+  padding: 2rem 1rem 3rem 1rem;
   background-color: #fff;
-  max-width: 800px;
-  margin: 2rem auto;
+  max-width: 900px;
+  width: 100%;
+  margin: 0 auto;
+  flex: 1;
 }
 .form-group {
   display: flex;
@@ -204,5 +223,26 @@ textarea::placeholder {
   display: block;
 }
 
+
+/* 각 항목별 스크롤 영역 */
+.scrollable-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* 공통 스크롤 스타일 (ex. 최대 높이 150px) */
+.scrollable-content {
+  min-height: 100px;
+  max-height: 150px;
+  overflow-y: auto;
+  background-color: #fff;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 0.75rem;
+  font-size: 1rem;
+  line-height: 1.5;
+  resize: none; /* textarea에만 필요 */
+}
 
 </style>

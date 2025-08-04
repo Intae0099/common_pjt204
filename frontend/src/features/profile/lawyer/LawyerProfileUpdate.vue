@@ -2,6 +2,14 @@
   <div class="profile-edit-container">
     <h2>프로필 수정</h2>
 
+    <div>
+      <img
+        :src="`data:image/jpeg;base64,${photo}`"
+        alt="프로필 이미지"
+        style="width: 150px; height: 150px; object-fit: cover; border-radius: 8px"
+      />
+    </div>
+
     <div class="section">
       <h3>이름</h3>
       <input v-model="name" />
@@ -44,6 +52,7 @@ const router = useRouter()
 const name = ref('')
 const introduction = ref('')
 const selectedTagIds = ref(new Set())
+const photo = ref('')
 
 // 🧠 프론트에 고정된 tagMap
 const tagMap = [
@@ -75,6 +84,7 @@ const saveChanges = async () => {
     name: name.value,
     introduction: introduction.value,
     tagIds: Array.from(selectedTagIds.value),
+    photo: photo.value // base64 인코딩된 이미지
   }
 
   try {
@@ -93,6 +103,7 @@ onMounted(async () => {
     name.value = res.data.name
     introduction.value = res.data.introduction
     selectedTagIds.value = new Set(res.data.tags) // ID만 받음
+    photo.value = res.data.photo
   } catch (err) {
     console.error('변호사 정보 로딩 실패:', err)
   }
