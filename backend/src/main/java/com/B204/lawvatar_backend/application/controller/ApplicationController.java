@@ -27,8 +27,6 @@ public class ApplicationController {
 
     // Field
     private final ApplicationService applicationService;
-    private final AppointmentRepository appointmentRepository;
-    private final ApplicationRepository applicationRepository;
 
     // Method
     /**

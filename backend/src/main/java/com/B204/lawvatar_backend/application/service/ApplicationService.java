@@ -145,7 +145,7 @@ public class ApplicationService {
             }
             
             if(!isThisApplicationAccessibleByLawyer) {
-                throw new SecurityException("[ApplicationController - 005] 맡아서 진행한 상담의 신청서만 열람할 수 있습니다.");
+                throw new SecurityException("[ApplicationController - 005] 자신이 맡아서 진행한 상담의 신청서만 열람할 수 있습니다.");
             }
 
             // 에러 발생하지 않았다면 Application 조회해서 반환

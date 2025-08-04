@@ -147,13 +147,13 @@ public class AppointmentController {
     return ResponseEntity.ok().build();
   }
 
-      /**
+    /**
      * 변호사가 자신의 상담에 대한 상담신청서 목록을 전체조회하는 메서드
      * @param authentication
      * @return
      */
     @GetMapping("/me/applications")
-    public ResponseEntity<List<GetMyAppointmentApplicationListResponse>> getMyAppointmentApplicationList(Authentication authentication) {
+    public ResponseEntity<GetMyAppointmentApplicationListResponse> getMyAppointmentApplicationList(Authentication authentication) {
 
         // Principal 객체 얻기
         Object principal = authentication.getPrincipal();
@@ -163,22 +163,16 @@ public class AppointmentController {
 
             List<Application> applicationList = appointmentService.getMyAppointmentApplicationList(lawyerPrincipal.getId());
 
-            // dto 만들고 응답
-            // 서비스에서 응답받은 상담신청서 목록을 DTO 배열로 변환해서 저장할 List 객체 선언
-            List<GetMyAppointmentApplicationListResponse> result = new ArrayList<>();
-
-            // application 목록 dto로 변환하고 응답
-            // 태그 리스트는 따로 만들기
-            List<Long> tags = new ArrayList<>();
+            // dto 만들고 응답하기
+            List<GetMyAppointmentApplicationListResponse.Data.ApplicationDto> applicationDtoList = new ArrayList<>();
             for(Application application : applicationList) {
+                // 태그 리스트는 따로 만들기
+                List<Long> tags = new ArrayList<>();
                 for(ApplicationTag applicationTag : application.getTags()) {
                     tags.add(applicationTag.getTag().getId());
                 }
-            }
 
-            // dto 만들기
-            for(Application application : applicationList) {
-                GetMyAppointmentApplicationListResponse getMyAppointmentApplicationListResponse = GetMyAppointmentApplicationListResponse.builder()
+                GetMyAppointmentApplicationListResponse.Data.ApplicationDto applicationDto = GetMyAppointmentApplicationListResponse.Data.ApplicationDto.builder()
                         .applicationId(application.getId())
                         .clientId(application.getClient().getId())
                         .title(application.getTitle())
@@ -192,13 +186,25 @@ public class AppointmentController {
                         .tags(tags)
                         .build();
 
-                result.add(getMyAppointmentApplicationListResponse);
+                applicationDtoList.add(applicationDto);
             }
 
-            return ResponseEntity.status(HttpStatus.OK).body(result);
+            // 응답하기
+            GetMyAppointmentApplicationListResponse getMyAppointmentApplicationListResponse = GetMyAppointmentApplicationListResponse.builder()
+                    .success(true)
+                    .message("[AppointmentController - 00] 내 상담 내역에 대한 상담신청서 목록 전체조회 성공")
+                    .data(GetMyAppointmentApplicationListResponse.Data.builder().applicationList(applicationDtoList).build())
+                    .build();
+
+            return ResponseEntity.status(HttpStatus.OK).body(getMyAppointmentApplicationListResponse);
 
         } else {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "변호사만 이용할 수 있는 기능입니다.");
+            GetMyAppointmentApplicationListResponse getMyAppointmentApplicationListResponse = GetMyAppointmentApplicationListResponse.builder()
+                    .success(false)
+                    .message("[AppointmentController - 00] 변호사만 이용할 수 있는 기능입니다.")
+                    .build();
+
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(getMyAppointmentApplicationListResponse);
         }
     }
 }
