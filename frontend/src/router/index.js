@@ -33,6 +33,10 @@ import PreviewLawyerView from '@/features/videoconference/lawyer/PreviewLawyerVi
 import MeetingRoom from '@/features/videoconference/MeetingRoom.vue';
 import ChatbotView from '@/features/chatting/ChatbotView.vue';
 import RealtimeChatView from '@/features/chatting/RealtimeChatView.vue';
+import RoomManager from '@/features/admin/RoomManager.vue';
+import LawyerStatusManager from '@/features/admin/LawyerStatusManager.vue';
+import AdminClients from '@/features/admin/AdminClients.vue';
+import AdminLayout from '@/features/admin/AdminLayout.vue';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -155,6 +159,43 @@ const router = createRouter({
       name: 'RealtimeChatView',
       component: RealtimeChatView
     },
+    {
+      path: '/chat/realtimechat',
+      name: 'RealtimeChatView',
+      component: RealtimeChatView
+    },
+     {
+      path: '/admin',
+      component: AdminLayout, // 모든 /admin/* 경로의 부모 레이아웃 역할
+      children: [
+        {
+          // /admin 경로로 직접 접속 시, 변호사 관리 페이지로 자동 이동시킵니다.
+          path: '', 
+          redirect: { name: 'admin-lawyer-management' }
+        },
+        {
+          // 클라이언트 목록 페이지
+          // 경로: /admin/clients
+          path: 'clients',
+          name: 'admin-clients', // 고유한 이름
+          component: AdminClients
+        },
+        {
+          // 변호사 자격 인증 관리 페이지
+          // 경로: /admin/lawyers/manage
+          path: 'lawyers/manage',
+          name: 'admin-lawyer-management', // 고유한 이름
+          component: LawyerStatusManager
+        },
+        {
+          // 화상 상담방 강제 종료 페이지
+          // 경로: /admin/rooms/manage
+          path: 'rooms/manage',
+          name: 'admin-room-management', // 고유한 이름
+          component: RoomManager
+        }
+      ]
+    }
 
   ],
 })
