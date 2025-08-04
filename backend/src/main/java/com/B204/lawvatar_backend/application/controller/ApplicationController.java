@@ -285,6 +285,55 @@ public class ApplicationController {
         }
     }
 
-    // 프론트가 AI 파트와 직접 소통한다면 4-1-4 요청은 필요없는 것으로 판단되어서 로직 삭제하였습니다.
+    @PatchMapping("/{applicationId}")
+    public ResponseEntity<ModifyApplicationResponse> modifyApplication(Authentication authentication, @PathVariable Long applicationId, ModifyApplicationRequest request) {
+
+        // Principal 객체 얻기
+        Object principal = authentication.getPrincipal();
+        
+        // 의뢰인이면 그대로 비즈니스 로직 진행, 아니면 에러 응답
+        if(principal instanceof ClientPrincipal clientPrincipal) {
+            try {
+                applicationService.modifyApplication(applicationId, request);
+            } catch(NoSuchElementException e) {
+                ModifyApplicationResponse modifyApplicationResponse = ModifyApplicationResponse.builder()
+                        .success(false)
+                        .message(e.getMessage())
+                        .build();
+
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(modifyApplicationResponse);
+            } catch(SecurityException e) {
+                ModifyApplicationResponse modifyApplicationResponse = ModifyApplicationResponse.builder()
+                        .success(false)
+                        .message(e.getMessage())
+                        .build();
+
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(modifyApplicationResponse);
+            }
+
+            ModifyApplicationResponse modifyApplicationResponse = ModifyApplicationResponse.builder()
+                    .success(true)
+                    .message("[ApplicationController - 008] 상담신청서 수정 성공")
+                    .data(ModifyApplicationResponse.Data.builder().applicationId(applicationId).build())
+                    .build();
+
+            return ResponseEntity.status(HttpStatus.OK).body(modifyApplicationResponse);
+        } else if(principal instanceof LawyerPrincipal lawyerPrincipal){
+            ModifyApplicationResponse modifyApplicationResponse = ModifyApplicationResponse.builder()
+                    .success(false)
+                    .message("[ApplicationController - 009] 의뢰인만 사용 가능한 기능입니다.")
+                    .build();
+
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(modifyApplicationResponse);
+        } else {
+            ModifyApplicationResponse modifyApplicationResponse = ModifyApplicationResponse.builder()
+                    .success(false)
+                    .message("[ApplicationController - 010] 유효하지 않은 사용자입니다.")
+                    .build();
+
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(modifyApplicationResponse);
+        }
+    }
+
     // 상담신청서 다운로드 api는 개발 후순위여서 나중에 만들겠습니다.
 }

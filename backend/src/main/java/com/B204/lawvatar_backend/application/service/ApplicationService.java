@@ -2,6 +2,7 @@ package com.B204.lawvatar_backend.application.service;
 
 import com.B204.lawvatar_backend.application.dto.AddApplicationRequest;
 import com.B204.lawvatar_backend.application.dto.GetApplicationResponse;
+import com.B204.lawvatar_backend.application.dto.ModifyApplicationRequest;
 import com.B204.lawvatar_backend.application.entity.Application;
 import com.B204.lawvatar_backend.application.entity.ApplicationTag;
 import com.B204.lawvatar_backend.application.repository.ApplicationRepository;
@@ -20,7 +21,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 
 @Service
@@ -155,5 +158,51 @@ public class ApplicationService {
         }
 
         throw new IllegalStateException("[ApplicationService - 007] 알 수 없는 에러가 발생했습니다. 관리자에게 문의하세요.");
+    }
+
+    public void modifyApplication(Long applicationId, ModifyApplicationRequest request) {
+
+        // application 객체 얻기
+        Application application = applicationRepository.findById(applicationId).orElseThrow(() -> new NoSuchElementException("[ApplicationService - 00] 해당 ID 값을 가지는 Appointment가 없습니다."));
+
+        // null이 아닌 필드만 application에 반영
+        if(request.getTitle() != null) {
+            application.setTitle(request.getTitle());
+        }
+
+        if(request.getSummary() != null) {
+            application.setSummary(request.getSummary());
+        }
+
+        if(request.getContent() != null) {
+            application.setContent(request.getContent());
+        }
+
+        if(request.getOutcome() != null) {
+            application.setOutcome(request.getOutcome());
+        }
+
+        if(request.getDisadvantage() != null) {
+            application.setDisadvantage(request.getDisadvantage());
+        }
+
+        if(request.getRecommendedQuestion() != null) {
+            application.setRecommendedQuestion(request.getRecommendedQuestion());
+        }
+
+        if(request.getTags() != null) {
+            // application_tag 테이블에서 기존 것 전부 삭제
+            List<ApplicationTag> applicationTagList = applicationTagRepository.findByApplicationId(applicationId);
+            for(ApplicationTag applicationTag : applicationTagList) {
+                applicationTagRepository.delete(applicationTag);
+            }
+
+            // 새로운 것 전부 insert
+            for(Long tagId : request.getTags()) {
+                Tag tag = tagRepository.findById(tagId).orElseThrow(() -> new NoSuchElementException("[ApplicationService - 00] 해당 ID 값을 가지는 Tag가 없습니다."));
+                ApplicationTag applicationTag = ApplicationTag.builder().application(application).tag(tag).build();
+                applicationTagRepository.save(applicationTag);
+            }
+        }
     }
 }
