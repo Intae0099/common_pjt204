@@ -21,6 +21,14 @@ def get_case_analysis_service(
     return CaseAnalysisService(llm, embedding_model, cross_encoder_model)
 
 from services.search_service import SearchService
+from services.chat_service import ChatService
+from llm.clients.openai_client import async_client as async_openai_client
+
+chat_service_instance = ChatService(async_openai_client)
+
+def get_chat_service() -> ChatService:
+    """ChatService 인스턴스를 반환합니다."""
+    return chat_service_instance
 
 
 def get_structuring_service(
