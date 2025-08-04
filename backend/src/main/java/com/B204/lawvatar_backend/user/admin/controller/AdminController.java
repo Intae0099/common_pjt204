@@ -116,7 +116,7 @@ public class AdminController {
     return ResponseEntity.ok(res);
   }
 
-  @DeleteMapping("/rooms/{appointmentId")
+  @DeleteMapping("/rooms/{appointmentId}")
   public ResponseEntity<Void> removeRoom(Authentication authentication, @PathVariable Long appointmentId) {
 
     // Principal 객체 얻기
