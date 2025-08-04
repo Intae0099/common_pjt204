@@ -152,7 +152,7 @@ public class AppointmentController {
      * @param authentication
      * @return
      */
-    @GetMapping("/applications")
+    @GetMapping("/me/applications")
     public ResponseEntity<List<GetMyAppointmentApplicationListResponse>> getMyAppointmentApplicationList(Authentication authentication) {
 
         // Principal 객체 얻기
