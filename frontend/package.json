@@ -19,6 +19,7 @@
     "@lottiefiles/dotlottie-vue": "^0.8.1",
     "bootstrap": "^5.3.7",
     "lottie-web": "^5.13.0",
+    "lucide-vue-next": "^0.536.0",
     "openvidu-browser": "^2.31.0",
     "pinia": "^2.3.1",
     "socket.io-client": "^4.8.1",
