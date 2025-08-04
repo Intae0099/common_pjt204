@@ -18,6 +18,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 @RestController
 @RequestMapping("/api/applications")
@@ -38,10 +39,10 @@ public class ApplicationController {
      */
     @PostMapping
     // 이 메서드의 isCompleted 쿼리 스트링은 true/false로만 분기처리할 거라서 그냥 boolean으로 받음
-    public ResponseEntity<AddApplicationResponse> addApplicaiton(
+    public ResponseEntity<AddApplicationResponse> addApplicaiton (
             Authentication authentication,
             @RequestParam boolean isCompleted,
-            @RequestBody AddApplicationRequest request) {
+            @RequestBody AddApplicationRequest request) throws Exception {
 
         // Principal 객체 얻기
         Object principal = authentication.getPrincipal();
@@ -49,14 +50,34 @@ public class ApplicationController {
         // Principal 객체 의뢰인인지 검사하고 맞으면 비즈니스 로직 진행, 아니면 에러 응답
         if(principal instanceof ClientPrincipal clientPrincipal) {
             // 상담신청서 Service에 가서 상담신청서 DB에 저장하고 id값 리턴받기
-            Long applicationId = applicationService.addApplication(clientPrincipal.getId(), isCompleted, request);
+            Long applicationId = null;
+            try {
+                applicationId = applicationService.addApplication(clientPrincipal.getId(), isCompleted, request);
+            } catch (NoSuchElementException e) {
+                AddApplicationResponse addApplicationResponse = AddApplicationResponse.builder()
+                        .success(false)
+                        .message(e.getMessage())
+                        .build();
+
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(addApplicationResponse);
+            }
 
             // 응답 dto 만들고 응답
-            AddApplicationResponse addApplicationResponse = AddApplicationResponse.builder().applicationId(applicationId).build();
+            AddApplicationResponse addApplicationResponse = AddApplicationResponse.builder()
+                    .success(true)
+                    .message("[ApplicationController - 001] 상담경위서(신청서) 저장 성공")
+                    .data(AddApplicationResponse.Data.builder().applicationId(applicationId).build())
+                    .build();
 
             return ResponseEntity.status(HttpStatus.OK).body(addApplicationResponse);
+
         } else {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "변호사는 이용할 수 없는 기능입니다.");
+            AddApplicationResponse addApplicationResponse = AddApplicationResponse.builder()
+                    .success(false)
+                    .message("[ApplicationController - 002] 변호사는 이용할 수 없는 기능입니다.")
+                    .build();
+
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(addApplicationResponse);
         }
     }
 
@@ -67,7 +88,7 @@ public class ApplicationController {
      */
     @GetMapping("/me")
     // isCompleted를 아예 붙이지 않는 경우까지 고려하기 때문에, required 속성값 false로 주고, Boolean 래퍼 객체로 받음
-    public ResponseEntity<List<GetMyApplicationListResponse>> getMyApplicationList(Authentication authentication, @RequestParam(required = false) Boolean isCompleted) {
+    public ResponseEntity<GetMyApplicationListResponse> getMyApplicationList(Authentication authentication, @RequestParam(required = false) Boolean isCompleted) throws Exception {
 
         // Principal 객체얻기
         Object principal = authentication.getPrincipal();
@@ -87,12 +108,11 @@ public class ApplicationController {
                 }
             }
 
-            // 서비스에서 응답받은 상담신청서 목록을 DTO 배열로 변환해서 저장할 List 객체 선언
-            List<GetMyApplicationListResponse> result = new ArrayList<>();
-
             // application 목록 dto로 변환하고 응답
+            List<GetMyApplicationListResponse.Data.ApplicationDto> result = new ArrayList<>();
+
             for(Application application : applicationList) {
-                GetMyApplicationListResponse getMyApplicationResponse = GetMyApplicationListResponse.builder()
+                GetMyApplicationListResponse.Data.ApplicationDto applicationDto = GetMyApplicationListResponse.Data.ApplicationDto.builder()
                         .applicationId(application.getId())
                         .clientId(application.getClient().getId())
                         .title(application.getTitle())
@@ -106,12 +126,25 @@ public class ApplicationController {
                         .tags(tags)
                         .build();
 
-                result.add(getMyApplicationResponse);
+                result.add(applicationDto);
             }
 
-            return ResponseEntity.status(HttpStatus.OK).body(result);
+            GetMyApplicationListResponse getMyApplicationResponse = GetMyApplicationListResponse.builder()
+                    .success(true)
+                    .message("[ApplicationController - 003] 의뢰인 상담경위서(신청서) 목록 전체조회 성공")
+                    .data(GetMyApplicationListResponse.Data.builder()
+                            .applicationList(result)
+                            .build())
+                    .build();
+
+            return ResponseEntity.status(HttpStatus.OK).body(getMyApplicationResponse);
         } else {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "의뢰인만 사용 가능한 기능입니다.");
+            GetMyApplicationListResponse getMyApplicationListResponse = GetMyApplicationListResponse.builder()
+                    .success(false)
+                    .message("[ApplicationController - 004] 의뢰인만 사용 가능한 기능입니다.")
+                    .build();
+
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(getMyApplicationListResponse);
         }
     }
 
@@ -129,85 +162,128 @@ public class ApplicationController {
         // 요청한 사용자가 의뢰인이면 본인이 작성한 상담신청서일 때만 조회 가능하도록 하기
         if (principal instanceof ClientPrincipal clientPrincipal) {
 
-            // Path Variable로 넘어온 applicationId로 상담신청서 객체 조회
-            Application application = applicationService.getApplication(applicationId);
+            try{
+                Application application = applicationService.getApplication(applicationId, "CLIENT", clientPrincipal.getId());
 
-            // 조회한 상담신청서의 작성자가 본인이 아니라면 403 Forbidden 에러 발생
-            if(!clientPrincipal.getId().equals(application.getClient().getId())) {
-                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "자신이 작성한 신청서만 열람할 수 있습니다.");
+                // 응답 dto 만들고 응답하기
+                // 태그 리스트는 따로 만들기
+                List<Long> tags = new ArrayList<>();
+                List<ApplicationTag> applicationTagList = application.getTags();
+                for(ApplicationTag applicationTag : applicationTagList) {
+                    tags.add(applicationTag.getTag().getId());
+                }
+
+                // Application 내용 dto 만들기
+                GetApplicationResponse.Data.ApplicationDto applicationDto = GetApplicationResponse.Data.ApplicationDto.builder()
+                        .applicationId(application.getId())
+                        .clientId(application.getClient().getId())
+                        .title(application.getTitle())
+                        .summary(application.getSummary())
+                        .content(application.getContent())
+                        .outcome(application.getOutcome())
+                        .disadvantage(application.getDisadvantage())
+                        .recommendedQuestions(application.getRecommendedQuestion())
+                        .isCompleted(application.isCompleted())
+                        .createdAt(application.getCreatedAt())
+                        .tags(tags)
+                        .build();
+
+                // 표준 응답 dto 만들어서 응답
+                GetApplicationResponse applicationResponse = GetApplicationResponse.builder()
+                        .success(true)
+                        .message("[ApplicationController - 005] 상담경위서(신청서) 조회 성공")
+                        .data(GetApplicationResponse.Data.builder().applicationDto(applicationDto).build())
+                        .build();
+
+                return ResponseEntity.status(HttpStatus.OK).body(applicationResponse);
+            } catch(SecurityException e) {
+                GetApplicationResponse getApplicationResponse = GetApplicationResponse.builder()
+                        .success(false)
+                        .message(e.getMessage())
+                        .build();
+
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(getApplicationResponse);
+            } catch(NoSuchElementException e) {
+                GetApplicationResponse getApplicationResponse = GetApplicationResponse.builder()
+                        .success(false)
+                        .message(e.getMessage())
+                        .build();
+
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(getApplicationResponse);
+            } catch(IllegalStateException e) {
+                GetApplicationResponse getApplicationResponse = GetApplicationResponse.builder()
+                        .success(false)
+                        .message(e.getMessage())
+                        .build();
+
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(getApplicationResponse);
             }
-
-            // 응답 dto 만들고 응답완료
-            // 태그 리스트는 따로 만들기
-            List<Long> tags = new ArrayList<>();
-            List<ApplicationTag> applicationTagList = application.getTags();
-            for(ApplicationTag applicationTag : applicationTagList) {
-                tags.add(applicationTag.getTag().getId());
-            }
-
-            // 응답 dto 만들기
-            GetApplicationResponse applicationResponse = GetApplicationResponse.builder()
-                    .applicationId(application.getId())
-                    .clientId(application.getClient().getId())
-                    .title(application.getTitle())
-                    .summary(application.getSummary())
-                    .content(application.getContent())
-                    .outcome(application.getOutcome())
-                    .disadvantage(application.getDisadvantage())
-                    .recommendedQuestions(application.getRecommendedQuestion())
-                    .isCompleted(application.isCompleted())
-                    .createdAt(application.getCreatedAt())
-                    .tags(tags)
-                    .build();
-
-            return ResponseEntity.status(HttpStatus.OK).body(applicationResponse);
 
         } else if(principal instanceof LawyerPrincipal lawyerPrincipal){ // 요청한 사용자가 변호사이면 본인이 담당한 상담에 대한 상담신청서일 때만 조회 가능하도록 하기
 
-            // 조회할 상담신청서로 이루어진 상담 중 현재 요청보낸 변호사가 맡은 건이 단 하나도 없다면 403 Forbidden 에러 발생
-            List<Appointment> appointmentList = appointmentRepository.findByApplicationId(applicationId);
-            boolean isThisApplicationAccessibleByLawyer = false; // 플래그: 상담 리스트 중 하나라도 현재 요청보낸 변호사가 맡았다면 true가 됨
-            for(Appointment appointment : appointmentList) {
-                if(lawyerPrincipal.getId().equals(appointment.getLawyer().getId())) {
-                    isThisApplicationAccessibleByLawyer = true;
-                    break;
+            try {
+                Application application = applicationService.getApplication(applicationId, "LAWYER", lawyerPrincipal.getId());
+
+                // 응답 dto 만들고 응답하기
+                // 태그 리스트는 따로 만들기
+                List<Long> tags = new ArrayList<>();
+                List<ApplicationTag> applicationTagList = application.getTags();
+                for(ApplicationTag applicationTag : applicationTagList) {
+                    tags.add(applicationTag.getTag().getId());
                 }
+
+                // Application 내용 dto 만들기
+                GetApplicationResponse.Data.ApplicationDto applicationDto = GetApplicationResponse.Data.ApplicationDto.builder()
+                        .applicationId(application.getId())
+                        .clientId(application.getClient().getId())
+                        .title(application.getTitle())
+                        .summary(application.getSummary())
+                        .content(application.getContent())
+                        .outcome(application.getOutcome())
+                        .disadvantage(application.getDisadvantage())
+                        .recommendedQuestions(application.getRecommendedQuestion())
+                        .isCompleted(application.isCompleted())
+                        .createdAt(application.getCreatedAt())
+                        .tags(tags)
+                        .build();
+                
+                // 표준 응답 dto 만들어서 응답
+                GetApplicationResponse applicationResponse = GetApplicationResponse.builder()
+                        .success(true)
+                        .message("[ApplicationController - 006] 상담경위서(신청서) 조회 성공")
+                        .data(GetApplicationResponse.Data.builder().applicationDto(applicationDto).build())
+                        .build();
+
+                return ResponseEntity.status(HttpStatus.OK).body(applicationResponse);
+            } catch (SecurityException e) {
+                GetApplicationResponse getApplicationResponse = GetApplicationResponse.builder()
+                        .success(false)
+                        .message(e.getMessage())
+                        .build();
+
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(getApplicationResponse);
+            } catch(NoSuchElementException e) {
+                GetApplicationResponse getApplicationResponse = GetApplicationResponse.builder()
+                        .success(false)
+                        .message(e.getMessage())
+                        .build();
+
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(getApplicationResponse);
+            } catch(IllegalStateException e) {
+                GetApplicationResponse getApplicationResponse = GetApplicationResponse.builder()
+                        .success(false)
+                        .message(e.getMessage())
+                        .build();
+
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(getApplicationResponse);
             }
-
-            if(!isThisApplicationAccessibleByLawyer) {
-                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "[ApplicationController - 002] 맡아서 진행한 상담의 신청서만 열람할 수 있습니다.");
-            }
-
-            // Path Variable로 넘어온 applicationId로 상담신청서 객체 조회
-            Application application = applicationRepository.findById(applicationId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "[ApplicationController - 001] 해당 ID 값을 가지는 Application이 없습니다."));
-
-            // 응답 dto 만들고 응답완료
-            // 태그 리스트는 따로 만들기
-            List<Long> tags = new ArrayList<>();
-            List<ApplicationTag> applicationTagList = application.getTags();
-            for(ApplicationTag applicationTag : applicationTagList) {
-                tags.add(applicationTag.getTag().getId());
-            }
-
-            //응답 dto 만들기
-            GetApplicationResponse applicationResponse = GetApplicationResponse.builder()
-                    .applicationId(application.getId())
-                    .clientId(application.getClient().getId())
-                    .title(application.getTitle())
-                    .summary(application.getSummary())
-                    .content(application.getContent())
-                    .outcome(application.getOutcome())
-                    .disadvantage(application.getDisadvantage())
-                    .recommendedQuestions(application.getRecommendedQuestion())
-                    .isCompleted(application.isCompleted())
-                    .createdAt(application.getCreatedAt())
-                    .tags(tags)
+        } else {
+            GetApplicationResponse getApplicationResponse = GetApplicationResponse.builder()
+                    .success(false)
+                    .message("[ApplicationController - 007] 유효하지 않은 사용자입니다.")
                     .build();
 
-            return ResponseEntity.status(HttpStatus.OK).body(applicationResponse);
-
-        } else {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "[ApplicationController - 003] 유효하지 않은 Principal 입니다.");
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(getApplicationResponse);
         }
     }
 

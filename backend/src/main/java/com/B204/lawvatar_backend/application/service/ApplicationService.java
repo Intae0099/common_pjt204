@@ -1,10 +1,12 @@
 package com.B204.lawvatar_backend.application.service;
 
 import com.B204.lawvatar_backend.application.dto.AddApplicationRequest;
+import com.B204.lawvatar_backend.application.dto.GetApplicationResponse;
 import com.B204.lawvatar_backend.application.entity.Application;
 import com.B204.lawvatar_backend.application.entity.ApplicationTag;
 import com.B204.lawvatar_backend.application.repository.ApplicationRepository;
 import com.B204.lawvatar_backend.application.repository.ApplicationTagRepository;
+import com.B204.lawvatar_backend.appointment.entity.Appointment;
 import com.B204.lawvatar_backend.appointment.repository.AppointmentRepository;
 import com.B204.lawvatar_backend.common.entity.Tag;
 import com.B204.lawvatar_backend.common.repository.TagRepository;
@@ -19,6 +21,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 @Service
 @RequiredArgsConstructor
@@ -42,7 +45,7 @@ public class ApplicationService {
     public Long addApplication(Long clientId, boolean isCompleted, AddApplicationRequest request) {
 
         // Application 객체 만들고 DB에 저장하기 위해 Client 객체 가져오기
-        Client client = clientRepository.findById(clientId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "[ApplicationService - 001] 해당 ID 값을 가지는 Client가 없습니다."));
+        Client client = clientRepository.findById(clientId).orElseThrow(() -> new NoSuchElementException("[ApplicationService - 001] 해당 ID 값을 가지는 Client가 없습니다."));
 
         if (isCompleted) { // isCompleted가 true이면 Application 필드 꽉 채워서 상담신청서 저장
             // Application 객체 만들고 저장
@@ -64,7 +67,7 @@ public class ApplicationService {
             List<Long> tags = request.getTags();
             for (Long tagId : tags) {
                 // ApplicationTag 객체 만들어서 DB에 저장하기 위해 Tag 객체 가져오기
-                Tag tag = tagRepository.findById(tagId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "[ApplicationService - 002] 해당 ID 값을 가지는 Tag가 없습니다."));
+                Tag tag = tagRepository.findById(tagId).orElseThrow(() -> new NoSuchElementException("[ApplicationService - 002] 해당 ID 값을 가지는 Tag가 없습니다."));
 
                 // ApplicationTag 객체 만들고 저장
                 ApplicationTag applicationTag = ApplicationTag.builder().application(application).tag(tag).build();
@@ -112,7 +115,45 @@ public class ApplicationService {
      * @param applicationId 조회하고자 하는 상담신청서 DB 고유번호
      * @return 조회한 상담신청서 객체 반환
      */
-    public Application getApplication(Long applicationId) {
-        return applicationRepository.findById(applicationId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "[ApplicationService - 003] 해당 ID 값을 가지는 Application이 없습니다."));
+    public Application getApplication(Long applicationId, String userType, Long userId) throws Exception {
+
+        if(userType.equals("CLIENT")) {
+
+            // 일단 상담신청서 조회
+            Application application = applicationRepository.findById(applicationId).orElseThrow(() -> new NoSuchElementException("[ApplicationService - 003] 해당 ID 값을 가지는 Application이 없습니다."));
+
+            // 가져온 상담신청서 작성자가 본인이 아니라면 SecurityException 발생
+            if(!application.getClient().getId().equals(userId)) {
+                throw new SecurityException("[ApplicationService - 004] 자신이 작성한 신청서만 열람할 수 있습니다.");
+            }
+
+            // 그게 아니라면 아까 조회한 상담신청서 반환
+            return application;
+
+        } else if(userType.equals("LAWYER")) {
+
+            // 이 상담신청서로 이루어진 상담 목록 전체조회
+            List<Appointment> appointmentList = appointmentRepository.findByApplicationId(applicationId);
+
+            // 조회한 상담 목록 중 이 변호사가 진행한 상담이 하나라도 있는지 조사해서 없다면 에러 발생
+            boolean isThisApplicationAccessibleByLawyer = false; // 플래그 변수: 상담 리스트 중 하나라도 현재 요청보낸 변호사가 맡았다면 true가 됨
+            for(Appointment appointment : appointmentList) {
+                if(userId.equals(appointment.getLawyer().getId())) {
+                    isThisApplicationAccessibleByLawyer = true;
+                    break;
+                }
+            }
+            
+            if(!isThisApplicationAccessibleByLawyer) {
+                throw new SecurityException("[ApplicationController - 005] 맡아서 진행한 상담의 신청서만 열람할 수 있습니다.");
+            }
+
+            // 에러 발생하지 않았다면 Application 조회해서 반환
+            Application application = applicationRepository.findById(applicationId).orElseThrow(() -> new NoSuchElementException("[ApplicationService - 006 해당 ID 값을 가지는 Application이 없습니다."));
+
+            return application;
+        }
+
+        throw new IllegalStateException("[ApplicationService - 007] 알 수 없는 에러가 발생했습니다. 관리자에게 문의하세요.");
     }
 }
