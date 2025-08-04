@@ -123,7 +123,7 @@ const handlePredictVerdict = async () => {
     if (data.success) {
       // API 응답에 맞춰 state 업데이트
       verdictResult.value = data.data.report
-      lawyers.value = data.data.recommendedLawyers
+      lawyers.value = data.data.report.recommendedLawyers
       canShowRecommendBtn.value = true
     } else {
       console.error('판례 분석 API 오류:', data.error.message)

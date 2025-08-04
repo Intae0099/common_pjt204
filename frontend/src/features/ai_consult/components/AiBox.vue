@@ -33,17 +33,21 @@
             </li>
           </ul>
           <p style="margin-top: 1rem;">{{ verdictResult.opinion }}</p>
-          <p><strong>예상 형량:</strong> {{ verdictResult.sentencePrediction }}</p>
+          <p><strong>예상 형량:</strong> {{ verdictResult.expected_sentence }}</p>
           <p><strong>신뢰도:</strong> {{ (verdictResult.confidence * 100).toFixed(0) }}%</p>
+          <div v-if="verdictResult.tags?.length" class="tags-wrapper">
+            <span v-for="tag in verdictResult.tags" :key="tag" class="tag">#{{ tag }}</span>
+          </div>
 
           <!-- ✅ 유사 판례 정보 -->
           <div v-if="verdictResult.references?.cases?.length" style="margin-top: 1rem;">
             <h4>📚 유사 판례</h4>
             <ul>
               <li v-for="(caseItem, index) in verdictResult.references.cases" :key="`case-${index}`" style="margin-bottom: 0.5rem;">
-                <p><strong>사건명:</strong> {{ caseItem.name }}</p>
-                <p><strong>법원:</strong> {{ caseItem.court }}</p>
-                <p><strong>년도:</strong> {{ caseItem.year }}</p>
+                <p><strong>사건:</strong> {{ caseItem.title }} ({{ caseItem.id }})</p>
+                <p><strong>분류:</strong> {{ caseItem.category }}</p>
+                <p><strong>판결일:</strong> {{ caseItem.decision_date }}</p>
+                <p class="summary-text"><strong>요약:</strong>{{ caseItem.chunk_summary }}</p>
               </li>
             </ul>
           </div>
