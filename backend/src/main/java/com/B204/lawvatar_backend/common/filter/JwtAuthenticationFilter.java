@@ -43,13 +43,25 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
   @Override
   protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
     String path = request.getRequestURI();
-    // 사전 검사, 회원가입, 로그인 등 공개 엔드포인트
-    return path.startsWith("/api/lawyers/signup")
+    // 회원가입, 로그인 등 공개 엔드포인트
+    return
+        // 변호사 회원가입 / 로그인
+        path.startsWith("/api/lawyers/signup")
         || path.startsWith("/api/lawyers/emails/check")
         || path.startsWith("/api/lawyers/login")
+        || path.startsWith("/auth/login")
+
+            // 의뢰인 회원가입 / 로그인
         || path.startsWith("/login/oauth2/")
-        || path.startsWith("/api/lawyers/list")
-        || path.startsWith("/api/admin")
+        || path.startsWith("/oauth2/authorization/")
+        || path.startsWith("/oauth2/callback/")
+
+        // refreshToken 발급
+        || path.startsWith("/api/auth/")
+
+        // 관리자 기능 Test용
+        // || path.startsWith("/api/admin")
+
         // Swagger/OpenAPI
         || path.startsWith("/v3/api-docs")
         || path.startsWith("/swagger-ui")
@@ -59,21 +71,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
   }
 
   @Override
-  protected void doFilterInternal(HttpServletRequest req,
+  protected void doFilterInternal(
+      HttpServletRequest req,
       HttpServletResponse res,
       FilterChain chain) throws ServletException, IOException {
-
-    String path = req.getServletPath();
-    if (path.startsWith("/auth") ||
-        path.startsWith("/oauth2") ||
-        path.startsWith("/login/oauth2") ||
-        path.startsWith("/api/lawyers/signup") ||
-        path.startsWith("/api/lawyers/login")
-//        || path.startsWith("/api")                         // 일단 다 열어둠 . 추후 수정 필요 / must be fixed
-    ) {
-      chain.doFilter(req, res);
-      return;
-    }
 
     String header = req.getHeader("Authorization");
     if (header == null || !header.startsWith("Bearer ")) {
@@ -116,8 +117,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         res.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid userType");
         return;
       }
-
-
 
       // 3) Authentication 토큰 생성
       Authentication authToken =

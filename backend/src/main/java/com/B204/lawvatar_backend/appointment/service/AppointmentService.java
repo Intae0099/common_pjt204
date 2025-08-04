@@ -9,6 +9,8 @@ import com.B204.lawvatar_backend.user.client.repository.ClientRepository;
 import com.B204.lawvatar_backend.user.lawyer.repository.LawyerRepository;
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -99,5 +101,15 @@ public class AppointmentService {
 
     // 3) 상태를 CANCELED 로 변경 (AppointmentStatus에 CANCELED 값이 있어야 함)
     appt.setAppointmentStatus(AppointmentStatus.CANCELLED);
+  }
+
+  public List<Application> getMyAppointmentApplicationList(Long lawyerId) {
+
+    List<Appointment> appointmentList = appointmentRepo.findByLawyerId(lawyerId);
+    List<Application> applicationList = new ArrayList<>();
+    for(Appointment appointment : appointmentList) {
+        applicationList.add(appointment.getApplication());
+    }
+    return applicationList;
   }
 }

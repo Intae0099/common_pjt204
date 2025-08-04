@@ -28,29 +28,21 @@ import org.springframework.web.server.ResponseStatusException;
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
 public class AuthController {
-  private final RefreshTokenService rtService;
   private final JwtUtil jwtUtil;
   private final LawyerRepository lawyerRepository;
   private final ClientRepository clientRepository;
-  private final RefreshTokenRepository rtRepo;
 
   @PostMapping("/refresh")
   public ResponseEntity<Map<String,String>> refresh(
-      @CookieValue(value = "refresh_token", required = false) String refreshToken,
-      @RequestHeader(value = "grant_type", required = false) String grantType
+      @CookieValue(value = "refresh_token", required = false) String refreshToken
   ) {
-    if (!"refresh_token".equals(grantType)) {
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "grant_type must be 'refresh_token'");
-    }
-
     if (refreshToken == null) {
       throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Refresh token missing");
     }
 
     Claims claims = jwtUtil.validateAndGetClaims(refreshToken);
-    String subject = claims.getSubject();  // ← 이 값이 ID 또는 oauthIdentifier
+    String subject = claims.getSubject();
     String userType = claims.get("userType", String.class);
-
 
     // 1. 사용자 로드 (선택적 – roles 조회용)
     List<String> roles;
@@ -62,7 +54,7 @@ public class AuthController {
     } else {
       Client client = clientRepository.findByOauthIdentifier(subject)
           .orElseThrow(() -> new UsernameNotFoundException("No client with oauthIdentifier: " + subject));
-      roles = List.of("ROLE_USER");
+      roles = List.of("ROLE_CLIENT");
     }
 
     // 2. AccessToken 재발급

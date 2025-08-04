@@ -1,9 +1,12 @@
 package com.B204.lawvatar_backend.appointment.controller;
 
+import com.B204.lawvatar_backend.application.entity.Application;
+import com.B204.lawvatar_backend.application.entity.ApplicationTag;
 import com.B204.lawvatar_backend.application.repository.ApplicationRepository;
 import com.B204.lawvatar_backend.appointment.dto.AppointmentRequestDto;
 import com.B204.lawvatar_backend.appointment.dto.AppointmentResponseDto;
 import com.B204.lawvatar_backend.appointment.dto.AppointmentStatusRequestDto;
+import com.B204.lawvatar_backend.appointment.dto.GetMyAppointmentApplicationListResponse;
 import com.B204.lawvatar_backend.appointment.dto.MyAppointmentDto;
 import com.B204.lawvatar_backend.appointment.entity.Appointment;
 import com.B204.lawvatar_backend.appointment.entity.AppointmentStatus;
@@ -20,11 +23,13 @@ import io.jsonwebtoken.Claims;
 import jakarta.validation.Valid;
 import java.net.URI;
 import java.nio.file.attribute.UserPrincipal;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -60,36 +65,29 @@ public class AppointmentController {
 
   @GetMapping("/me")
   public ResponseEntity<List<MyAppointmentDto>> getMyAppointments(
-      Authentication authentication,
+      @AuthenticationPrincipal Object principal,
       @RequestParam(value = "status", required = false) AppointmentStatus status
   ) {
-    Object principal = authentication.getPrincipal();
     List<Appointment> appts = List.of();
 
-    if (principal instanceof LawyerPrincipal lawyerPrincipal) {
-      // 변호사로 로그인 됐으면
+    if (principal instanceof LawyerPrincipal lawyerPrincipal) {       // 변호사로 로그인 됐으면
       Lawyer lawyer = lawyerRepo.findById(lawyerPrincipal.getId())
           .orElseThrow(() -> new UsernameNotFoundException("변호사 없음: " + lawyerPrincipal.getId()));
+
       appts = appointmentRepo.findByLawyer(lawyer);
 
-    } else if (principal instanceof ClientPrincipal clientPrincipal) {
-      // 의뢰인으로 로그인 됐으면
+    } else if (principal instanceof ClientPrincipal clientPrincipal) {        // 의뢰인으로 로그인 됐으면
       Client client = clientRepo.findById(clientPrincipal.getId())
           .orElseThrow(() -> new UsernameNotFoundException("의뢰인 없음: " + clientPrincipal.getId()));
+
       appts = appointmentRepo.findByClient(client);
 
-    } else {
-      throw new AccessDeniedException("올바르지 않은 사용자 타입입니다.");
     }
 
     if (status != null) {
       appts = appts.stream()
           .filter(a -> a.getAppointmentStatus() == status)
           .toList();
-    }
-
-    if (appts.isEmpty()) {
-      return ResponseEntity.ok(Collections.emptyList());
     }
 
     List<MyAppointmentDto> dtoList = appts.stream()
@@ -99,22 +97,14 @@ public class AppointmentController {
   }
 
   @PostMapping
+  @PreAuthorize("hasRole('CLIENT')")
   public ResponseEntity<AppointmentResponseDto> createAppointment(
-      Authentication authentication,
+      @AuthenticationPrincipal ClientPrincipal client,
       @Valid @RequestBody AppointmentRequestDto req
   ){
 
-    Long clientId;
-    if (authentication.getPrincipal() instanceof LawyerPrincipal) {
-      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "변호사는 상담 예약을 할 수 없습니다.");
-    } else if (authentication.getPrincipal() instanceof ClientPrincipal cp) {
-      clientId = cp.getId();
-    } else {
-      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "알 수 없는 사용자 타입입니다.");
-    }
-
     Appointment appt = appointmentService.create(
-        clientId,
+        client.getId(),
         req.getLawyerId(),
         req.getApplicationId(),
         req.getStartTime(),
@@ -122,6 +112,7 @@ public class AppointmentController {
     );
 
     AppointmentResponseDto body = AppointmentResponseDto.from(appt);
+
     // Location header: /api/appointments/{id}
     return ResponseEntity
         .created(URI.create("/api/appointments/" + appt.getId()))
@@ -132,35 +123,82 @@ public class AppointmentController {
     변호사가 자신에게 온 상담을 승인 / 거절
    */
   @PatchMapping("/{appointmentId}/status")
+  @PreAuthorize("hasRole('LAWYER')")
   public ResponseEntity<Void> updateAppointmentStatus(
       @PathVariable Long appointmentId,
       @Valid @RequestBody AppointmentStatusRequestDto dto,
-      Authentication authentication
+      @AuthenticationPrincipal LawyerPrincipal lawyer
   ) {
-
-    if (!(authentication.getPrincipal() instanceof LawyerPrincipal lp)) {
-      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "권한이 없습니다.");
-    }
-    Long lawyerId = lp.getId();
-
-    // 2) 서비스 호출 (내부에서 권한·상태 전환 검증)
+    Long lawyerId = lawyer.getId();
     appointmentService.updateStatus(appointmentId, lawyerId, dto.getAppointmentStatus());
 
     return ResponseEntity.ok().build();
   }
 
   @PatchMapping("/{appointmentId}/cancel")
+  @PreAuthorize("hasRole('LAWYER')")
   public ResponseEntity<Void> cancelAppointment(
     @PathVariable Long appointmentId,
-    Authentication authentication
+      @AuthenticationPrincipal LawyerPrincipal lawyer
   ){
-    if(!(authentication.getPrincipal() instanceof ClientPrincipal cp)){
-      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "취소할 권한이 없습니다.");
-    }
-
-    Long clientId = cp.getId();
+    Long clientId = lawyer.getId();
     appointmentService.cancel(appointmentId, clientId);
 
     return ResponseEntity.ok().build();
   }
+
+      /**
+     * 변호사가 자신의 상담에 대한 상담신청서 목록을 전체조회하는 메서드
+     * @param authentication
+     * @return
+     */
+    @GetMapping("/me/applications")
+    public ResponseEntity<List<GetMyAppointmentApplicationListResponse>> getMyAppointmentApplicationList(Authentication authentication) {
+
+        // Principal 객체 얻기
+        Object principal = authentication.getPrincipal();
+
+        // 변호사 맞는지 검사하고 맞으면 비즈니스 로직 진행, 아니면 에러 응답
+        if(principal instanceof LawyerPrincipal lawyerPrincipal) {
+
+            List<Application> applicationList = appointmentService.getMyAppointmentApplicationList(lawyerPrincipal.getId());
+
+            // dto 만들고 응답
+            // 서비스에서 응답받은 상담신청서 목록을 DTO 배열로 변환해서 저장할 List 객체 선언
+            List<GetMyAppointmentApplicationListResponse> result = new ArrayList<>();
+
+            // application 목록 dto로 변환하고 응답
+            // 태그 리스트는 따로 만들기
+            List<Long> tags = new ArrayList<>();
+            for(Application application : applicationList) {
+                for(ApplicationTag applicationTag : application.getTags()) {
+                    tags.add(applicationTag.getTag().getId());
+                }
+            }
+
+            // dto 만들기
+            for(Application application : applicationList) {
+                GetMyAppointmentApplicationListResponse getMyAppointmentApplicationListResponse = GetMyAppointmentApplicationListResponse.builder()
+                        .applicationId(application.getId())
+                        .clientId(application.getClient().getId())
+                        .title(application.getTitle())
+                        .summary(application.getSummary())
+                        .content(application.getContent())
+                        .outcome(application.getOutcome())
+                        .disadvantage(application.getDisadvantage())
+                        .recommendedQuestions(application.getRecommendedQuestion())
+                        .isCompleted(application.isCompleted())
+                        .createdAt(application.getCreatedAt())
+                        .tags(tags)
+                        .build();
+
+                result.add(getMyAppointmentApplicationListResponse);
+            }
+
+            return ResponseEntity.status(HttpStatus.OK).body(result);
+
+        } else {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "변호사만 이용할 수 있는 기능입니다.");
+        }
+    }
 }

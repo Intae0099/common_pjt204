@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -44,14 +45,10 @@ public class ClientController {
   }
 
   @GetMapping("/me")
-  public ResponseEntity<Map<String, Object>> getMyInfo(Authentication authentication){
-    Object principal = authentication.getPrincipal();
-
-    if(!(principal instanceof ClientPrincipal client)){
-      return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
-          "error", "의뢰인으로서 권한이 없습니다."
-      ));
-    }
+  @PreAuthorize("hasRole('CLIENT')")
+  public ResponseEntity<Map<String, Object>> getMyInfo(
+      @AuthenticationPrincipal ClientPrincipal client
+  ){
 
     Map<String ,Object> response = new LinkedHashMap<>();
     response.put("clientId", client.getUsername());
@@ -64,6 +61,7 @@ public class ClientController {
 
 
   @PatchMapping("/me/edit")
+  @PreAuthorize("hasRole('CLIENT')")
   public ResponseEntity<Void> updateMyInfo(
       @Valid @RequestBody ClientUpdateDto dto,
       @AuthenticationPrincipal ClientPrincipal principal) {
@@ -73,26 +71,21 @@ public class ClientController {
   }
 
   @DeleteMapping("/me")
-  public ResponseEntity<Void> deleteMyAccount(Authentication authentication){
+  @PreAuthorize("hasRole('CLIENT')")
+  public ResponseEntity<Void> deleteMyAccount(
+      @AuthenticationPrincipal ClientPrincipal client
+  ){
+    clientService.deleteByClientId(client.getId());
 
-    if(!(authentication.getPrincipal() instanceof ClientPrincipal client)){
-      return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-    }
-
-    Long clientId = client.getId();
-    clientService.deleteByClientId(clientId);
     return ResponseEntity.noContent().build();
-
   }
 
   @GetMapping("/{clientId}")
+  @PreAuthorize("hasRole('LAWYER')")
   ResponseEntity<ClientSearchDto> getClientById(
       @PathVariable Long clientId,
-      Authentication authentication
+      @AuthenticationPrincipal LawyerPrincipal lp
   ){
-    if(!(authentication.getPrincipal() instanceof LawyerPrincipal lp) ){
-      throw new ResponseStatusException(HttpStatus.FORBIDDEN,  "변호사만 접근할 수 있습니다.");
-    }
     Long lawyerId = lp.getId();
 
     boolean exists = appointmentRepo.existsByLawyerIdAndClientId(lawyerId, clientId);

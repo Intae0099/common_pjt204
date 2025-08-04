@@ -64,7 +64,7 @@ public class ClientService implements OAuth2UserService<OAuth2UserRequest, OAuth
 
     // 4) 스프링 시큐리티용 OAuth2User 반환
     return new DefaultOAuth2User(
-        List.of(() -> "ROLE_USER"),
+        List.of(() -> "ROLE_CLIENT"),
         oauth.getAttributes(),
         userNameAttr  // "id"
     );

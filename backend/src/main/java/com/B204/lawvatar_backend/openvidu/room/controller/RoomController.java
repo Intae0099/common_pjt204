@@ -1,18 +1,17 @@
 package com.B204.lawvatar_backend.openvidu.room.controller;
 
+import com.B204.lawvatar_backend.common.principal.ClientPrincipal;
+import com.B204.lawvatar_backend.common.principal.LawyerPrincipal;
 import com.B204.lawvatar_backend.openvidu.room.dto.CreateRoomResponse;
-import com.B204.lawvatar_backend.openvidu.room.dto.GetRoomListResponse;
 import com.B204.lawvatar_backend.openvidu.room.dto.ParticipateRoomResponse;
-import com.B204.lawvatar_backend.openvidu.room.entity.Room;
 import com.B204.lawvatar_backend.openvidu.room.service.RoomService;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-import java.util.Map;
+import java.util.NoSuchElementException;
 
 @RestController
 @RequestMapping("/api/rooms")
@@ -23,33 +22,91 @@ public class RoomController {
     private final RoomService roomService;
 
     // Method
-    @PostMapping("/create")
-    public ResponseEntity<CreateRoomResponse> createClientRoom(HttpServletRequest servletRequest) throws Exception {
+    /**
+     * 유저가 상담에 대한 화상상담방을 생성하기 요청을 할 때 호출되는 메서드
+     * @param authentication
+     * @param appointmentId
+     * @return
+     */
+    @PostMapping("/{appointmentId}")
+    public ResponseEntity<CreateRoomResponse> createRoom(Authentication authentication, @PathVariable Long appointmentId) throws Exception {
 
-        Map<String, Object> result = roomService.createRoom();
+        // Principal 객체 얻기
+        Object principal = authentication.getPrincipal();
 
-        CreateRoomResponse createRoomResponse = new CreateRoomResponse((Long)result.get("roomId"), (String)result.get("customSessionId"), (String)result.get("token"));
+        // 유저타입을 서비스에 넘겨주면서 비즈니스 로직 시작
+        String token = null;
+        if(principal instanceof ClientPrincipal clientPrincipal) {
+            try {
+                token = roomService.createRoom(appointmentId, "CLIENT", clientPrincipal.getId());
+            } catch(IllegalStateException e) {
+                e.getStackTrace();
+                return ResponseEntity.status(HttpStatus.CONFLICT).build();
+            } catch(NoSuchElementException e) {
+                e.getStackTrace();
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            }
+        } else if(principal instanceof LawyerPrincipal lawyerPrincipal) {
+            try {
+                token = roomService.createRoom(appointmentId, "LAWYER", lawyerPrincipal.getId());
+            } catch(IllegalStateException e) {
+                e.getStackTrace();
+                return ResponseEntity.status(HttpStatus.CONFLICT).build();
+            } catch(NoSuchElementException e) {
+                e.getStackTrace();
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            }
+        }
+
+        CreateRoomResponse createRoomResponse = CreateRoomResponse.builder().token(token).build();
 
         return ResponseEntity.status(HttpStatus.OK).body(createRoomResponse);
     }
 
-    @PostMapping("/{customSessionId}/participants") // 특정 방에 참가자를 추가로 생성(Post요청)한다는 의미에서 요청경로 이렇게 작성
-    public ResponseEntity<ParticipateRoomResponse> participateClientRoom(@PathVariable String customSessionId, HttpServletRequest servletRequest) throws Exception {
+    /**
+     * 유저가 화상상담방에 참여하기 요청을 할 때 호출되는 메서드
+     * @param authentication
+     * @param appointmentId
+     * @return
+     */
+    @PostMapping("/{appointmentId}/participants") // 특정 방에 참가자를 추가로 생성(Post요청)한다는 의미에서 요청경로 이렇게 작성
+    public ResponseEntity<ParticipateRoomResponse> participateRoome(Authentication authentication, @PathVariable Long appointmentId) throws Exception {
 
-        Map<String, Object> result = roomService.participateRoom(customSessionId);
+        // Principal 객체 얻기
+        Object principal = authentication.getPrincipal();
 
-        ParticipateRoomResponse participateRoomResponse = new ParticipateRoomResponse((Long)result.get("roomId"), (String)result.get("token"));
+        // 유저타입을 서비스에 넘겨주면서 비즈니스 로직 시작
+        String token = null;
+        if(principal instanceof ClientPrincipal clientPrincipal) {
+            token = roomService.participateRoom(appointmentId, "CLIENT", clientPrincipal.getId());
+        } else if(principal instanceof LawyerPrincipal lawyerPrincipal) {
+            token = roomService.participateRoom(appointmentId, "LAWYER", lawyerPrincipal.getId());
+        }
+
+        ParticipateRoomResponse participateRoomResponse = ParticipateRoomResponse.builder().token(token).build();
 
         return ResponseEntity.status(HttpStatus.OK).body(participateRoomResponse);
     }
 
-    @GetMapping("/list")
-    public ResponseEntity<GetRoomListResponse> getRoomList() {
+    /**
+     * 유저가 화상상담방 나가기 요청을 할 때 호출되는 메서드
+     * @param authentication
+     * @param appointmentId
+     * @return
+     */
+    @DeleteMapping("/{appointmentId}/participants/me")
+    public ResponseEntity<Void> leaveRoom(Authentication authentication, @PathVariable Long appointmentId) {
 
-        List<Room> roomList = roomService.getRoomList();
+        // Principal 객체 얻기
+        Object principal = authentication.getPrincipal();
 
-        GetRoomListResponse getRoomListResponse = new GetRoomListResponse(roomList);
+        // 유저타입을 서비스에 넘겨주면서 비즈니스 로직 시작
+        if(principal instanceof ClientPrincipal clientPrincipal) {
+            roomService.leaveRoom(appointmentId, "CLIENT", clientPrincipal.getId());
+        } else if(principal instanceof LawyerPrincipal lawyerPrincipal) {
+            roomService.leaveRoom(appointmentId, "LAWYER", lawyerPrincipal.getId());
+        }
 
-        return ResponseEntity.status(HttpStatus.OK).body(getRoomListResponse);
+        return ResponseEntity.status(HttpStatus.OK).build();
     }
 }

@@ -25,6 +25,9 @@ public class LawyerSearchDto {  // client가 lawyer 전체 조회, 검색 시 �
   /** 소개 글 */
   private String introduction;
 
+  /** 상담 횟수 */
+  private int consultationCount;
+
   /** 전문 분야 태그 ID 목록 */
   private List<Long> tags;
 
@@ -37,6 +40,7 @@ public class LawyerSearchDto {  // client가 lawyer 전체 조회, 검색 시 �
         lawyer.getLoginEmail(),
         lawyer.getName(),
         lawyer.getIntroduction(),
+        lawyer.getConsultationCount(),
         lawyer.getTags().stream()
             .map(lt -> lt.getTag().getId())
             .collect(Collectors.toList())

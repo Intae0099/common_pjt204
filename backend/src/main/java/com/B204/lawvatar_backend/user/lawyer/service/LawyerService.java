@@ -1,41 +1,130 @@
 package com.B204.lawvatar_backend.user.lawyer.service;
 
+import com.B204.lawvatar_backend.common.entity.Tag;
+import com.B204.lawvatar_backend.common.util.JwtUtil;
 import com.B204.lawvatar_backend.user.auth.repository.RefreshTokenRepository;
+import com.B204.lawvatar_backend.user.auth.service.RefreshTokenService;
+import com.B204.lawvatar_backend.user.lawyer.dto.LawyerSignupDto;
 import com.B204.lawvatar_backend.user.lawyer.dto.LawyerUpdateDto;
+import com.B204.lawvatar_backend.user.lawyer.dto.LoginResult;
 import com.B204.lawvatar_backend.user.lawyer.entity.CertificationStatus;
 import com.B204.lawvatar_backend.user.lawyer.entity.Lawyer;
 import com.B204.lawvatar_backend.user.lawyer.entity.LawyerTag;
 import com.B204.lawvatar_backend.user.lawyer.repository.LawyerRepository;
 import com.B204.lawvatar_backend.user.lawyer.repository.LawyerTagRepository;
-import com.B204.lawvatar_backend.user.lawyer.repository.TagRepository;
+import com.B204.lawvatar_backend.common.repository.TagRepository;
 import jakarta.persistence.EntityNotFoundException;
-import jakarta.validation.Valid;
+import java.time.Duration;
 import java.util.Base64;
 import java.util.List;
+import java.util.stream.Collectors;
+import org.apache.coyote.BadRequestException;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Direction;
+import org.springframework.http.ResponseCookie;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 @Service
 public class LawyerService implements UserDetailsService {
+
+  private final RefreshTokenService refreshTokenService;
 
   private final LawyerRepository lawyerRepo;
   private final RefreshTokenRepository refreshTokenRepo;
   private final LawyerTagRepository lawyerTagRepo;
   private final TagRepository tagRepo;
 
-  public LawyerService(LawyerRepository lawyerRepo,
+  private final JwtUtil jwtUtil;
+  private final PasswordEncoder pwEncoder;
+
+  public LawyerService(RefreshTokenService refreshTokenService, LawyerRepository lawyerRepo,
       RefreshTokenRepository refreshTokenRepo,
       LawyerTagRepository lawyerTagRepo,
-      TagRepository tagRepo) {
+      TagRepository tagRepo, JwtUtil jwtUtil, PasswordEncoder pwEncoder) {
+    this.refreshTokenService = refreshTokenService;
     this.lawyerRepo = lawyerRepo;
     this.refreshTokenRepo = refreshTokenRepo;
     this.lawyerTagRepo = lawyerTagRepo;
     this.tagRepo = tagRepo;
+    this.jwtUtil = jwtUtil;
+    this.pwEncoder = pwEncoder;
+  }
+
+  @Transactional
+  public void registerLawyer(LawyerSignupDto dto) {
+
+    Lawyer l = new Lawyer();
+    l.setLoginEmail(dto.getLoginEmail());
+    l.setPasswordHash(pwEncoder.encode(dto.getPassword()));
+    l.setName(dto.getName());
+    l.setIntroduction(dto.getIntroduction());
+    l.setExam(dto.getExam());
+    l.setRegistrationNumber(dto.getRegistrationNumber());
+    l.setCertificationStatus(CertificationStatus.PENDING);
+    l.setConsultationCount(0);
+
+    if (StringUtils.hasText(dto.getPhotoBase64())) {
+      byte[] img = Base64.getDecoder().decode(dto.getPhotoBase64());
+      l.setPhoto(img);
+    }
+
+    lawyerRepo.save(l);
+
+    List<Tag> tags = tagRepo.findAllById(dto.getTags());
+    List<LawyerTag> ltList = tags.stream()
+        .map(tag -> LawyerTag.builder()
+            .lawyer(l)
+            .tag(tag)
+            .build())
+        .collect(Collectors.toList());
+
+    lawyerTagRepo.saveAll(ltList);
+  }
+
+  public LoginResult loginLawyer(Authentication authentication) {
+    // 1) 인증된 사용자 정보 조회
+    String loginEmail = authentication.getName();
+    Lawyer lawyer = findByLoginEmail(loginEmail);
+
+    // 2) 권한 목록 준비
+    List<String> roles = authentication.getAuthorities().stream()
+        .map(GrantedAuthority::getAuthority)
+        .toList();
+
+    // 3) 토큰 생성
+    String accessToken = jwtUtil.generateAccessToken(
+        String.valueOf(lawyer.getId()), roles, "LAWYER");
+    String refreshToken = jwtUtil.generateRefreshToken(String.valueOf(lawyer.getId()));
+
+    // 4) DB에 리프레시 토큰 저장
+    refreshTokenService.createForLawyer(lawyer, refreshToken);
+
+    // 5) 쿠키 생성
+    ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", refreshToken)
+        .httpOnly(true)
+        .secure(true)
+        .sameSite("Strict")
+        .path("/")
+        .maxAge(Duration.ofDays(7))
+        .build();
+
+    // 6) 결과 반환
+    return new LoginResult(
+        accessToken,
+        refreshCookie.toString(),
+        loginEmail
+    );
   }
 
   @Override
@@ -120,26 +209,35 @@ public class LawyerService implements UserDetailsService {
     lawyerRepo.deleteById(id);
   }
 
-  public List<Lawyer> findLawyers(List<Long> tagIds, String search) {
+  public List<Lawyer> findLawyers(
+      List<Long> tagIds,
+      String search,
+      String sortBy
+  ) {
 
     boolean hasTags = tagIds != null && !tagIds.isEmpty();
     boolean hasSearch = search != null && !search.isEmpty();
 
+    // sort 객체 생성
+    Sort sort = "name".equals(sortBy)
+        ? Sort.by(Direction.ASC, "name")
+        : Sort.by(Direction.DESC, "consultationCount");
+
     if (hasTags && hasSearch) {
       // 모든 태그 + 이름 검색
       return lawyerRepo.findByAllTagIdsAndNameContainingIgnoreCase(
-          tagIds, tagIds.size(), search);
+          tagIds, tagIds.size(), search, sort);
     }
     if (hasTags) {
       // 모든 태그만
-      return lawyerRepo.findByAllTagIds(tagIds, tagIds.size());
+      return lawyerRepo.findByAllTagIds(tagIds, tagIds.size(), sort);
     }
     if (hasSearch) {
       // 이름만 검색
-      return lawyerRepo.findByNameContainingIgnoreCase(search);
+      return lawyerRepo.findByNameContainingIgnoreCase(search, sort);
     }
     // 둘 다 없으면 전체
-    return lawyerRepo.findAll();
+    return lawyerRepo.findAll(sort);
 
   }
 
@@ -160,5 +258,6 @@ public class LawyerService implements UserDetailsService {
     return lawyerRepo.findByCertificationStatus(status);
 
   }
+
 }
 
