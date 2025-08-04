@@ -8,6 +8,6 @@ import java.util.List;
 public interface SessionRepository extends JpaRepository<Session, Long> {
 
     // Abstract Method
-    Session findByAppointmentId(Long appointmentId);
+    Session findByAppointment_Id(Long appointmentId);
 
 }

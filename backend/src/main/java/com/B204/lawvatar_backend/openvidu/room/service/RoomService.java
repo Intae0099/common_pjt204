@@ -50,6 +50,13 @@ public class RoomService {
     // Method
     public String createRoom(Long appointmentId, String userType, Long userId) {
 
+        // 이 appointmentId에 대해 이미 생성돼있는 화상상담방이 있으면 409 에러 응답하기
+        Session existingSession = sessionRepository.findByAppointment_Id(appointmentId);
+        if(existingSession != null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "[RoomService - 001] 이미 화상상담방이 존재하는 상담입니다.");
+        }
+
+        // customSessionId 만들기
         String openviduCustomSessionId = Room.generateCustomSessionId();
 
         // 생성한 customSessionId 들고 sessionId 얻으러 가기
@@ -73,17 +80,17 @@ public class RoomService {
         // Participant 테이블에 참가정보 저장하기
         // 유저타입에 따라 Participant 객체 만들어서 DB에 저장
         if(userType.equals("CLIENT")) {
-            Client client = clientRepository.findById(userId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "[RoomService - 001] 해당 ID 값을 가지는 Client가 없습니다."));
+            Client client = clientRepository.findById(userId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "[RoomService - 002] 해당 ID 값을 가지는 Client가 없습니다."));
             Participant participant = Participant.builder().client(client).room(room).build();
             participantRepository.save(participant);
         } else if(userType.equals("LAWYER")) {
-            Lawyer lawyer = lawyerRepository.findById(userId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "[RoomService - 002] 해당 ID 값을 가지는 Lawyer가 없습니다."));
+            Lawyer lawyer = lawyerRepository.findById(userId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "[RoomService - 003] 해당 ID 값을 가지는 Lawyer가 없습니다."));
             Participant participant = Participant.builder().lawyer(lawyer).room(room).build();
             participantRepository.save(participant);
         }
 
         // Session 테이블에 세션정보 저장하기
-        Appointment appointment = appointmentRepository.findById(appointmentId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "[RoomService - 003] 해당 ID 값을 가지는 Appointment가 없습니다."));
+        Appointment appointment = appointmentRepository.findById(appointmentId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "[RoomService - 004] 해당 ID 값을 가지는 Appointment가 없습니다."));
         Session session = Session.builder().appointment(appointment).room(room).participantCount(1).build();
         sessionRepository.save(session);
 
@@ -93,17 +100,17 @@ public class RoomService {
     public String participateRoom(Long appointmentId, String userType, Long userId) {
 
         // 이 Appointment 객체에 대한 Session 객체와 Room 객체 얻기
-        Session session = sessionRepository.findByAppointmentId(appointmentId);
+        Session session = sessionRepository.findByAppointment_Id(appointmentId);
         Room room = session.getRoom();
 
         // Participant 테이블에 참가정보 저장하기
         // 유저타입에 따라 Participant 객체 만들어서 DB에 저장
         if(userType.equals("CLIENT")) {
-            Client client = clientRepository.findById(userId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "[RoomService - 004] 해당 ID 값을 가지는 Client가 없습니다."));
+            Client client = clientRepository.findById(userId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "[RoomService - 005] 해당 ID 값을 가지는 Client가 없습니다."));
             Participant participant = Participant.builder().client(client).room(room).build();
             participantRepository.save(participant);
         } else if(userType.equals("LAWYER")) {
-            Lawyer lawyer = lawyerRepository.findById(userId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "[RoomService - 005] 해당 ID 값을 가지는 Lawyer가 없습니다."));
+            Lawyer lawyer = lawyerRepository.findById(userId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "[RoomService - 006] 해당 ID 값을 가지는 Lawyer가 없습니다."));
             Participant participant = Participant.builder().lawyer(lawyer).room(room).build();
             participantRepository.save(participant);
         }
@@ -128,7 +135,7 @@ public class RoomService {
     public void leaveRoom(Long appointmentId, String userType, Long userId) {
 
         // appointmentId 기준으로 세션 객체 얻기
-        Session session = sessionRepository.findByAppointmentId(appointmentId);
+        Session session = sessionRepository.findByAppointment_Id(appointmentId);
 
         // 세션에서 나간다면 남는 인원수
         int participantCount = session.getParticipantCount() - 1;
@@ -147,7 +154,7 @@ public class RoomService {
             } else if(participantCount == 0) { // 0명일 때는 세션정보(Session)와 openvidu 관련정보(Room)도 삭제해야 함
 
                 // 이 화상상담방의 openvidu 관련정보 삭제해야 해서 해당하는 Room 객체 얻어놓기
-                Room room = sessionRepository.findByAppointmentId(appointmentId).getRoom();
+                Room room = sessionRepository.findByAppointment_Id(appointmentId).getRoom();
 
                 // 해당 세션을 삭제
                 sessionRepository.delete(session);
@@ -168,7 +175,7 @@ public class RoomService {
 
             } else if(participantCount == 0) {
 
-                Room room = sessionRepository.findByAppointmentId(appointmentId).getRoom();
+                Room room = sessionRepository.findByAppointment_Id(appointmentId).getRoom();
                 sessionRepository.delete(session);
                 participantRepository.deleteByLawyerId(userId);
                 roomRepository.delete(room);
@@ -182,7 +189,7 @@ public class RoomService {
         Appointment appointment = appointmentRepository.findById(appointmentId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "[RoomService - 00] 해당 ID 값을 가지는 Appointment가 없습니다."));
 
         // 이 Appointment에 해당하는 Session 객체 얻기
-        Session session = sessionRepository.findByAppointmentId(appointmentId);
+        Session session = sessionRepository.findByAppointment_Id(appointmentId);
 
         // 이 Appointment에 대해 활성화된 세션이 없다면, 404 NotFound 에러 응답
         if(session == null) {

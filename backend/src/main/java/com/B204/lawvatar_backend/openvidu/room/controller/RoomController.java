@@ -27,7 +27,7 @@ public class RoomController {
      * @return
      */
     @PostMapping("/{appointmentId}")
-    public ResponseEntity<CreateRoomResponse> createRoom(Authentication authentication, @PathVariable Long appointmentId) throws Exception {
+    public ResponseEntity<CreateRoomResponse> createRoom(Authentication authentication, @PathVariable Long appointmentId) {
 
         // Principal 객체 얻기
         Object principal = authentication.getPrincipal();
