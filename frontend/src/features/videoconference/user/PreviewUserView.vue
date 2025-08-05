@@ -452,7 +452,27 @@ const enterMeeting = async (appointmentId) => {
   white-space: nowrap;
   border: none;
 }
-
+.no-appointments {
+  text-align: center;
+  .no-img {
+    width: 200px;
+    margin-top: 40px;
+    margin-bottom: 1rem;
+  }
+  .no-msg {
+    font-weight: bold;
+    color: #82A0B3;
+  }
+  .links {
+    margin: 0.5rem 0;
+    color: #2A5976;
+    font-weight: bold;
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+  }
+}
 .enter-btn-wrapper {
   display: flex;
   justify-content: flex-end;

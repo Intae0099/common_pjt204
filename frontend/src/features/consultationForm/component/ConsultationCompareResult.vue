@@ -68,7 +68,7 @@
 <script setup>
 import { ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import axios from 'axios'
+import axios from '@/lib/axios'
 import ConsultationForm from './ConsultationForm.vue'
 import { InformationCircleIcon } from '@heroicons/vue/24/outline'
 

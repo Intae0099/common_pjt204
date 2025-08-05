@@ -36,7 +36,8 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import axios from 'axios'
+import { useRouter, useRoute } from 'vue-router'
+import axios from '@/lib/axios'
 
 import LayoutDefault from '@/components/layout/LayoutDefault.vue'
 import ConsultationFomLayout from '@/components/layout/ConsultationFomLayout.vue'
@@ -50,11 +51,19 @@ const userInput = ref(null)
 const aiResult = ref(null)
 const applicationId = ref(null)
 const showSaveModal = ref()
+const route = useRoute()
+const router = useRouter()
 
 onMounted(() => {
   setTimeout(() => {
     isLoading.value = false
-  }, 1000)
+
+    // 로그인 필요한 상태인지 query 확인 후 alert
+    if (route.query.needLogin === 'true') {
+      alert('로그인이 필요한 페이지입니다.')
+      router.replace('/login')  // 히스토리에 남기지 않음
+    }
+  }, 1000)  // 1초 로딩 후 처리
 })
 
 const handleFormSubmit = async (formData) => {
