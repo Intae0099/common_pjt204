@@ -56,10 +56,19 @@ const toggleVideo = () => {
 }
 
 onBeforeUnmount(() => {
+  if (publisher.value?.stream?.mediaStream) {
+    publisher.value.stream.mediaStream.getTracks().forEach(track => track.stop())
+  }
   if (publisher.value) {
     publisher.value.stream.dispose()
+    publisher.value = null
+  }
+  if (OV.value) {
+    OV.value = null
   }
 })
+
+
 </script>
 
 <style scoped>
