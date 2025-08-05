@@ -126,7 +126,7 @@ export default {
       }
 
       try {
-        const res = await axios.post('/api/auth/emails/check', {
+        const res = await axios.post('/api/lawyers/emails/check', {
           loginEmail: this.form.loginEmail
         });
 

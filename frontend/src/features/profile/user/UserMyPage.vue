@@ -6,7 +6,7 @@
     <div class="element">
       <div class="div">
         <div class="overlap">
-          <div class="text-wrapper">{{ user.oauthname }}</div>
+          <div class="text-wrapper">{{ user.oauthName }}</div>
           <div class="ellipse"></div>
           <div class="text-wrapper">{{ user.email }}</div>
         </div>

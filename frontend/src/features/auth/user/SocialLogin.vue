@@ -22,7 +22,7 @@
 
 const login = async () => {
 
-  window.location.href = 'https://i13b204.p.ssafy.io/oauth2/authorization/kakao'
+  window.location.href = 'http://localhost:8080/oauth2/authorization/kakao'
 }
 </script>
 

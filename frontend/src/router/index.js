@@ -172,7 +172,7 @@ const router = createRouter({
       children: [
         {
           // /admin 경로로 직접 접속 시, 변호사 관리 페이지로 자동 이동시킵니다.
-          path: '', 
+          path: '',
           redirect: { name: 'admin-lawyer-management' }
         },
         {
@@ -197,7 +197,7 @@ const router = createRouter({
           component: RoomManager
         }
       ]
-    }
+    },
 
   ],
 })
