@@ -1,4 +1,6 @@
 package com.B204.lawvatar_backend.openvidu.room.entity;
+import com.B204.lawvatar_backend.openvidu.participant.entity.Participant;
+import com.B204.lawvatar_backend.openvidu.session.entity.Session;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -13,13 +15,20 @@ public class Room {
 
     // Field
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(columnDefinition = "int unsigned")
     private Long id;
 
-    @Column(nullable = false)
+    @Column(length = 100, nullable = false)
     private String openviduCustomSessionId;
 
-    @Column(nullable = false)
+    @Column(length = 100, nullable = false)
     private String openviduSessionId;
+
+    @OneToOne(mappedBy = "room", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private Session session;
+
+    @OneToMany(mappedBy = "room", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<Participant> participantList = new ArrayList<>();
 
     // Method
     /**

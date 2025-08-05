@@ -53,7 +53,7 @@ public class LawyerPrincipal implements UserDetails {
   }
 
   public List<LawyerTag> getTags(){
-    return lawyer.getTags();
+    return lawyer.getLawyerTagList();
   }
 
   @Override

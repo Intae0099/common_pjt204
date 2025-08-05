@@ -1,6 +1,9 @@
 package com.B204.lawvatar_backend.user.lawyer.entity;
 
+import com.B204.lawvatar_backend.appointment.entity.Appointment;
 import com.B204.lawvatar_backend.common.entity.Tag;
+import com.B204.lawvatar_backend.openvidu.participant.entity.Participant;
+import com.B204.lawvatar_backend.user.auth.entity.RefreshToken;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -15,38 +18,50 @@ public class Lawyer {
 
     // Field
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(columnDefinition = "int unsigned")
     private Long id;
 
     @Column(name = "login_email", nullable = false, unique = true, length = 100)
     private String loginEmail;
 
     @Column(name = "login_password_hash", nullable = false, length = 255)
-    private String passwordHash;
+    private String loginPasswordHash;
 
     @Lob
-    @Column(name = "photo", columnDefinition = "LONGBLOB")
+    @Column(name = "photo", columnDefinition = "longblob")
     private byte[] photo;
 
-    @Column(nullable = false, length = 10)
+    @Column(nullable = false, length = 100)
     private String name;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(columnDefinition = "text")
     private String introduction;
 
-    @Column(length = 20, nullable = false)
+    @Column(length = 100, nullable = false)
     private String exam;
 
-    @Column(length = 20, nullable = false)
+    @Column(length = 100, nullable = false)
     private String registrationNumber;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "certification_status", nullable = false)
+    @Column(nullable = false)
     private CertificationStatus certificationStatus = CertificationStatus.PENDING;
 
     @Column(columnDefinition = "int unsigned", nullable = false)
     private int consultationCount = 0;
 
-    @OneToMany(mappedBy = "lawyer", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<LawyerTag> tags = new ArrayList<>();
+    @OneToMany(mappedBy = "lawyer", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<RefreshToken> refreshTokenList = new ArrayList<>();
 
+    @OneToMany(mappedBy = "lawyer", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<LawyerTag> lawyerTagList = new ArrayList<>();
+
+    @OneToMany(mappedBy = "lawyer", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<Appointment> appointmentList = new ArrayList<>();
+
+    @OneToMany(mappedBy = "lawyer", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<UnavailabilitySlot> unavailabilitySlotList = new ArrayList<>();
+
+    @OneToOne(mappedBy = "lawyer", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private Participant participant;
 }
