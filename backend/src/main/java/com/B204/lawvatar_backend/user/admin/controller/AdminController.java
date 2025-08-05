@@ -22,7 +22,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -33,13 +32,13 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/api/admin")
-@RequiredArgsConstructor
 public class AdminController {
 
   private final LawyerService lawyerService;
@@ -50,40 +49,69 @@ public class AdminController {
   private final AdminService adminService;
   private final AppointmentRepository appointmentRepo;
 
-  @Qualifier("adminAuthenticationManager")
   private final AuthenticationManager adminAuthenticationManager;
   private final JwtUtil jwtUtil;
+
+  public AdminController(LawyerService lawyerService,
+      RoomService roomService,
+      RefreshTokenService refreshTokenService,
+      ClientRepository clientRepo,
+      AdminService adminService,
+      AppointmentRepository appointmentRepo,
+      @Qualifier("adminAuthenticationManager")
+      AuthenticationManager adminAuthenticationManager,
+      JwtUtil jwtUtil
+  ) {
+    this.lawyerService = lawyerService;
+    this.roomService = roomService;
+    this.refreshTokenService = refreshTokenService;
+    this.clientRepo = clientRepo;
+    this.adminService = adminService;
+    this.appointmentRepo = appointmentRepo;
+    this.adminAuthenticationManager = adminAuthenticationManager;
+    this.jwtUtil = jwtUtil;
+  }
 
   @PostMapping("/login")
   public ResponseEntity<Map<String,String>> login(
       @RequestBody LoginDto dto,
       HttpServletResponse response
   ) {
-    // 관리 전용 매니저로 인증 시도 (더 이상 순환 없음)
-    Authentication auth = adminAuthenticationManager.authenticate(
-        new UsernamePasswordAuthenticationToken(dto.getLoginEmail(), dto.getPassword())
-    );
+    try {
+      System.out.println("메서드 입장 1");
+      // 관리 전용 매니저로 인증 시도 (더 이상 순환 없음)
+      Authentication auth = adminAuthenticationManager.authenticate(
+          new UsernamePasswordAuthenticationToken(dto.getLoginEmail(), dto.getPassword())
+      );
 
-    String email = auth.getName();
-    Admin admin = adminService.findByLoginEmail(email);
-    String subject = "ADMIN:" + email;
+      System.out.println("메서드 입장 1.5");
 
-    // 리프레시 토큰 생성·저장
-    String refreshToken = jwtUtil.generateRefreshToken(subject);
-    refreshTokenService.createForAdmin(admin, refreshToken);
+      String email = auth.getName();
+      Admin admin = adminService.findByLoginEmail(email);
+      String subject = "ADMIN:" + admin.getLoginEmail();
+      System.out.println("메서드 입장 2");
 
-    // 쿠키 세팅
-    ResponseCookie cookie = ResponseCookie.from("refresh_token", refreshToken)
-        .httpOnly(true).secure(true).sameSite("Strict")
-        .path("/").maxAge(Duration.ofDays(7)).build();
-    response.setHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+      // 리프레시 토큰 생성·저장
+      String refreshToken = jwtUtil.generateRefreshToken(subject);
+      refreshTokenService.createForAdmin(admin, refreshToken);
 
-    // 액세스 토큰 발급
-    List<String> roles = auth.getAuthorities().stream()
-        .map(GrantedAuthority::getAuthority).toList();
-    String accessToken = jwtUtil.generateAccessToken(subject, roles, "ADMIN");
-
-    return ResponseEntity.ok(Map.of("accessToken", accessToken));
+      // 쿠키 세팅
+      ResponseCookie cookie = ResponseCookie.from("refresh_token", refreshToken)
+          .httpOnly(true).secure(true).sameSite("Strict")
+          .path("/").maxAge(Duration.ofDays(7)).build();
+      response.setHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+      System.out.println("메서드 입장 3");
+      // 액세스 토큰 발급
+      List<String> roles = auth.getAuthorities().stream()
+          .map(GrantedAuthority::getAuthority).toList();
+      String accessToken = jwtUtil.generateAccessToken(subject, roles, "ADMIN");
+      System.out.println("메서드 입장 4");
+      return ResponseEntity.ok(Map.of("accessToken", accessToken));
+    } catch (AuthenticationException ex) {
+      return ResponseEntity
+          .status(HttpStatus.UNAUTHORIZED)
+          .body(Map.of("error", "Admin Login Failed"));
+    }
   }
 
   @GetMapping("/lawyers/certifications")
@@ -121,6 +149,7 @@ public class AdminController {
   @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<?> approveLawyer(@PathVariable("id") Long id) {
     try{
+      System.out.println("승인");
       Lawyer l = lawyerService.approveLawyer(id);
 
       return ResponseEntity.ok(Map.of(
