@@ -140,7 +140,7 @@ public class SecurityConfig {
 
       // BE 개발 편의를 위해 8080으로 변경 (-> front 서버 결합 시 5173으로 변경 필요)
       String redirectUrl = UriComponentsBuilder
-          .fromUriString("http://localhost:5173/user/mypage")
+          .fromUriString("http://localhost:5173/oauth2/callback/kakao")
           .queryParam("accessToken", accessToken)
           .build().toUriString();
 
@@ -167,32 +167,32 @@ public class SecurityConfig {
     AuthenticationSuccessHandler lawyerLoginSuccessHandler =
         (req, res, auth) -> {
 
-      String email = auth.getName();
-      List<String> roles = List.of("ROLE_LAWYER");
+          String email = auth.getName();
+          List<String> roles = List.of("ROLE_LAWYER");
 
-      Lawyer lawyer = lawyerService.findByLoginEmail(email);
-      String subject = String.valueOf(lawyer.getId());
-      String refreshToken = jwtUtil.generateRefreshToken(subject);
-      refreshTokenService.createForLawyer(lawyer, refreshToken);
+          Lawyer lawyer = lawyerService.findByLoginEmail(email);
+          String subject = String.valueOf(lawyer.getId());
+          String refreshToken = jwtUtil.generateRefreshToken(subject);
+          refreshTokenService.createForLawyer(lawyer, refreshToken);
 
-      ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", refreshToken)
-          .httpOnly(true)
-          .secure(true)
-          .sameSite("Strict")
-          .path("/")
-          .maxAge(Duration.ofDays(7))
-          .build();
-      res.setHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
+          ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", refreshToken)
+              .httpOnly(true)
+              .secure(true)
+              .sameSite("Strict")
+              .path("/")
+              .maxAge(Duration.ofDays(7))
+              .build();
+          res.setHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
 
-      String accessToken = jwtUtil.generateAccessToken(subject, roles, "LAWYER");
+          String accessToken = jwtUtil.generateAccessToken(subject, roles, "LAWYER");
 
-      Map<String, String> body = new LinkedHashMap<>();
-      body.put("accessToken", accessToken);
+          Map<String, String> body = new LinkedHashMap<>();
+          body.put("accessToken", accessToken);
 
-      res.setStatus(HttpServletResponse.SC_OK);
-      res.setContentType(MediaType.APPLICATION_JSON_VALUE);
-      res.getWriter().write(new ObjectMapper().writeValueAsString(body));
-    };
+          res.setStatus(HttpServletResponse.SC_OK);
+          res.setContentType(MediaType.APPLICATION_JSON_VALUE);
+          res.getWriter().write(new ObjectMapper().writeValueAsString(body));
+        };
 
     // 변호사 로컬 로그인 실패 핸들러
     AuthenticationFailureHandler lawyerLoginFailureHandler = (req, res, ex) -> {
@@ -203,7 +203,6 @@ public class SecurityConfig {
     };
 
     http
-
         // 1) CSRF 비활성화
         .csrf(csrf -> csrf.disable())
 
@@ -212,7 +211,7 @@ public class SecurityConfig {
 
         // 로컬 로그인 설정 (formLogin)
         .formLogin(form -> form
-            .loginPage("/auth/login")
+            .loginPage("http://localhost:5173/")
             // .loginProcessingUrl("/auth/login") // POST 요청
             .loginProcessingUrl("/api/lawyers/login")
             .usernameParameter("loginEmail")
