@@ -1,4 +1,4 @@
-package com.B204.lawvatar_backend.openvidu.room.dto;
+package com.B204.lawvatar_backend.application.dto;
 
 import lombok.*;
 
@@ -6,7 +6,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class CreateRoomResponse {
+public class ModifyApplicationResponse {
 
     // Field
     private boolean success;
@@ -21,6 +21,6 @@ public class CreateRoomResponse {
     public static class Data {
 
         // Field
-        private String openviduToken;
+        private Long applicationId;
     }
 }

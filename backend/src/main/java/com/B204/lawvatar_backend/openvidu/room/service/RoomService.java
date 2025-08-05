@@ -1,6 +1,7 @@
 package com.B204.lawvatar_backend.openvidu.room.service;
 
 import com.B204.lawvatar_backend.appointment.entity.Appointment;
+import com.B204.lawvatar_backend.appointment.entity.AppointmentStatus;
 import com.B204.lawvatar_backend.appointment.repository.AppointmentRepository;
 import com.B204.lawvatar_backend.openvidu.participant.entity.Participant;
 import com.B204.lawvatar_backend.openvidu.participant.repository.ParticipantRepository;
@@ -47,7 +48,7 @@ public class RoomService {
     // Method
     public String createRoom(Long appointmentId, String userType, Long userId) throws Exception{
 
-        // 이 appointmentId에 대해 이미 생성돼있는 화상상담방이 있으면 409 에러 응답하기
+        // 이 appointmentId에 대해 이미 생성돼있는 화상상담방이 있으면 에러 응답
         Session existingSession = sessionRepository.findByAppointment_Id(appointmentId);
         if(existingSession != null) {
             throw new IllegalStateException("[RoomService - 001] 이미 화상상담방이 존재하는 상담입니다.");
@@ -74,7 +75,7 @@ public class RoomService {
         System.out.println("token 획득 성공!");
         /// ///////////////////////////////////////////////////////
 
-        // Participant 테이블에 참가정보 저장하기
+        // participant 테이블에 참가정보 저장하기
         // 유저타입에 따라 Participant 객체 만들어서 DB에 저장
         if(userType.equals("CLIENT")) {
             Client client = clientRepository.findById(userId).orElseThrow(() -> new NoSuchElementException("[RoomService - 002] 해당 ID 값을 가지는 Client가 없습니다."));
@@ -86,10 +87,13 @@ public class RoomService {
             participantRepository.save(participant);
         }
 
-        // Session 테이블에 세션정보 저장하기
+        // session 테이블에 세션정보 저장하기
         Appointment appointment = appointmentRepository.findById(appointmentId).orElseThrow(() -> new NoSuchElementException("[RoomService - 004] 해당 ID 값을 가지는 Appointment가 없습니다."));
         Session session = Session.builder().appointment(appointment).room(room).participantCount(1).build();
         sessionRepository.save(session);
+        
+        // appointment 테이블에서 appointment_status 'IN_PROGRESS'로 변경
+        appointment.setAppointmentStatus(AppointmentStatus.IN_PROGRESS);
 
         return openviduToken;
     }
@@ -129,10 +133,15 @@ public class RoomService {
         return openviduToken;
     }
 
-    public void leaveRoom(Long appointmentId, String userType, Long userId) {
+    public void leaveRoom(Long appointmentId, String userType, Long userId) throws Exception{
 
         // appointmentId 기준으로 세션 객체 얻기
         Session session = sessionRepository.findByAppointment_Id(appointmentId);
+
+        // session 객체가 없다면, 에러 발생
+        if(session == null) {
+            throw new NoSuchElementException("[RoomService - 007] 해당 ID 값을 가지는 Appointment는 열려있는 화상상담방이 없습니다.");
+        }
 
         // 세션에서 나간다면 남는 인원수
         int participantCount = session.getParticipantCount() - 1;
@@ -162,6 +171,10 @@ public class RoomService {
                 // 이 화상상담방의 openvidu 관련정보 삭제
                 roomRepository.delete(room);
 
+                // appointment 테이블에서 appointment_status 'ENDED'로 변경
+                Appointment appointment = appointmentRepository.findById(appointmentId).orElseThrow(() -> new NoSuchElementException("[RoomService - 008] 해당 ID 값을 가지는 Appointment가 없습니다."));
+                appointment.setAppointmentStatus(AppointmentStatus.ENDED);
+
             }
         } else if(userType.equals("LAWYER")) { // userType이 LAWYER 일 때도 똑같이 반복ㅠ
 
@@ -173,9 +186,15 @@ public class RoomService {
             } else if(participantCount == 0) {
 
                 Room room = sessionRepository.findByAppointment_Id(appointmentId).getRoom();
+
                 sessionRepository.delete(session);
+
                 participantRepository.deleteByLawyerId(userId);
+
                 roomRepository.delete(room);
+
+                Appointment appointment = appointmentRepository.findById(appointmentId).orElseThrow(() -> new NoSuchElementException("[RoomService - 008] 해당 ID 값을 가지는 Appointment가 없습니다."));
+                appointment.setAppointmentStatus(AppointmentStatus.ENDED);
             }
         }
     }
@@ -183,14 +202,14 @@ public class RoomService {
     public HttpStatusCode removeRoom(Long appointmentId) {
 
         // 화상상담방을 파괴하고 싶은 Appointment 객체 얻기
-        Appointment appointment = appointmentRepository.findById(appointmentId).orElseThrow(() -> new NoSuchElementException("[RoomService - 00] 해당 ID 값을 가지는 Appointment가 없습니다."));
+        Appointment appointment = appointmentRepository.findById(appointmentId).orElseThrow(() -> new NoSuchElementException("[RoomService - 008] 해당 ID 값을 가지는 Appointment가 없습니다."));
 
         // 이 Appointment에 해당하는 Session 객체 얻기
         Session session = sessionRepository.findByAppointment_Id(appointmentId);
 
         // 이 Appointment에 대해 활성화된 세션이 없다면, 404 NotFound 에러 응답
         if(session == null) {
-            throw new NoSuchElementException("[RoomService - 00] 해당 상담은 화상상담방이 열려있지 않습니다.");
+            throw new NoSuchElementException("[RoomService - 009] 해당 상담은 화상상담방이 열려있지 않습니다.");
         }
 
         // 이 Session이 참조중인 Room 객체 얻어내고 Session 데이터 DB에서 삭제하기

@@ -14,16 +14,39 @@ import java.util.Map;
 public class GetApplicationResponse {
 
     // Field
-    private Long applicationId;
-    private Long clientId;
-    private String title;
-    private String summary;
-    private String content;
-    private String outcome;
-    private String disadvantage;
-    private Map<String, String> recommendedQuestions = new HashMap<>();
-    private boolean isCompleted;
-    private LocalDateTime createdAt;
-    private List<Long> tags;
+    private boolean success;
+    private String message;
+    private Data data;
 
+    // Nested Class
+    @Getter @Setter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class Data {
+
+        // Field
+        private ApplicationDto application;
+
+        // Nested Class
+        @Getter @Setter
+        @NoArgsConstructor
+        @AllArgsConstructor
+        @Builder
+        public static class ApplicationDto {
+
+            // Field
+            private Long applicationId;
+            private Long clientId;
+            private String title;
+            private String summary;
+            private String content;
+            private String outcome;
+            private String disadvantage;
+            private Map<String, String> recommendedQuestions = new HashMap<>();
+            private boolean isCompleted;
+            private LocalDateTime createdAt;
+            private List<Long> tags;
+        }
+    }
 }

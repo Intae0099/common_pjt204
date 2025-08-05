@@ -3,9 +3,11 @@ package com.B204.lawvatar_backend.openvidu.room.controller;
 import com.B204.lawvatar_backend.common.principal.ClientPrincipal;
 import com.B204.lawvatar_backend.common.principal.LawyerPrincipal;
 import com.B204.lawvatar_backend.openvidu.room.dto.CreateRoomResponse;
+import com.B204.lawvatar_backend.openvidu.room.dto.LeaveRoomResponse;
 import com.B204.lawvatar_backend.openvidu.room.dto.ParticipateRoomResponse;
 import com.B204.lawvatar_backend.openvidu.room.service.RoomService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.crossstore.ChangeSetPersister;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -35,30 +37,54 @@ public class RoomController {
         Object principal = authentication.getPrincipal();
 
         // 유저타입을 서비스에 넘겨주면서 비즈니스 로직 시작
-        String token = null;
+        String openviduToken = null;
         if(principal instanceof ClientPrincipal clientPrincipal) {
             try {
-                token = roomService.createRoom(appointmentId, "CLIENT", clientPrincipal.getId());
+                openviduToken = roomService.createRoom(appointmentId, "CLIENT", clientPrincipal.getId());
             } catch(IllegalStateException e) {
-                e.getStackTrace();
-                return ResponseEntity.status(HttpStatus.CONFLICT).build();
+                // dto 만들고 응답
+                CreateRoomResponse createRoomResponse = CreateRoomResponse.builder()
+                        .success(false)
+                        .message(e.getMessage())
+                        .build();
+
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(createRoomResponse);
             } catch(NoSuchElementException e) {
-                e.getStackTrace();
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+                // dto 만들고 응답
+                CreateRoomResponse createRoomResponse = CreateRoomResponse.builder()
+                        .success(false)
+                        .message(e.getMessage())
+                        .build();
+
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(createRoomResponse);
             }
         } else if(principal instanceof LawyerPrincipal lawyerPrincipal) {
             try {
-                token = roomService.createRoom(appointmentId, "LAWYER", lawyerPrincipal.getId());
+                openviduToken = roomService.createRoom(appointmentId, "LAWYER", lawyerPrincipal.getId());
             } catch(IllegalStateException e) {
-                e.getStackTrace();
-                return ResponseEntity.status(HttpStatus.CONFLICT).build();
+                // dto 만들고 응답
+                CreateRoomResponse createRoomResponse = CreateRoomResponse.builder()
+                        .success(false)
+                        .message(e.getMessage())
+                        .build();
+
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(createRoomResponse);
             } catch(NoSuchElementException e) {
-                e.getStackTrace();
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+                // dto 만들고 응답
+                CreateRoomResponse createRoomResponse = CreateRoomResponse.builder()
+                        .success(false)
+                        .message(e.getMessage())
+                        .build();
+
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(createRoomResponse);
             }
         }
 
-        CreateRoomResponse createRoomResponse = CreateRoomResponse.builder().token(token).build();
+        CreateRoomResponse createRoomResponse = CreateRoomResponse.builder()
+                .success(true)
+                .message("[RoomController - 001] 화상상담방 생성 성공")
+                .data(CreateRoomResponse.Data.builder().openviduToken(openviduToken).build())
+                .build();
 
         return ResponseEntity.status(HttpStatus.OK).body(createRoomResponse);
     }
@@ -69,21 +95,45 @@ public class RoomController {
      * @param appointmentId
      * @return
      */
-    @PostMapping("/{appointmentId}/participants") // 특정 방에 참가자를 추가로 생성(Post요청)한다는 의미에서 요청경로 이렇게 작성
-    public ResponseEntity<ParticipateRoomResponse> participateRoome(Authentication authentication, @PathVariable Long appointmentId) throws Exception {
+    @PostMapping("/{appointmentId}/participants")
+    public ResponseEntity<ParticipateRoomResponse> participateRoom(Authentication authentication, @PathVariable Long appointmentId) throws Exception {
 
         // Principal 객체 얻기
         Object principal = authentication.getPrincipal();
 
         // 유저타입을 서비스에 넘겨주면서 비즈니스 로직 시작
-        String token = null;
+        String openviduToken = null;
         if(principal instanceof ClientPrincipal clientPrincipal) {
-            token = roomService.participateRoom(appointmentId, "CLIENT", clientPrincipal.getId());
+            try {
+                openviduToken = roomService.participateRoom(appointmentId, "CLIENT", clientPrincipal.getId());
+            } catch(NoSuchElementException e) {
+                // dto 만들고 응답
+                ParticipateRoomResponse participateRoomResponse = ParticipateRoomResponse.builder()
+                        .success(false)
+                        .message(e.getMessage())
+                        .build();
+
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(participateRoomResponse);
+            }
         } else if(principal instanceof LawyerPrincipal lawyerPrincipal) {
-            token = roomService.participateRoom(appointmentId, "LAWYER", lawyerPrincipal.getId());
+            try {
+                openviduToken = roomService.participateRoom(appointmentId, "LAWYER", lawyerPrincipal.getId());
+            } catch(NoSuchElementException e) {
+                // dto 만들고 응답
+                ParticipateRoomResponse participateRoomResponse = ParticipateRoomResponse.builder()
+                        .success(false)
+                        .message(e.getMessage())
+                        .build();
+
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(participateRoomResponse);
+            }
         }
 
-        ParticipateRoomResponse participateRoomResponse = ParticipateRoomResponse.builder().token(token).build();
+        ParticipateRoomResponse participateRoomResponse = ParticipateRoomResponse.builder()
+                .success(true)
+                .message("[RoomController - 002] 화상상담방 참가토큰 생성 성공")
+                .data(ParticipateRoomResponse.Data.builder().openviduToken(openviduToken).build())
+                .build();
 
         return ResponseEntity.status(HttpStatus.OK).body(participateRoomResponse);
     }
@@ -95,18 +145,43 @@ public class RoomController {
      * @return
      */
     @DeleteMapping("/{appointmentId}/participants/me")
-    public ResponseEntity<Void> leaveRoom(Authentication authentication, @PathVariable Long appointmentId) {
+    public ResponseEntity<LeaveRoomResponse> leaveRoom(Authentication authentication, @PathVariable Long appointmentId) throws Exception {
 
         // Principal 객체 얻기
         Object principal = authentication.getPrincipal();
 
         // 유저타입을 서비스에 넘겨주면서 비즈니스 로직 시작
         if(principal instanceof ClientPrincipal clientPrincipal) {
-            roomService.leaveRoom(appointmentId, "CLIENT", clientPrincipal.getId());
+            try {
+                roomService.leaveRoom(appointmentId, "CLIENT", clientPrincipal.getId());
+            } catch(NoSuchElementException e) {
+                // dto 만들고 응답
+                LeaveRoomResponse leaveRoomResponse = LeaveRoomResponse.builder()
+                        .success(false)
+                        .message(e.getMessage())
+                        .build();
+
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(leaveRoomResponse);
+            }
         } else if(principal instanceof LawyerPrincipal lawyerPrincipal) {
-            roomService.leaveRoom(appointmentId, "LAWYER", lawyerPrincipal.getId());
+            try {
+                roomService.leaveRoom(appointmentId, "LAWYER", lawyerPrincipal.getId());
+            } catch(NoSuchElementException e) {
+                // dto 만들고 응답
+                LeaveRoomResponse leaveRoomResponse = LeaveRoomResponse.builder()
+                        .success(false)
+                        .message(e.getMessage())
+                        .build();
+
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(leaveRoomResponse);
+            }
         }
 
-        return ResponseEntity.status(HttpStatus.OK).build();
+        LeaveRoomResponse leaveRoomResponse = LeaveRoomResponse.builder()
+                .success(true)
+                .message("[RoomController - 003] 화상상담방 나가기 성공")
+                .build();
+
+        return ResponseEntity.status(HttpStatus.OK).body(leaveRoomResponse);
     }
 }
