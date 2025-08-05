@@ -1,5 +1,6 @@
 package com.B204.lawvatar_backend.user.auth.service;
 
+import com.B204.lawvatar_backend.user.admin.entity.Admin;
 import com.B204.lawvatar_backend.user.auth.entity.RefreshToken;
 import com.B204.lawvatar_backend.user.auth.repository.RefreshTokenRepository;
 import com.B204.lawvatar_backend.user.client.entity.Client;
@@ -39,6 +40,15 @@ public class RefreshTokenService {
     repo.deleteByLawyer(lawyer);
     // 새 토큰 저장
     RefreshToken rt = RefreshToken.ofForLawyer(lawyer, rawToken, LocalDateTime.now(), refreshExpirationMs);
+    return repo.save(rt);
+  }
+
+  @Transactional
+  public RefreshToken createForAdmin(Admin admin, String rawToken) {
+    // 기존 토큰 전부 삭제
+    repo.deleteByAdmin(admin);
+    // 새 토큰 저장
+    RefreshToken rt = RefreshToken.ofForAdmin(admin, rawToken, LocalDateTime.now(), refreshExpirationMs);
     return repo.save(rt);
   }
 }

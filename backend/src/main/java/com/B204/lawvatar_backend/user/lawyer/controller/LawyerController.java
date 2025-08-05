@@ -11,6 +11,7 @@ import com.B204.lawvatar_backend.user.lawyer.dto.LawyerSignupDto;
 import com.B204.lawvatar_backend.user.lawyer.dto.LawyerUpdateDto;
 import com.B204.lawvatar_backend.user.lawyer.dto.LoginResponseDto;
 import com.B204.lawvatar_backend.user.lawyer.dto.LoginResult;
+import com.B204.lawvatar_backend.user.lawyer.dto.UnavailabilitySlotDto;
 import com.B204.lawvatar_backend.user.lawyer.entity.CertificationStatus;
 import com.B204.lawvatar_backend.user.lawyer.entity.Lawyer;
 import com.B204.lawvatar_backend.user.lawyer.entity.LawyerTag;
@@ -18,6 +19,7 @@ import com.B204.lawvatar_backend.user.lawyer.repository.LawyerRepository;
 import com.B204.lawvatar_backend.user.lawyer.repository.LawyerTagRepository;
 import com.B204.lawvatar_backend.common.repository.TagRepository;
 import com.B204.lawvatar_backend.user.lawyer.service.LawyerService;
+import com.B204.lawvatar_backend.user.lawyer.service.UnavailabilityService;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.Valid;
 import java.time.Duration;
@@ -62,6 +64,7 @@ public class LawyerController {
   private final TagRepository tagRepo;
 
   private final LawyerService lawyerService;
+  private final UnavailabilityService unavailabilityService;
 
   private final PasswordEncoder pwEncoder;
   private final AuthenticationManager authManager;
@@ -69,7 +72,7 @@ public class LawyerController {
   public LawyerController(LawyerRepository lawyerRepo,
       LawyerTagRepository lawyerTagRepo,
       TagRepository tagRepo,
-      LawyerService lawyerService,
+      LawyerService lawyerService, UnavailabilityService unavailabilityService,
       PasswordEncoder pwEncoder,
       AuthenticationManager authManager
       ) {
@@ -77,6 +80,7 @@ public class LawyerController {
     this.lawyerTagRepo = lawyerTagRepo;
     this.tagRepo = tagRepo;
     this.lawyerService = lawyerService;
+    this.unavailabilityService = unavailabilityService;
     this.pwEncoder = pwEncoder;
     this.authManager = authManager;
   }
@@ -200,4 +204,13 @@ public class LawyerController {
     // 3) DTO 변환 후 응답
     return ResponseEntity.ok(LawyerSearchDto.from(lawyer));
   }
+
+  @GetMapping("/{lawyerId}/unavailable-slot")
+  ResponseEntity<List<UnavailabilitySlotDto>> getUnavailibility(
+      @PathVariable Long lawyerId
+  ){
+    List<UnavailabilitySlotDto> slots = unavailabilityService.getSlotsForLawyer(lawyerId);
+    return ResponseEntity.ok(slots);
+  }
+
 }

@@ -4,7 +4,12 @@ import com.B204.lawvatar_backend.appointment.dto.AppointmentResponseDto;
 import com.B204.lawvatar_backend.appointment.entity.Appointment;
 import com.B204.lawvatar_backend.appointment.repository.AppointmentRepository;
 import com.B204.lawvatar_backend.common.principal.LawyerPrincipal;
+import com.B204.lawvatar_backend.common.util.JwtUtil;
 import com.B204.lawvatar_backend.openvidu.room.service.RoomService;
+import com.B204.lawvatar_backend.user.admin.dto.LoginDto;
+import com.B204.lawvatar_backend.user.admin.entity.Admin;
+import com.B204.lawvatar_backend.user.admin.service.AdminService;
+import com.B204.lawvatar_backend.user.auth.service.RefreshTokenService;
 import com.B204.lawvatar_backend.user.client.dto.ClientAdminDto;
 import com.B204.lawvatar_backend.user.client.entity.Client;
 import com.B204.lawvatar_backend.user.client.repository.ClientRepository;
@@ -13,13 +18,22 @@ import com.B204.lawvatar_backend.user.lawyer.entity.CertificationStatus;
 import com.B204.lawvatar_backend.user.lawyer.entity.Lawyer;
 import com.B204.lawvatar_backend.user.lawyer.service.LawyerService;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.servlet.http.HttpServletResponse;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -30,11 +44,50 @@ public class AdminController {
 
   private final LawyerService lawyerService;
   private final RoomService roomService;
+  private final RefreshTokenService refreshTokenService;
 
   private final ClientRepository clientRepo;
+  private final AdminService adminService;
   private final AppointmentRepository appointmentRepo;
 
+  @Qualifier("adminAuthenticationManager")
+  private final AuthenticationManager adminAuthenticationManager;
+  private final JwtUtil jwtUtil;
+
+  @PostMapping("/login")
+  public ResponseEntity<Map<String,String>> login(
+      @RequestBody LoginDto dto,
+      HttpServletResponse response
+  ) {
+    // 관리 전용 매니저로 인증 시도 (더 이상 순환 없음)
+    Authentication auth = adminAuthenticationManager.authenticate(
+        new UsernamePasswordAuthenticationToken(dto.getLoginEmail(), dto.getPassword())
+    );
+
+    String email = auth.getName();
+    Admin admin = adminService.findByLoginEmail(email);
+    String subject = "ADMIN:" + email;
+
+    // 리프레시 토큰 생성·저장
+    String refreshToken = jwtUtil.generateRefreshToken(subject);
+    refreshTokenService.createForAdmin(admin, refreshToken);
+
+    // 쿠키 세팅
+    ResponseCookie cookie = ResponseCookie.from("refresh_token", refreshToken)
+        .httpOnly(true).secure(true).sameSite("Strict")
+        .path("/").maxAge(Duration.ofDays(7)).build();
+    response.setHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+
+    // 액세스 토큰 발급
+    List<String> roles = auth.getAuthorities().stream()
+        .map(GrantedAuthority::getAuthority).toList();
+    String accessToken = jwtUtil.generateAccessToken(subject, roles, "ADMIN");
+
+    return ResponseEntity.ok(Map.of("accessToken", accessToken));
+  }
+
   @GetMapping("/lawyers/certifications")
+  @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<List<LawyerAdminDto>> getLawyersByCertificationStatus(@RequestParam CertificationStatus status){
 
     List<Lawyer> lawyers = lawyerService.findByCertificationStatus(status);
@@ -50,6 +103,7 @@ public class AdminController {
   }
 
   @GetMapping("/clients")
+  @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<List<ClientAdminDto>> getAllClients(){
     List<Client> clients = clientRepo.findAll();
     if(clients.isEmpty()){
@@ -64,6 +118,7 @@ public class AdminController {
   }
 
   @PatchMapping("/{id}/approve")
+  @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<?> approveLawyer(@PathVariable("id") Long id) {
     try{
       Lawyer l = lawyerService.approveLawyer(id);
@@ -83,6 +138,7 @@ public class AdminController {
   }
 
   @PatchMapping("/{id}/reject")
+  @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<?> rejectLawyer(@PathVariable("id") Long id) {
     try{
       Lawyer l = lawyerService.rejectLawyer(id);
@@ -102,6 +158,7 @@ public class AdminController {
   }
 
   @GetMapping("/appointments")
+  @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<List<AppointmentResponseDto>> getAllAppointments(){
     List<Appointment> appts = appointmentRepo.findAll();
 
@@ -117,6 +174,7 @@ public class AdminController {
   }
 
   @DeleteMapping("/rooms/{appointmentId}")
+  @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<Void> removeRoom(Authentication authentication, @PathVariable Long appointmentId) {
 
     // Principal 객체 얻기

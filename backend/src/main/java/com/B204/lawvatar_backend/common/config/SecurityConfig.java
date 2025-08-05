@@ -2,6 +2,7 @@ package com.B204.lawvatar_backend.common.config;
 
 import com.B204.lawvatar_backend.common.filter.JwtAuthenticationFilter;
 import com.B204.lawvatar_backend.common.util.JwtUtil;
+import com.B204.lawvatar_backend.user.admin.service.AdminService;
 import com.B204.lawvatar_backend.user.auth.service.RefreshTokenService;
 import com.B204.lawvatar_backend.user.client.entity.Client;
 import com.B204.lawvatar_backend.user.client.repository.ClientRepository;
@@ -18,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
@@ -28,8 +30,10 @@ import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.client.InMemoryOAuth2AuthorizedClientService;
@@ -55,17 +59,19 @@ public class SecurityConfig {
 
   private final ClientService clientService;
   private final RefreshTokenService refreshTokenService;
+  private final AdminService adminService;
 
   public SecurityConfig(
       JwtUtil jwtUtil,
       JwtAuthenticationFilter jwtAuthenticationFilter,
       ClientService clientService,
-      RefreshTokenService refreshTokenService
+      RefreshTokenService refreshTokenService, AdminService adminService
   ) {
     this.jwtUtil = jwtUtil;
     this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     this.clientService = clientService;
     this.refreshTokenService = refreshTokenService;
+    this.adminService = adminService;
   }
 
   @Component
@@ -143,31 +149,30 @@ public class SecurityConfig {
   }
 
   @Bean
-  public SecurityFilterChain filterChain(HttpSecurity http,
+  @Order(2)
+  public SecurityFilterChain lawyerFilterChain(
+      HttpSecurity http,
       OAuth2JwtSuccessHandler oauth2JwtSuccessHandler,
-      LawyerService lawyerService) throws Exception {
+      LawyerService lawyerService
+  ) throws Exception {
 
-    // OAuth2 로그인 실패 핸들러
+    // 의뢰인 OAuth2 로그인 실패 핸들러
     AuthenticationFailureHandler oauth2FailureHandler = (
         req,
         res,
         ex) ->
         res.sendError(HttpServletResponse.SC_UNAUTHORIZED, "OAuth2 Login Failed");
 
-    // 로컬 로그인 성공 핸들러 → JWT 발급
-    AuthenticationSuccessHandler lawyerLoginSuccessHandler = (
-        req,
-        res,
-        auth) -> {
-      List<String> roles = auth.getAuthorities().stream()
-          .map(a -> a.getAuthority())
-          .toList();
+    // 변호사 로컬 로그인 성공 핸들러 → JWT 발급
+    AuthenticationSuccessHandler lawyerLoginSuccessHandler =
+        (req, res, auth) -> {
 
-      Lawyer lawyer = lawyerService.findByLoginEmail(auth.getName());
+      String email = auth.getName();
+      List<String> roles = List.of("ROLE_LAWYER");
 
-      String accessToken = jwtUtil.generateAccessToken(String.valueOf(lawyer.getId()), roles, "LAWYER");
-      String refreshToken = jwtUtil.generateRefreshToken(String.valueOf(lawyer.getId()));
-
+      Lawyer lawyer = lawyerService.findByLoginEmail(email);
+      String subject = String.valueOf(lawyer.getId());
+      String refreshToken = jwtUtil.generateRefreshToken(subject);
       refreshTokenService.createForLawyer(lawyer, refreshToken);
 
       ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", refreshToken)
@@ -179,16 +184,17 @@ public class SecurityConfig {
           .build();
       res.setHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
 
-      Map<String,String> body = new LinkedHashMap<>();
-      body.put("accessToken",  accessToken);
+      String accessToken = jwtUtil.generateAccessToken(subject, roles, "LAWYER");
+
+      Map<String, String> body = new LinkedHashMap<>();
+      body.put("accessToken", accessToken);
 
       res.setStatus(HttpServletResponse.SC_OK);
       res.setContentType(MediaType.APPLICATION_JSON_VALUE);
-      res.getWriter()
-          .write(new ObjectMapper().writeValueAsString(body));
+      res.getWriter().write(new ObjectMapper().writeValueAsString(body));
     };
 
-    // 로컬 로그인 실패 핸들러
+    // 변호사 로컬 로그인 실패 핸들러
     AuthenticationFailureHandler lawyerLoginFailureHandler = (req, res, ex) -> {
       res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
       res.setContentType("application/json");
@@ -197,6 +203,7 @@ public class SecurityConfig {
     };
 
     http
+
         // 1) CSRF 비활성화
         .csrf(csrf -> csrf.disable())
 
@@ -206,7 +213,8 @@ public class SecurityConfig {
         // 로컬 로그인 설정 (formLogin)
         .formLogin(form -> form
             .loginPage("/auth/login")
-            .loginProcessingUrl("/auth/login") // POST 요청
+            // .loginProcessingUrl("/auth/login") // POST 요청
+            .loginProcessingUrl("/api/lawyers/login")
             .usernameParameter("loginEmail")
             .passwordParameter("password")
             .successHandler(lawyerLoginSuccessHandler)
@@ -226,7 +234,7 @@ public class SecurityConfig {
         // 세션 설정 (기존 유지: OAuth2용 state 저장 가능)
         .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
 
-        // 인증 Provider 등록 (Lawyer 전용)
+        // 인증 Provider 등록
         .authenticationProvider(lawyerAuthProvider(lawyerService))
 
         // JWT 필터: OAuth2 로그인 이후에 추가
@@ -250,6 +258,8 @@ public class SecurityConfig {
                 "/api/lawyers/emails/check",
                 "/api/lawyers/login"
             ).permitAll()
+
+            .requestMatchers("/api/admin/login").permitAll()
 
             // refreshToken 발급
             .requestMatchers(
@@ -275,6 +285,37 @@ public class SecurityConfig {
     return http.build();
   }
 
+  @Bean
+  @Order(1)
+  public SecurityFilterChain adminFilterChain(
+      HttpSecurity http,
+      JwtAuthenticationFilter jwtAuthenticationFilter
+  ) throws Exception {
+    http
+        .securityMatcher("/api/admin/**")
+        .csrf(csrf -> csrf.disable())
+        .cors(Customizer.withDefaults())
+
+        // 로그인 컨트롤러만 열기
+        .authorizeHttpRequests(auth -> auth
+            .requestMatchers(HttpMethod.POST, "/api/admin/login").permitAll()
+            .anyRequest().authenticated()
+        )
+
+        // JWT 검사 필터
+        .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+
+        // formLogin 비활성화
+        .formLogin(AbstractHttpConfigurer::disable)
+
+        // 인증 실패 시 401
+        .exceptionHandling(ex -> ex
+            .authenticationEntryPoint((req, res, ex2) ->
+                res.sendError(HttpServletResponse.SC_UNAUTHORIZED))
+        );
+
+    return http.build();
+  }
 
   @Bean
   public OAuth2AuthorizedClientService authorizedClientService(
@@ -297,9 +338,9 @@ public class SecurityConfig {
     return provider;
   }
 
-  @Bean
-  public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
-    return config.getAuthenticationManager();
-  }
+//  @Bean
+//  public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
+//    return config.getAuthenticationManager();
+//  }
 
 }

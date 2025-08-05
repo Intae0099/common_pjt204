@@ -6,7 +6,9 @@ import com.B204.lawvatar_backend.appointment.entity.Appointment;
 import com.B204.lawvatar_backend.appointment.entity.AppointmentStatus;
 import com.B204.lawvatar_backend.appointment.repository.AppointmentRepository;
 import com.B204.lawvatar_backend.user.client.repository.ClientRepository;
+import com.B204.lawvatar_backend.user.lawyer.entity.UnavailabilitySlot;
 import com.B204.lawvatar_backend.user.lawyer.repository.LawyerRepository;
+import com.B204.lawvatar_backend.user.lawyer.repository.UnavailabilitySlotRepository;
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -24,13 +26,19 @@ public class AppointmentService {
   private final ClientRepository clientRepo;
   private final LawyerRepository lawyerRepo;
   private final ApplicationRepository applicationRepo;
+  private final UnavailabilitySlotRepository slotRepo;
 
-  public AppointmentService(AppointmentRepository appointmentRepo, ClientRepository clientRepo,
-      LawyerRepository lawyerRepo, ApplicationRepository applicationRepo) {
+  public AppointmentService(
+      AppointmentRepository appointmentRepo,
+      ClientRepository clientRepo,
+      LawyerRepository lawyerRepo,
+      ApplicationRepository applicationRepo,
+      UnavailabilitySlotRepository unavailabilitySlotRepository) {
     this.appointmentRepo = appointmentRepo;
     this.clientRepo = clientRepo;
     this.lawyerRepo = lawyerRepo;
     this.applicationRepo = applicationRepo;
+    this.slotRepo = unavailabilitySlotRepository;
   }
 
   public Appointment create(
@@ -81,6 +89,14 @@ public class AppointmentService {
 
     // 3) 상태 업데이트
     appt.setAppointmentStatus(newStatus);
+
+    if(newStatus == AppointmentStatus.CONFIRMED){
+      UnavailabilitySlot slot = new UnavailabilitySlot();
+      slot.setLawyer(appt.getLawyer());
+      slot.setStartTime(appt.getStartTime());  // Appointment에 startTime 필드가 있다고 가정
+      slot.setEndTime(appt.getEndTime());      // Appointment에 endTime 필드가 있다고 가정
+      slotRepo.save(slot);
+    }
   }
 
   public void cancel(Long appointmentId, Long clientId) {
@@ -101,6 +117,13 @@ public class AppointmentService {
 
     // 3) 상태를 CANCELED 로 변경 (AppointmentStatus에 CANCELED 값이 있어야 함)
     appt.setAppointmentStatus(AppointmentStatus.CANCELLED);
+
+    LocalDateTime start = appt.getStartTime();
+    LocalDateTime end = appt.getEndTime();
+    Long lawyerId = appt.getLawyer().getId();
+
+    // 미리 정의해 둔 메서드 사용 (아래 예시처럼 리포에 추가)
+    slotRepo.deleteByLawyerIdAndStartTimeAndEndTime(lawyerId, start, end);
   }
 
   public List<Application> getMyAppointmentApplicationList(Long lawyerId) {
