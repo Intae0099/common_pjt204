@@ -115,6 +115,7 @@ const router = createRouter({
       name: 'CaseDetail',
       component: CaseDetail,
     },
+
     // 상담예약
     {
       path: '/lawyers',
@@ -127,6 +128,7 @@ const router = createRouter({
       component: DetailReservation,
       props: true
     },
+
     // AI 상담 신청서
     {
       path: '/consult-form',

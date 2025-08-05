@@ -1,5 +1,7 @@
 <template>
-  <nav class="navbar fixed-top py-2" :class="[navbarTextColorClass, { 'navbar--scrolled': isScrolled }]">
+  <nav class="navbar fixed-top py-2"
+     :class="[isMenuOpen ? 'navbar--default-text' : navbarTextColorClass, { 'navbar--scrolled': isScrolled }]">
+
 
     <!-- 배경 어두운 오버레이 (메뉴 바깥 누르면 닫힘) -->
     <div v-if="isMenuOpen" class="menu-backdrop" @click="isMenuOpen = false"></div>
@@ -35,9 +37,24 @@
 
       <!-- 오른쪽: 마이페이지 & 로그아웃 (PC) -->
       <div class="d-none d-lg-block">
-        <RouterLink :to="mypagePath" class="me-3 text-dark fw-medium text-decoration-none">마이페이지</RouterLink>
-        <a href="#" class="text-dark fw-medium text-decoration-none" @click.prevent="logout">Logout</a>
+        <!-- 로그인 상태일 때 -->
+        <template v-if="isLoggedIn">
+          <RouterLink :to="mypagePath" class="me-3 text-dark fw-medium text-decoration-none">
+            마이페이지
+          </RouterLink>
+          <a href="#" class="text-dark fw-medium text-decoration-none" @click.prevent="logout">
+            Logout
+          </a>
+        </template>
+
+        <!-- 로그아웃 상태일 때 -->
+        <template v-else>
+          <RouterLink to="/login" class="text-dark fw-medium text-decoration-none">
+            Login
+          </RouterLink>
+        </template>
       </div>
+
     </div>
 
     <!-- 모바일 메뉴 슬라이드 -->
@@ -63,15 +80,28 @@
 
         <!-- 하단 마이페이지 / Login, Logout -->
         <ul class="nav flex-column px-3 pb-4 text-start menu-footer">
-          <li class="nav-item">
-            <RouterLink :to="mypagePath" class="nav-link text-dark fw-medium text-decoration-none">마이페이지</RouterLink>
-          </li>
-          <li class="nav-item" v-if="isLoggedIn">
-            <a href="#" class="nav-link text-dark fw-medium text-decoration-none" @click.prevent="logout">Logout</a>
-          </li>
-          <li class="nav-item" v-else>
-            <RouterLink to="/login" class="nav-link text-dark fw-medium text-decoration-none">Login</RouterLink>
-          </li>
+          <!-- 로그인 상태일 때: 마이페이지 + 로그아웃 -->
+          <template v-if="isLoggedIn">
+            <li class="nav-item">
+              <RouterLink :to="mypagePath" class="nav-link text-dark fw-medium text-decoration-none">
+                마이페이지
+              </RouterLink>
+            </li>
+            <li class="nav-item">
+              <a href="#" class="nav-link text-dark fw-medium text-decoration-none" @click.prevent="logout">
+                Logout
+              </a>
+            </li>
+          </template>
+
+          <!-- 로그아웃 상태일 때: 로그인 -->
+          <template v-else>
+            <li class="nav-item">
+              <RouterLink to="/login" class="nav-link text-dark fw-medium text-decoration-none">
+                Login
+              </RouterLink>
+            </li>
+          </template>
         </ul>
       </div>
     </div>
@@ -185,6 +215,17 @@ onUnmounted(() => {
 .menu-footer {
   margin-top: 30px;
 }
+
+.menu-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.3); /* 어두운 배경 */
+  z-index: 998; /* mobile-menu (999) 보다 낮고, navbar 보다 높게 */
+}
+
 
 
 /* 닫기 버튼 */

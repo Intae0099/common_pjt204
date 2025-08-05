@@ -92,7 +92,7 @@ import { ref } from 'vue'
 import IncidentSelect from './IncidentSelect.vue'
 import { InformationCircleIcon } from '@heroicons/vue/24/outline'
 
-const emit = defineEmits(['submitted'])
+const emit = defineEmits(['submitted', 'application-selected'])
 const showModal = ref(false)
 const props = defineProps({
   form: Object,
@@ -117,7 +117,10 @@ const submit = () => {
 const handleSelect = (data) => {
   form.value.title = data.title
   form.value.content = data.content
+  form.value.summary = data.summary
+  emit('application-selected', data.applicationId)
 }
+
 </script>
 
 <style scoped>
