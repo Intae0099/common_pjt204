@@ -78,15 +78,21 @@ onMounted(async () => {
 
 // 퇴장 함수
 const leaveSession = async () => {
-  // 1. 세션 연결 해제
-  if (session.value) session.value.disconnect()
-
-  // 2. 백엔드에 "나 퇴장함" 요청 보내기
-  await axios.delete(`/api/rooms/${appointmentId}/participants/me`)
-
-  // 3. 홈으로 이동
+  if (session.value) {
+    session.value.disconnect()
+    session.value = null
+  }
+  if (OV.value) OV.value = null
+  mainStreamManager.value = null
+  subscribers.value = []
+  try {
+    await axios.delete(`/api/rooms/${appointmentId}/participants/me`)
+  } catch (e) {
+    console.warn('퇴장 요청 실패:', e)
+  }
   router.push('/')
 }
+
 
 // 컴포넌트 언마운트 시 세션 정리
 onBeforeUnmount(() => {
