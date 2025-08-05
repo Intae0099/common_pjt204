@@ -29,7 +29,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import axios from 'axios'
+import axios from '@/lib/axios'
 import { ChevronDownIcon, XMarkIcon } from '@heroicons/vue/24/solid'
 
 const emit = defineEmits(['select', 'close'])

@@ -4,22 +4,29 @@
     <img class="avatar" :src="userAvatarUrl" alt="user" />
 
     <!-- 입력창 -->
-    <textarea
-      v-model="text"
-      class="textarea"
-      :placeholder="placeholder"
-      :disabled="disabled"
-      @keydown.enter.prevent="submit"
-    />
+    <div class="input-area">
+      <textarea
+        v-model="text"
+        class="textarea"
+        :placeholder="placeholder"
+        :disabled="disabled"
+        @keydown.enter.prevent="submit"
+      ></textarea>
 
-    <!-- 제출 버튼 (아이콘 대체 가능) -->
-    <button
-      @click="submit"
-      :disabled="!text.trim() || disabled"
-      class="submit-button"
-    >
-      <ArrowRightIcon class="arrow-icon"/>
-    </button>
+
+      <!-- 제출 버튼 (아이콘 대체 가능) -->
+      <button
+        @click="submit"
+        :disabled="!text.trim() || disabled"
+        class="submit-button"
+      >
+        <ArrowRightIcon class="arrow-icon"/>
+      </button>
+
+    </div>
+    <p v-if="showWarning" class="warning-text">
+      50자 이상으로 내용을 더 정확하게 입력해 주세요.
+    </p>
   </div>
 </template>
 
@@ -45,10 +52,20 @@ const emit = defineEmits(['submit'])
 
 const text = ref('')
 
+const showWarning = ref(false)
+
 const submit = () => {
-  if (text.value.trim()) {
-    emit('submit', text.value.trim())
+  if (disabled) return
+  const inputLength = text.value.trim().length
+
+  if (inputLength < 50) {
+    showWarning.value = true
+    return
   }
+
+  showWarning.value = false
+  emit('submit', text.value.trim())
+  text.value = ''
 }
 </script>
 
@@ -59,8 +76,15 @@ const submit = () => {
 .chat-input-box {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
+  gap: 10px;
   position: relative;
+}
+
+.input-area {
+  position: relative;
+  width: 100%;
+  max-width: 500px;
 }
 
 .avatar {
@@ -101,7 +125,7 @@ const submit = () => {
 
 .submit-button {
   position: absolute;
-  bottom: 8px;
+  bottom: 12px;
   right: 12px;
   border: none;
   background: none;
@@ -118,5 +142,11 @@ const submit = () => {
 .arrow-icon {
   width: 24px;
   height: 24px;
+}
+
+.warning-text {
+  color: red;
+  font-size: 14px;
+  margin-left: 6px;
 }
 </style>

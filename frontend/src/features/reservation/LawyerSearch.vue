@@ -96,6 +96,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from '@/lib/axios'
+
 const router = useRouter()
 
 const lawyers = ref([])

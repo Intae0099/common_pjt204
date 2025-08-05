@@ -28,7 +28,7 @@
           <RouterLink to="/lawyers" class="nav-link">변호사 조회</RouterLink>
         </li>
         <li class="nav-item">
-          <RouterLink to="/consult-form" class="nav-link" :class="{ active: isActive('/consult-form') }">AI상담신청서</RouterLink>
+          <RouterLink to="/consult-form" class="nav-link" :class="{ active: isActive('/consult-form') }" @click.prevent="goToConsultForm">AI상담신청서</RouterLink>
         </li>
         <li class="nav-item">
           <RouterLink to="/videocall/preview/client" class="nav-link">화상상담</RouterLink>
@@ -74,7 +74,7 @@
           <li class="nav-item"><RouterLink to="/ai-consult" class="nav-link">AI사전상담</RouterLink></li>
           <li class="nav-item"><RouterLink to="/cases/search" class="nav-link">판례 검색</RouterLink></li>
           <li class="nav-item"><RouterLink to="/lawyers" class="nav-link">변호사 조회</RouterLink></li>
-          <li class="nav-item"><RouterLink to="/consult-form" class="nav-link">AI상담신청서</RouterLink></li>
+          <li class="nav-item"><RouterLink to="/consult-form" class="nav-link" @click.prevent="handleMobileConsultFormClick">AI상담신청서</RouterLink></li>
           <li class="nav-item"><RouterLink to="/videocall/preview/client" class="nav-link">화상상담</RouterLink></li>
         </ul>
 
@@ -139,6 +139,19 @@ const navbarTextColorClass = computed(() => {
     return 'navbar--default-text'
   }
 })
+
+const goToConsultForm = () => {
+  if (!isLoggedIn.value) {
+    router.push({ path: '/consult-form', query: { needLogin: 'true' } })
+  } else {
+    router.push('/consult-form')
+  }
+}
+
+const handleMobileConsultFormClick = () => {
+  isMenuOpen.value = false  // 모바일 메뉴 닫기
+  goToConsultForm()
+}
 
 const isActive = (path) => route.path === path
 
