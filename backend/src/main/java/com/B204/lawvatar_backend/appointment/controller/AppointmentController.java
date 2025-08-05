@@ -192,7 +192,7 @@ public class AppointmentController {
             // 응답하기
             GetMyAppointmentApplicationListResponse getMyAppointmentApplicationListResponse = GetMyAppointmentApplicationListResponse.builder()
                     .success(true)
-                    .message("[AppointmentController - 00] 내 상담 내역에 대한 상담신청서 목록 전체조회 성공")
+                    .message("[AppointmentController - 001] 내 상담 내역에 대한 상담신청서 목록 전체조회 성공")
                     .data(GetMyAppointmentApplicationListResponse.Data.builder().applicationList(applicationDtoList).build())
                     .build();
 
@@ -201,7 +201,7 @@ public class AppointmentController {
         } else {
             GetMyAppointmentApplicationListResponse getMyAppointmentApplicationListResponse = GetMyAppointmentApplicationListResponse.builder()
                     .success(false)
-                    .message("[AppointmentController - 00] 변호사만 이용할 수 있는 기능입니다.")
+                    .message("[AppointmentController - 002] 변호사만 이용할 수 있는 기능입니다.")
                     .build();
 
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(getMyAppointmentApplicationListResponse);

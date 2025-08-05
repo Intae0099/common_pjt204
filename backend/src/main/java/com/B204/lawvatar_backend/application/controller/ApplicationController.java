@@ -67,12 +67,12 @@ public class ApplicationController {
                     .data(AddApplicationResponse.Data.builder().applicationId(applicationId).build())
                     .build();
 
-            return ResponseEntity.status(HttpStatus.OK).body(addApplicationResponse);
+            return ResponseEntity.status(HttpStatus.CREATED).body(addApplicationResponse);
 
         } else {
             AddApplicationResponse addApplicationResponse = AddApplicationResponse.builder()
                     .success(false)
-                    .message("[ApplicationController - 002] 변호사는 이용할 수 없는 기능입니다.")
+                    .message("[ApplicationController - 002] 의뢰인만 사용 가능한 기능입니다.")
                     .build();
 
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(addApplicationResponse);
@@ -190,7 +190,7 @@ public class ApplicationController {
                 GetApplicationResponse applicationResponse = GetApplicationResponse.builder()
                         .success(true)
                         .message("[ApplicationController - 005] 상담경위서(신청서) 조회 성공")
-                        .data(GetApplicationResponse.Data.builder().applicationDto(applicationDto).build())
+                        .data(GetApplicationResponse.Data.builder().application(applicationDto).build())
                         .build();
 
                 return ResponseEntity.status(HttpStatus.OK).body(applicationResponse);
@@ -249,7 +249,7 @@ public class ApplicationController {
                 GetApplicationResponse applicationResponse = GetApplicationResponse.builder()
                         .success(true)
                         .message("[ApplicationController - 006] 상담경위서(신청서) 조회 성공")
-                        .data(GetApplicationResponse.Data.builder().applicationDto(applicationDto).build())
+                        .data(GetApplicationResponse.Data.builder().application(applicationDto).build())
                         .build();
 
                 return ResponseEntity.status(HttpStatus.OK).body(applicationResponse);
@@ -286,7 +286,7 @@ public class ApplicationController {
     }
 
     @PatchMapping("/{applicationId}")
-    public ResponseEntity<ModifyApplicationResponse> modifyApplication(Authentication authentication, @PathVariable Long applicationId, ModifyApplicationRequest request) {
+    public ResponseEntity<ModifyApplicationResponse> modifyApplication(Authentication authentication, @PathVariable Long applicationId, ModifyApplicationRequest request) throws Exception {
 
         // Principal 객체 얻기
         Object principal = authentication.getPrincipal();
@@ -294,7 +294,7 @@ public class ApplicationController {
         // 의뢰인이면 그대로 비즈니스 로직 진행, 아니면 에러 응답
         if(principal instanceof ClientPrincipal clientPrincipal) {
             try {
-                applicationService.modifyApplication(applicationId, request);
+                applicationService.modifyApplication(applicationId, request, clientPrincipal.getId());
             } catch(NoSuchElementException e) {
                 ModifyApplicationResponse modifyApplicationResponse = ModifyApplicationResponse.builder()
                         .success(false)

@@ -26,7 +26,7 @@ public class GetApplicationResponse {
     public static class Data {
 
         // Field
-        private ApplicationDto applicationDto;
+        private ApplicationDto application;
 
         // Nested Class
         @Getter @Setter
