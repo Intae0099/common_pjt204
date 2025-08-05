@@ -1,6 +1,6 @@
 <template>
-  <component :is="layoutComponent">
-    <RouterView />
+  <component :is="layoutComponent" :key="$route.name">
+    <RouterView :key="$route.fullPath" />
   </component>
 </template>
 
