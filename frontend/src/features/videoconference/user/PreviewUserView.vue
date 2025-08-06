@@ -134,7 +134,6 @@ const getTimeDifference = (startTime) => {
   const start = new Date(startTime)
   const now = new Date()
 
-  // 날짜 변환 실패 시
   if (isNaN(start)) return '시간 정보 오류'
 
   const diffMs = start - now
@@ -159,31 +158,6 @@ const canEnterMeeting = (startTime, endTime) => {
 
 
 onMounted(async () => {
-  const now = new Date()
-  const dummyAppointments = [
-    {
-      appointmentId: 1,
-      lawyerId: 1001,
-      applicationId: 10,
-      startTime: new Date(now.getTime() + 1000 * 60 * 30).toISOString(), // 30분 후
-      endTime: new Date(now.getTime() + 1000 * 60 * 90).toISOString(),   // 1시간 후
-      lawyerName: '김태인',
-      profileImage: '/default-profile.png',
-      tags: [1, 2]
-    },
-    {
-      appointmentId: 2,
-      lawyerId: 1002,
-      applicationId: 11,
-      startTime: new Date(now.getTime() + 1000 * 60 * 150).toISOString(), // 2시간 30분 후
-      endTime: new Date(now.getTime() + 1000 * 60 * 210).toISOString(),   // 3시간 30분 후
-      lawyerName: '전해지',
-      profileImage: '/default-profile.png',
-      tags: [3, 5]
-    }
-  ]
-
-
 
   try {
     const { data: appointmentData } = await axios.get('/api/appointments/me')
@@ -205,48 +179,23 @@ onMounted(async () => {
       })
     )
 
-    // 📌 실제 데이터 있으면 쓰고, 없으면 더미
-    appointments.value = appointmentsWithLawyerInfo.length ? appointmentsWithLawyerInfo : dummyAppointments
+    appointments.value = appointmentsWithLawyerInfo.length
   } catch (e) {
     console.error('상담 일정 불러오기 실패:', e)
 
-    // 🧪 여기서 꼭 더미 할당 필요!
-    appointments.value = dummyAppointments
   }
 })
 
 
 const goToApplication = async (applicationId) => {
   try {
-  // 📌 백엔드 연결 안 됐을 때 사용할 더미
-    const dummyDetail = {
-      applicationId,
-      title: '사건예시제목1',
-      summary: 'Lorem ipsum dolor sit amet consectetur. Purus quam semper quis pretium egestas',
-      content: `Lorem ipsum dolor sit amet consectetur. Purus quam semper quis pretium egestas orci in nunc amet.
-        Sociis et pharetra est augue. Ornare leo elementum egestas consequat et cursus lectus tellus a.
-        Volutpat suspendisse urna urna neque egestas ultricies et morbi urna.`,
-      outcome: `Lorem ipsum dolor sit amet consectetur. Purus quam semper quis pretium egestas orci in nunc amet.
-        Sociis et pharetra est augue. Ornare leo elementum egestas consequat et cursus lectus tellus a.
-        Volutpat suspendisse urna urna neque egestas ultricies et morbi urna.`,
-      disadvantage: `Lorem ipsum dolor sit amet consectetur. Purus quam semper quis pretium egestas orci in nunc amet.
-        Sociis et pharetra est augue. Ornare leo elementum egestas consequat et cursus lectus tellus a.
-        Volutpat suspendisse urna urna neque egestas ultricies et morbi urna.`,
-      recommendedQuestions: [
-        'Lorem ipsum dolor sit amet consectetur.',
-        'Purus quam semper quis pretium egestas orci in nunc amet.',
-        'Sociis et pharetra est augue'
-      ]
+    const { data } = await axios.get(`/api/applications/${applicationId}`)
+    const questions = Object.values(data.recommendedQuestion || {})
+
+    selectedApplicationData.value = {
+      ...data,
+      recommendedQuestions: questions
     }
-
-    // const { data } = await axios.get(`/api/applications/${applicationId}`)
-    // const questions = Object.values(data.recommendedQuestion || {})
-
-    // selectedApplicationData.value = {
-    //   ...data,
-    //   recommendedQuestions: questions
-    // }
-    selectedApplicationData.value = dummyDetail
     showDetailModal.value = true
   } catch (err) {
     console.error('상담신청서 상세 조회 실패:', err)
