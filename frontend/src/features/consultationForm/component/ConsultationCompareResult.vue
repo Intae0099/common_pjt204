@@ -99,7 +99,7 @@ const handleSubmit = async (formData) => {
   const applicationId = route.params.id
 
   try {
-    await axios.patch(`https://i13b204.p.ssafy.io/api/applications/${applicationId}`, {
+    await axios.patch(`api/applications/${applicationId}`, {
       ...formData,
     })
     alert('상담서가 저장되었습니다!')

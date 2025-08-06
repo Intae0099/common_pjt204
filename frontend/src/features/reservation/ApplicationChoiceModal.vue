@@ -59,7 +59,7 @@ const router = useRouter()
 
 const fetchApplications = async () => {
   const res = await axios.get('/api/applications/me?isCompleted=true')
-  applications.value = res.data
+  applications.value = res.data.data.aplicationList
 }
 
 const submitReservation = async () => {

@@ -5,9 +5,12 @@
         <XMarkIcon class="x-icon" />
       </button>
       <h3 class="modal-title">사건 경위서 선택</h3>
-      <div class="select-wrapper">
+      <!-- ✅ 데이터 있을 때 -->
+      <div v-if="applications.length > 0" class="select-wrapper">
         <select v-model="selectedId" class="modal-select" required>
-          <option disabled hidden value="" class="placeholder-option">사건 경위서를 선택해주세요</option>
+          <option disabled hidden value="" class="placeholder-option">
+            사건 경위서를 선택해주세요
+          </option>
           <option
             v-for="item in applications"
             :key="item.applicationId"
@@ -18,6 +21,11 @@
         </select>
         <ChevronDownIcon class="select-icon" />
       </div>
+
+      <!-- ❗ 데이터 없을 때 -->
+      <p v-else class="no-data-message">
+        불러올 사건 경위서가 없습니다.
+      </p>
 
       <div class="modal-buttons">
         <button @click="emit('close')" class="cancel-btn">취소</button>
@@ -37,8 +45,8 @@ const applications = ref([])
 const selectedId = ref('')
 
 onMounted(async () => {
-  const res = await axios.get('https://i13b204.p.ssafy.io/api/applications/me?isCompleted=false')
-  applications.value = res.data
+  const res = await axios.get('api/applications/me?isCompleted=false')
+  applications.value = res.data.data.applicationList
 })
 
 const confirm = () => {
