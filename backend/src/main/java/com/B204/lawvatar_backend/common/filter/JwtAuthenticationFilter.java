@@ -56,6 +56,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         path.startsWith("/api/lawyers/signup")
         || path.startsWith("/api/lawyers/emails/check")
         || path.startsWith("/api/lawyers/login")
+        || path.startsWith("/api/lawyers/list")
         || path.startsWith("/auth/login")
 
             // 의뢰인 회원가입 / 로그인

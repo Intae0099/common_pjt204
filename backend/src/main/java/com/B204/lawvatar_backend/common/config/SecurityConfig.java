@@ -311,8 +311,8 @@ public class SecurityConfig {
             ).permitAll()
 
             .requestMatchers("/api/admin/login").permitAll()
-
             .requestMatchers("/api/tag/**").permitAll()
+            .requestMatchers("/api/lawyers/list").permitAll()
 
             // refreshToken 발급
             .requestMatchers(
