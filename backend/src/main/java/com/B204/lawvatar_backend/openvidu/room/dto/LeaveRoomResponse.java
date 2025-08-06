@@ -6,7 +6,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class CreateRoomResponse {
+public class LeaveRoomResponse {
 
     // Field
     private boolean success;
@@ -14,13 +14,6 @@ public class CreateRoomResponse {
     private Data data;
 
     // Nested Class
-    @Getter @Setter
-    @NoArgsConstructor
-    @AllArgsConstructor
-    @Builder
     public static class Data {
-
-        // Field
-        private String openviduToken;
     }
 }

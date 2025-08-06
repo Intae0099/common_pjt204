@@ -2,13 +2,32 @@ package com.B204.lawvatar_backend.application.dto;
 
 import lombok.*;
 
-@Getter
+@Getter @Setter
 @NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class AddApplicationResponse {
-    private Long applicationId;
 
+    // Field
+    private boolean success;
+    private String message;
+    private Data data;
+
+    // Nested Class
+    @Getter @Setter
+    @NoArgsConstructor
+    @AllArgsConstructor
     @Builder
-    public AddApplicationResponse(Long applicationId) {
-        this.applicationId = applicationId;
+    public static class Data {
+
+        // Field
+        private Long applicationId;
     }
+
+//    클래스 선언부에 @Builder 붙이는 것으로 대체하였습니다!
+//    @Builder
+//    public AddApplicationResponse(Long applicationId) {
+//        this.applicationId = applicationId;
+//    }
+
 }

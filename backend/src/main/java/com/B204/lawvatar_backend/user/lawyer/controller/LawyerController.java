@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.http.HttpHeaders;
@@ -74,7 +75,7 @@ public class LawyerController {
       TagRepository tagRepo,
       LawyerService lawyerService, UnavailabilityService unavailabilityService,
       PasswordEncoder pwEncoder,
-      AuthenticationManager authManager
+      @Qualifier("lawyerAuthenticationManager") AuthenticationManager authManager
       ) {
     this.lawyerRepo = lawyerRepo;
     this.lawyerTagRepo = lawyerTagRepo;
@@ -97,9 +98,11 @@ public class LawyerController {
 
   @PostMapping("/emails/check")
   public ResponseEntity<?> isEmailAvailable(
-      @JsonProperty("loginEmail") String loginEmail
+      @RequestBody Map<String, String> body
   ){
-    boolean isAvailable = lawyerRepo.existsByLoginEmail(loginEmail);
+    String loginEmail = body.get("loginEmail");
+
+    boolean isAvailable = !lawyerRepo.existsByLoginEmail(loginEmail);
     Map<String, String> response = Map.of("isAvailable", String.valueOf(isAvailable));
 
     return ResponseEntity.ok(response);
