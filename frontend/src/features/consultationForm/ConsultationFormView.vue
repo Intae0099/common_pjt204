@@ -71,7 +71,7 @@ const handleFormSubmit = async (formData) => {
   userInput.value = formData
 
   try {
-    const res = await axios.post('https://i13b204.p.ssafy.io/api/consult/application', {
+    const res = await axios.post('api/consult/application', {
       case: {
         title: formData.title,
         summary: formData.summary,
@@ -105,7 +105,7 @@ const handleFinalSubmit = async (formData) => {
 
   try {
     if (hasPreviousApplication) {
-      await axios.patch(`https://i13b204.p.ssafy.io/api/applications/${applicationId.value}`, {
+      await axios.patch(`api/applications/${applicationId.value}`, {
         ...formData,
         recommendedQuestion: {
           question1: formData.recommendedQuestions[0] || '',
@@ -114,7 +114,7 @@ const handleFinalSubmit = async (formData) => {
         tags: aiResult.value.tags,
       })
     } else {
-      const res = await axios.post('https://i13b204.p.ssafy.io/api/applications?isCompleted=true', {
+      const res = await axios.post('api/applications?isCompleted=true', {
         title: formData.title,
         summary: formData.summary,
         content: formData.content,
