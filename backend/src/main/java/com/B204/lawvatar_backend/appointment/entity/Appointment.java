@@ -1,6 +1,7 @@
 package com.B204.lawvatar_backend.appointment.entity;
 
 import com.B204.lawvatar_backend.application.entity.Application;
+import com.B204.lawvatar_backend.openvidu.session.entity.Session;
 import com.B204.lawvatar_backend.user.client.entity.Client;
 import com.B204.lawvatar_backend.user.lawyer.entity.Lawyer;
 import jakarta.persistence.*;
@@ -9,6 +10,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Data
@@ -17,6 +20,7 @@ public class Appointment {
 
     // Field
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(columnDefinition = "int unsigned")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -32,7 +36,8 @@ public class Appointment {
     private Application application;
 
     @Enumerated(EnumType.STRING)
-    private AppointmentStatus appointmentStatus;
+    @Column(nullable = false)
+    private AppointmentStatus appointmentStatus = AppointmentStatus.PENDING;
 
     @Column(nullable = false)
     private LocalDateTime startTime;
@@ -43,4 +48,6 @@ public class Appointment {
     @Column(nullable = false)
     private LocalDateTime createdAt;
 
+    @OneToOne(mappedBy = "appointment", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private Session session;
 }
