@@ -14,7 +14,6 @@ public class UnavailabilitySlot {
 
     // Field
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(columnDefinition = "int unsigned")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)

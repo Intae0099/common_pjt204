@@ -67,7 +67,7 @@ public class LawyerService implements UserDetailsService {
 
     Lawyer l = new Lawyer();
     l.setLoginEmail(dto.getLoginEmail());
-    l.setLoginPasswordHash(pwEncoder.encode(dto.getPassword()));
+    l.setPasswordHash(pwEncoder.encode(dto.getPassword()));
     l.setName(dto.getName());
     l.setIntroduction(dto.getIntroduction());
     l.setExam(dto.getExam());
@@ -146,7 +146,7 @@ public class LawyerService implements UserDetailsService {
 
     return new org.springframework.security.core.userdetails.User(
         lawyer.getLoginEmail(),
-        lawyer.getLoginPasswordHash(),
+        lawyer.getPasswordHash(),
         AuthorityUtils.createAuthorityList("ROLE_LAWYER")
     );
   }
@@ -189,14 +189,14 @@ public class LawyerService implements UserDetailsService {
 
     if (dto.getTags() != null) {
       // 기존 태그 클리어
-      lawyer.getLawyerTagList().clear();
+      lawyer.getTags().clear();
       // 새 태그 매핑
       for (Long tagId : dto.getTags()) {
         tagRepo.findById(tagId).ifPresent(tag -> {
           LawyerTag lt = new LawyerTag();
           lt.setLawyer(lawyer);
           lt.setTag(tag);
-          lawyer.getLawyerTagList().add(lt);
+          lawyer.getTags().add(lt);
         });
       }
     }
