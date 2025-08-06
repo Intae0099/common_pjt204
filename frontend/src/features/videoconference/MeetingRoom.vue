@@ -1,20 +1,104 @@
 <template>
   <div class="meeting-room">
-    <h2>화상상담방</h2>
-    <!-- 내가 보는 내 영상 -->
-    <div id="publisher" class="video-box"></div>
-    <!-- 상대방의 영상들이 들어올 공간 -->
-    <div id="subscribers" class="video-box"></div>
-    <button @click="leaveSession">퇴장하기</button>
+    <div class="video-section">
+      <!-- 화면 공유 중일 때 -->
+      <template v-if="isScreenSharing">
+        <!-- 왼쪽: 변호사 + 의뢰인 세로 정렬 -->
+        <div class="video-box vertical-video">
+          <div class="video-inner" id="lawyer-video">
+            <p style="color:white; text-align:center">변호사</p>
+          </div>
+          <div class="video-inner" id="publisher">
+            <p style="color:white; text-align:center">의뢰인</p>
+          </div>
+        </div>
+
+        <!-- 가운데: 공유된 화면 -->
+        <div class="video-box shared-screen" id="client-video">
+          <canvas id="draw-canvas" class="drawing-canvas"></canvas>
+        </div>
+      </template>
+
+      <!-- 평소(공유 X) 화면: 좌우 나란히 -->
+      <template v-else>
+        <div class="video-box" id="lawyer-video">
+          <p style="color:white; text-align:center">변호사</p>
+        </div>
+        <div class="video-box" id="publisher">
+          <p style="color:white; text-align:center">의뢰인</p>
+        </div>
+      </template>
+
+      <!-- 오른쪽: 채팅 -->
+      <div class="chat-area">
+        <div class="chat-content">
+          <RealtimeChatView v-if="activeChat === 'realtime'" />
+          <ChatbotView v-if="activeChat === 'chatbot'" />
+        </div>
+      </div>
+    </div>
   </div>
+
+<!-- 하단 컨트롤 영역 -->
+<div class="meeting-footer">
+  <!-- 왼쪽: 제어 버튼들 -->
+  <div class="footer-left">
+    <!-- 그리기·지우기·포인터 -->
+    <button class="footer-btn" @click="setTool('pen')" :disabled="!isScreenSharing" :class="{ active: currentTool==='pen' }">
+      <Pencil class="footer-icon" />
+    </button>
+    <button class="footer-btn" @click="setTool('eraser')" :disabled="!isScreenSharing" :class="{ active: currentTool==='eraser' }">
+      <Eraser class="footer-icon" />
+    </button>
+    <button class="footer-btn" @click="setTool('pointer')" :disabled="!isScreenSharing" :class="{ active: currentTool==='pointer' }">
+      <MousePointer2 class="footer-icon" />
+    </button>
+    <!-- 화면공유버튼 -->
+    <button class="footer-btn only-share" @click="shareScreen">
+      <span class="footer-label">화면공유</span>
+      <Share class="footer-icon" />
+    </button>
+    <!-- 카메라 on/off -->
+    <button class="footer-btn" @click="toggleCamera">
+      <component :is="isCameraOn ? Video : VideoOff" class="footer-icon" />
+    </button>
+    <!-- 마이크 on/off -->
+    <button class="footer-btn" @click="toggleMic">
+      <component :is="isMicOn ? Mic : MicOff" class="footer-icon" />
+    </button>
+  </div>
+
+  <!-- 오른쪽: 채팅/챗봇/나가기 -->
+  <div class="footer-right">
+    <div class="chat-btn-wrapper">
+      <button class="footer-btn" @click="toggleChat('realtime')">
+        <MessageSquareText class="footer-icon" />
+      </button>
+      <button class="footer-btn" @click="toggleChat('chatbot')">
+        <img src="@/assets/ai-bot.png" class="footer-icon" />
+      </button>
+    </div>
+
+    <button class="footer-btn leave-btn" @click="leaveSession">
+      나가기
+    </button>
+  </div>
+</div>
 </template>
 
+
 <script setup>
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { OpenVidu } from 'openvidu-browser'
 import { useRoute, useRouter } from 'vue-router'
 import axios from '@/lib/axios'
-
+import RealtimeChatView from '@/features/chatting/RealtimeChatView.vue'
+import ChatbotView from '@/features/chatting/ChatbotView.vue'
+import { Pencil, Eraser, MousePointer2, MessageSquareText, Share, Video, VideoOff, Mic, MicOff } from 'lucide-vue-next'
+const activeChat = ref('realtime')
+const toggleChat = (type) => {
+  activeChat.value = activeChat.value === type ? null : type
+}
 // OpenVidu 관련 객체들 상태로 관리
 const OV = ref(null)                  // OpenVidu 객체 (엔진 역할)
 const session = ref(null)            // 세션 객체 (참여자 연결, 스트림 관리)
@@ -24,12 +108,118 @@ const subscribers = ref([])          // 다른 사람들(상대방)의 스트림
 const route = useRoute()
 const router = useRouter()
 
+// 상태 관리
+const isCameraOn = ref(true)
+const isMicOn = ref(true)
+
+// 화면 공유 중 여부
+const isScreenSharing = ref(false)
+
+/* ---------- 그리기 상태 ---------- */
+const currentTool    = ref('pointer') // 'pen' | 'eraser' | 'pointer'
+const isDrawing      = ref(false)
+let  canvas, ctx
+
+function setTool(tool){
+  currentTool.value = tool
+  if (!canvas) return;
+
+  canvas.style.pointerEvents = (tool === 'pointer') ? 'none' : 'auto';
+
+  // ② 클래스 토글
+  canvas.classList.toggle('pen-cursor'   , tool==='pen');
+  canvas.classList.toggle('eraser-cursor', tool==='eraser');
+}
+
+
+
 // URL 쿼리에서 토큰과 예약 ID 받아오기 (백엔드에서 발급해준 값)
 const token = route.query.token
 const appointmentId = route.query.appointmentId
 
+
+// 카메라 토글 함수
+const toggleCamera = () => {
+  if (mainStreamManager.value) {
+    isCameraOn.value = !isCameraOn.value
+    mainStreamManager.value.publishVideo(isCameraOn.value)
+  }
+}
+
+// 마이크 토글 함수
+const toggleMic = () => {
+  if (mainStreamManager.value) {
+    isMicOn.value = !isMicOn.value
+    mainStreamManager.value.publishAudio(isMicOn.value)
+  }
+}
+
+
+/* ---------- 로컬 그리기 ---------- */
+function startDraw(e){
+  if(currentTool.value==='pointer') return
+  isDrawing.value = true
+  ctx.beginPath()
+  ctx.moveTo(e.offsetX, e.offsetY)
+}
+function draw(e){
+  if(!isDrawing.value) return
+  if(currentTool.value==='pen'){
+    ctx.globalCompositeOperation='source-over'
+    ctx.lineWidth = 2
+    ctx.strokeStyle = 'red'
+  }else if(currentTool.value==='eraser'){
+    ctx.globalCompositeOperation='destination-out'
+    ctx.lineWidth = 20
+  }
+  ctx.lineTo(e.offsetX, e.offsetY)
+  ctx.stroke()
+
+  // 상대방에게 전파
+  sendSignal({ x:e.offsetX, y:e.offsetY, t:currentTool.value, a:isDrawing.value })
+}
+function endDraw(){
+  if(isDrawing.value){
+    isDrawing.value=false
+    ctx.closePath()
+  }
+}
+
+/* ----------  OpenVidu signal ---------- */
+function sendSignal(payload){
+  if(!session.value) return
+  session.value.signal({ type:'drawing', data:JSON.stringify(payload) })
+}
+
+// 수신 → 상대방 캔버스에 동일하게 그림
+function handleRemoteDraw({data}){
+  const {x,y,t,a} = JSON.parse(data)
+  if(t==='pointer') return
+  ctx.globalCompositeOperation = t==='pen' ? 'source-over' : 'destination-out'
+  ctx.lineWidth = t==='pen' ? 2 : 20
+  if(a){ ctx.lineTo(x,y); ctx.stroke() }
+  else{ ctx.beginPath(); ctx.moveTo(x,y) }
+}
+
+/* ---------- 캔버스 초기화 ---------- */
+async function initCanvas(){
+  await nextTick()                     // DOM 완성 대기
+  canvas = document.getElementById('draw-canvas')
+  if(!canvas) return
+  ctx = canvas.getContext('2d')
+  canvas.width  = canvas.offsetWidth
+  canvas.height = canvas.offsetHeight
+
+  canvas.addEventListener('mousedown', startDraw)
+  canvas.addEventListener('mousemove', draw)
+  canvas.addEventListener('mouseup'  , endDraw)
+  canvas.addEventListener('mouseleave', endDraw)
+}
+
+
 // 세션 참가 함수 (컴포넌트 마운트 시 자동 실행)
 onMounted(async () => {
+
   // 1. OpenVidu 객체 생성
   OV.value = new OpenVidu()
 
@@ -39,7 +229,8 @@ onMounted(async () => {
   // 3. 상대방이 입장해 스트림을 게시하면 구독하기
   session.value.on('streamCreated', (event) => {
     const subscriber = session.value.subscribe(event.stream, undefined)
-    subscriber.addVideoElement(document.getElementById('subscribers')) // 구독자 영상 붙이기
+    const target = document.getElementById('lawyer-video')
+    subscriber.addVideoElement(target)
     subscribers.value.push(subscriber)
   })
 
@@ -74,7 +265,40 @@ onMounted(async () => {
 
   // 9. 내 스트림 객체 저장
   mainStreamManager.value = publisher
+
+  session.value.on('signal:drawing', handleRemoteDraw)
 })
+
+const shareScreen = async () => {
+  try {
+    const screenPublisher = await OV.value.initPublisher(undefined, {
+      videoSource: 'screen',
+      audioSource: undefined,
+      publishVideo: true,
+      publishAudio: false,
+      mirror: false
+    })
+
+    const screenVideo = document.createElement('video')
+    screenVideo.autoplay = true
+    screenVideo.playsInline = true
+    screenVideo.style.width = '100%'
+    screenVideo.style.height = '100%'
+    screenVideo.style.objectFit = 'cover'
+    document.getElementById('client-video').appendChild(screenVideo)
+    screenPublisher.addVideoElement(screenVideo)
+
+    await session.value.publish(screenPublisher)
+    await initCanvas();
+    isScreenSharing.value = true
+
+    console.log('화면 공유 시작됨')
+  } catch (err) {
+    console.error('화면 공유 실패:', err)
+    alert('화면 공유를 허용하지 않으면 시작할 수 없습니다.')
+  }
+}
+
 
 // 퇴장 함수
 const leaveSession = async () => {
@@ -101,13 +325,189 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
+*{
+  font-family: 'Noto Sans KR', sans-serif;
+}
 .meeting-room {
-  padding: 2rem;
+  display: flex;
+  height: 660px;
+  flex-direction: column;
+  position: relative;
 }
+.video-section {
+  display: flex;
+  flex: 1;
+  height: 90vh;
+}
+
+/* 변호사 / 의뢰인 화면 */
 .video-box {
-  width: 640px;
-  height: 480px;
-  background: #eee;
-  margin-bottom: 1rem;
+  flex: 1;
+  min-width: 0;
+  background-color: black;
+  margin: 0.5rem;
+  border-radius: 8px;
 }
+
+.vertical-video {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.video-inner {
+  flex: 1;
+  background-color: black;
+  margin: 0.25rem;
+  border-radius: 8px;
+}
+
+.shared-screen {
+  flex: 2;
+  min-width: 0;
+  background-color: black;
+  margin: 0.5rem;
+  border-radius: 8px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  object-fit: cover;
+}
+/* 2. 비디오 & 캔버스 → 박스 꽉 채우기 */
+.shared-screen video,
+.shared-screen canvas{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  object-fit:contain;
+  pointer-events:none;
+}
+.shared-screen video{
+  z-index: 1;
+}
+.shared-screen canvas{
+  z-index: 10;
+}
+.drawing-canvas{
+  position:absolute; inset:0;
+  width:100%; height:100%;
+  z-index:5;
+  pointer-events:none;
+}
+/* 펜·지우개 커서 깜빡임 안 보이게 */
+.drawing-canvas.pen-cursor{ cursor:crosshair; }
+.drawing-canvas.eraser-cursor{ cursor:url('data:image/svg+xml;base64,PHN2Zy…') 6 6, crosshair; }
+
+.meeting-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.6rem 1.1rem;
+  border-top: 1px solid #333;
+  background-color: #111;
+  height: 9.5vh;
+}
+
+/* 좌우 영역 분리 */
+.footer-left,
+.footer-right {
+  display: flex;
+  gap: 1rem;
+}
+
+.footer-lef{
+  position: absolute;
+  bottom: 100px; /* 비디오 박스 바로 아래 느낌 */
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 1.5rem;
+  background-color: rgba(17, 17, 17, 0.8);
+  padding: 0.6rem 1.2rem;
+  border-radius: 12px;
+  z-index: 10;
+}
+
+
+/* 채팅 영역과 동일한 너비를 갖도록 */
+.footer-right {
+  width: 330px; /* 채팅 영역 너비와 일치 */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.chat-btn-wrapper {
+  display: flex;
+  gap: 1rem;
+}
+
+.footer-btn {
+  background-color: #111;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem; /* 아이콘과 텍스트 사이 간격 */
+  color: white;
+  border: none;
+}
+.footer-btn.active{
+  background-color:#444;
+}
+
+.only-share {
+  border: 1px solid white;
+  padding: 0.5rem 2rem;
+  border-radius: 8px;
+}
+
+.footer-label {
+  font-size: 1rem;
+  color: white;
+}
+
+
+.footer-btn>img{
+  margin-top: 2px;
+  width: 30px;
+  height: 30px;
+}
+
+.footer-icon {
+  width: 24px;
+  height: 24px;
+  color: white;
+}
+
+/* 채팅 영역 */
+.chat-area {
+  width: auto;
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid #ddd;
+  background-color: white;
+}
+
+/* 채팅 콘텐츠 (스크롤 가능) */
+.chat-content {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.leave-btn {
+  color: white;
+  font-size: 0.9rem;
+  padding: 0.4rem 1rem;
+  background-color: #c0392b;
+}
+
+.leave-btn:hover {
+  background-color: #e74c3c;
+}
+
 </style>
