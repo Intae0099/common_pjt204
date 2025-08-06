@@ -51,7 +51,7 @@ public class LawyerInfoDto {
         lawyer.getExam(),
         lawyer.getRegistrationNumber(),
         lawyer.getConsultationCount(),
-        lawyer.getTags().stream()
+        lawyer.getLawyerTagList().stream()
             .map(lawyerTag -> lawyerTag.getTag().getId())
             .toList(),
         encodedPhoto

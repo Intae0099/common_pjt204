@@ -41,7 +41,7 @@ public class LawyerSearchDto {  // client가 lawyer 전체 조회, 검색 시 �
         lawyer.getName(),
         lawyer.getIntroduction(),
         lawyer.getConsultationCount(),
-        lawyer.getTags().stream()
+        lawyer.getLawyerTagList().stream()
             .map(lt -> lt.getTag().getId())
             .collect(Collectors.toList())
     );
