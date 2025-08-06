@@ -78,18 +78,14 @@ public class AdminController {
       HttpServletResponse response
   ) {
     try {
-      System.out.println("메서드 입장 1");
       // 관리 전용 매니저로 인증 시도 (더 이상 순환 없음)
       Authentication auth = adminAuthenticationManager.authenticate(
           new UsernamePasswordAuthenticationToken(dto.getLoginEmail(), dto.getPassword())
       );
 
-      System.out.println("메서드 입장 1.5");
-
       String email = auth.getName();
       Admin admin = adminService.findByLoginEmail(email);
       String subject = "ADMIN:" + admin.getLoginEmail();
-      System.out.println("메서드 입장 2");
 
       // 리프레시 토큰 생성·저장
       String refreshToken = jwtUtil.generateRefreshToken(subject);
@@ -100,12 +96,10 @@ public class AdminController {
           .httpOnly(true).secure(true).sameSite("Strict")
           .path("/").maxAge(Duration.ofDays(7)).build();
       response.setHeader(HttpHeaders.SET_COOKIE, cookie.toString());
-      System.out.println("메서드 입장 3");
       // 액세스 토큰 발급
       List<String> roles = auth.getAuthorities().stream()
           .map(GrantedAuthority::getAuthority).toList();
       String accessToken = jwtUtil.generateAccessToken(subject, roles, "ADMIN");
-      System.out.println("메서드 입장 4");
       return ResponseEntity.ok(Map.of("accessToken", accessToken));
     } catch (AuthenticationException ex) {
       return ResponseEntity
@@ -116,7 +110,9 @@ public class AdminController {
 
   @GetMapping("/lawyers/certifications")
   @PreAuthorize("hasRole('ADMIN')")
-  public ResponseEntity<List<LawyerAdminDto>> getLawyersByCertificationStatus(@RequestParam CertificationStatus status){
+  public ResponseEntity<List<LawyerAdminDto>> getLawyersByCertificationStatus(
+      @RequestParam CertificationStatus status
+  ){
 
     List<Lawyer> lawyers = lawyerService.findByCertificationStatus(status);
     if(lawyers.isEmpty()) {
@@ -147,7 +143,9 @@ public class AdminController {
 
   @PatchMapping("/{id}/approve")
   @PreAuthorize("hasRole('ADMIN')")
-  public ResponseEntity<?> approveLawyer(@PathVariable("id") Long id) {
+  public ResponseEntity<?> approveLawyer(
+      @PathVariable("id") Long id
+  ) {
     try{
       System.out.println("승인");
       Lawyer l = lawyerService.approveLawyer(id);
@@ -168,7 +166,9 @@ public class AdminController {
 
   @PatchMapping("/{id}/reject")
   @PreAuthorize("hasRole('ADMIN')")
-  public ResponseEntity<?> rejectLawyer(@PathVariable("id") Long id) {
+  public ResponseEntity<?> rejectLawyer(
+      @PathVariable("id") Long id
+  ) {
     try{
       Lawyer l = lawyerService.rejectLawyer(id);
 
@@ -204,7 +204,10 @@ public class AdminController {
 
   @DeleteMapping("/rooms/{appointmentId}")
   @PreAuthorize("hasRole('ADMIN')")
-  public ResponseEntity<Void> removeRoom(Authentication authentication, @PathVariable Long appointmentId) {
+  public ResponseEntity<Void> removeRoom(
+      Authentication authentication,
+      @PathVariable Long appointmentId
+  ) {
 
     // Principal 객체 얻기
     Object principal = authentication.getPrincipal();

@@ -189,6 +189,13 @@ public class LawyerController {
             new ResponseStatusException(HttpStatus.NOT_FOUND,
                 "변호사를 찾을 수 없습니다. id=" + lawyerId));
 
+    if (lawyer.getCertificationStatus() != CertificationStatus.APPROVED) {
+      throw new ResponseStatusException(
+          HttpStatus.NOT_FOUND,
+          "승인된 변호사를 찾을 수 없습니다. id=" + lawyerId
+      );
+    }
+
     // 3) DTO 변환 후 응답
     return ResponseEntity.ok(LawyerSearchDto.from(lawyer));
   }
