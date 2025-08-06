@@ -34,9 +34,14 @@ import MeetingRoom from '@/features/videoconference/MeetingRoom.vue';
 import ChatbotView from '@/features/chatting/ChatbotView.vue';
 import RealtimeChatView from '@/features/chatting/RealtimeChatView.vue';
 import RoomManager from '@/features/admin/RoomManager.vue';
+
+//관리자
 import LawyerStatusManager from '@/features/admin/LawyerStatusManager.vue';
 import AdminClients from '@/features/admin/AdminClients.vue';
 import AdminLayout from '@/features/admin/AdminLayout.vue';
+import AdminLogin from '@/features/admin/AdminLogin.vue';
+import { useAuthStore } from '@/stores/auth';
+import LawyerCertifications from '@/features/admin/LawyerCertifications.vue';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -169,6 +174,7 @@ const router = createRouter({
      {
       path: '/admin',
       component: AdminLayout, // 모든 /admin/* 경로의 부모 레이아웃 역할
+      meta: { requiresAdmin: true },
       children: [
         {
           // /admin 경로로 직접 접속 시, 변호사 관리 페이지로 자동 이동시킵니다.
@@ -195,11 +201,61 @@ const router = createRouter({
           path: 'rooms/manage',
           name: 'admin-room-management', // 고유한 이름
           component: RoomManager
+        },
+        {
+          path: 'lawyers/cert',
+          name: 'admin-lawyer-certificate',
+          component: LawyerCertifications
+
+        },
+        {
+          // 화상 상담방 강제 종료 페이지
+          // 경로: /admin/rooms/manage
+          path: 'login',
+          name: 'admin-login', // 고유한 이름
+          component: AdminLogin,
+          meta: { requiresAdmin: false }
         }
       ]
     },
 
   ],
 })
+
+router.beforeEach((to, from, next) => {
+  const authStore = useAuthStore();
+  const isAdminLoggedIn = authStore.isLoggedIn && authStore.userType === 'ADMIN';
+
+  // 1. 접근하려는 경로가 /admin 으로 시작하는지 확인합니다.
+  if (to.path.startsWith('/admin')) {
+
+    // 2. 그중에서 /admin/login 페이지인 경우를 따로 처리합니다.
+    if (to.name === 'admin-login') {
+      // 2-1. 이미 로그인한 관리자가 로그인 페이지에 접근하면
+      if (isAdminLoggedIn) {
+        // 관리자 메인 페이지로 보냅니다.
+        next({ name: 'admin-lawyer-management' });
+      } else {
+        // 2-2. 로그인이 안 된 사용자라면 정상적으로 로그인 페이지를 보여줍니다.
+        next();
+      }
+    }
+    // 3. /admin/login 을 제외한 다른 모든 /admin/* 페이지의 경우
+    else {
+      // 3-1. 관리자로 로그인 되어 있다면 정상적으로 페이지를 보여줍니다.
+      if (isAdminLoggedIn) {
+        next();
+      } else {
+        // 3-2. 로그인 되어있지 않다면 alert를 띄우고 로그인 페이지로 보냅니다.
+        alert('관리자 로그인이 필요합니다.');
+        next({ name: 'admin-login' });
+      }
+    }
+  }
+  // 4. /admin 으로 시작하지 않는 모든 다른 페이지는 자유롭게 접근을 허용합니다.
+  else {
+    next();
+  }
+});
 
 export default router

@@ -100,22 +100,14 @@ import { useRouter } from 'vue-router'
 import axios from '@/lib/axios'
 import ApplicationDetail from '@/features/profile/user/ApplicationDetail.vue'
 import { Smile, MoveRight } from 'lucide-vue-next'
+import { TAG_MAP } from '@/constants/lawyerTags'
 
 const appointments = ref([])
 const defaultImage = '/default-profile.png'
 const router = useRouter()
 const showDetailModal = ref(false)
 const selectedApplicationData = ref(null)
-const tagMap = {
-  1: '이혼',
-  2: '형사',
-  3: '교통사고',
-  4: '음주운전',
-  5: '부동산',
-  6: '민사',
-  7: '형법',
-  8: '노동'
-}
+const tagMap = TAG_MAP
 
 const formatFullDateTime = (datetimeStr) => {
   const date = new Date(datetimeStr)

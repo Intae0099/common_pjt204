@@ -80,7 +80,7 @@ const approveLawyer = async (lawyerId) => {
   processingIds.value.add(lawyerId);
 
   try {
-    await instance.patch(`/api/admin/lawyers/${lawyerId}/approve`, {
+    await instance.patch(`/api/admin/${lawyerId}/approve`, {
       certificationStatus: "APPROVED"
     });
     alert(`변호사(ID: ${lawyerId})가 성공적으로 승인되었습니다.`);
@@ -107,7 +107,7 @@ const rejectLawyer = async (lawyerId) => {
 
   try {
     // API 명세가 /api/adimin/... 으로 되어있어 /api/admin/...으로 수정하여 요청합니다.
-    await instance.patch(`/api/admin/lawyers/${lawyerId}/reject`, {
+    await instance.patch(`/api/admin/${lawyerId}/reject`, {
       certificationStatus: "REJECTED"
     });
     alert(`변호사(ID: ${lawyerId})가 거절 처리되었습니다.`);

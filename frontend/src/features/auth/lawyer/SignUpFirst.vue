@@ -130,7 +130,7 @@ export default {
           loginEmail: this.form.loginEmail
         });
 
-        if (res.data.isAvailable) {
+        if (res.data.isAvailable === 'true') {
           alert('사용 가능한 이메일입니다.');
           this.isEmailChecked = true;
           this.emailDisabled = true;

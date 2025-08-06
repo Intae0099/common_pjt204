@@ -12,6 +12,9 @@
             <router-link :to="{ name: 'admin-clients' }">전체 회원 목록</router-link>
           </li>
           <li>
+            <router-link :to="{ name: 'admin-lawyer-certificate' }">전체 변호사 목록</router-link>
+          </li>
+          <li>
             <router-link :to="{ name: 'admin-room-management' }">상담방 관리</router-link>
           </li>
         </ul>
