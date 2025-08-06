@@ -106,7 +106,7 @@ const selectedTags = ref([])
 
 const sortOption = ref('name');  // 기본값 '이름순'
 
-const isLawyer = localStorage.getItem('user_type') === 'LAWYER' // JWT 파싱 or 저장된 사용자 정보 이용
+const isLawyer = localStorage.getItem('userType') === 'LAWYER' // JWT 파싱 or 저장된 사용자 정보 이용
 
 const tagMap = TAG_MAP
 
@@ -174,7 +174,7 @@ const toggleShowTags = (lawyerId) => {
 }
 
 const goToReservation = (lawyer) => {
-  const userType = localStorage.getItem('user_type')
+  const userType = localStorage.getItem('userType')
   if (!userType) {
     alert('로그인이 필요한 기능입니다. 로그인 페이지로 이동합니다.')
     router.push('/login') // 로그인 라우트 이름에 맞게 수정
