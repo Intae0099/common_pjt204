@@ -1,6 +1,6 @@
 package com.B204.lawvatar_backend.user.lawyer.service;
 
-import com.B204.lawvatar_backend.common.entity.Tag;
+import com.B204.lawvatar_backend.common.tag.entity.Tag;
 import com.B204.lawvatar_backend.common.util.JwtUtil;
 import com.B204.lawvatar_backend.user.auth.repository.RefreshTokenRepository;
 import com.B204.lawvatar_backend.user.auth.service.RefreshTokenService;
@@ -12,18 +12,15 @@ import com.B204.lawvatar_backend.user.lawyer.entity.Lawyer;
 import com.B204.lawvatar_backend.user.lawyer.entity.LawyerTag;
 import com.B204.lawvatar_backend.user.lawyer.repository.LawyerRepository;
 import com.B204.lawvatar_backend.user.lawyer.repository.LawyerTagRepository;
-import com.B204.lawvatar_backend.common.repository.TagRepository;
+import com.B204.lawvatar_backend.common.tag.repository.TagRepository;
 import jakarta.persistence.EntityNotFoundException;
 import java.time.Duration;
 import java.util.Base64;
 import java.util.List;
 import java.util.stream.Collectors;
-import org.apache.coyote.BadRequestException;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.http.ResponseCookie;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.AuthorityUtils;
