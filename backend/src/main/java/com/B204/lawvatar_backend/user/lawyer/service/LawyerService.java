@@ -231,22 +231,26 @@ public class LawyerService implements UserDetailsService {
         ? Sort.by(Direction.ASC, "name")
         : Sort.by(Direction.DESC, "consultationCount");
 
+    List<Lawyer> lawyers ;
     if (hasTags && hasSearch) {
       // 모든 태그 + 이름 검색
-      return lawyerRepo.findByAllTagIdsAndNameContainingIgnoreCase(
+      lawyers = lawyerRepo.findByAllTagIdsAndNameContainingIgnoreCase(
           tagIds, tagIds.size(), search, sort);
     }
-    if (hasTags) {
+    else if (hasTags) {
       // 모든 태그만
-      return lawyerRepo.findByAllTagIds(tagIds, tagIds.size(), sort);
+      lawyers = lawyerRepo.findByAllTagIds(tagIds, tagIds.size(), sort);
     }
-    if (hasSearch) {
+    else if (hasSearch) {
       // 이름만 검색
-      return lawyerRepo.findByNameContainingIgnoreCase(search, sort);
+      lawyers = lawyerRepo.findByNameContainingIgnoreCase(search, sort);
     }
     // 둘 다 없으면 전체
-    return lawyerRepo.findAll(sort);
+    else lawyers =  lawyerRepo.findAll(sort);
 
+    return lawyers.stream()
+        .filter(l -> l.getCertificationStatus() == CertificationStatus.APPROVED)
+        .toList();
   }
 
   public Lawyer rejectLawyer(Long id) {
