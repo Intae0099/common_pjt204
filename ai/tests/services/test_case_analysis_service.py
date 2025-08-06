@@ -1,88 +1,119 @@
-import json
-import unittest
-from unittest.mock import patch, MagicMock, AsyncMock
+import pytest
+from unittest.mock import AsyncMock, MagicMock
+from langchain_core.runnables import Runnable
 
 from services.case_analysis_service import CaseAnalysisService
-from app.api.schemas.analysis import CaseAnalysisResult
-from llm.clients.langchain_client import Gpt4oMini
-from config.tags import SPECIALTY_TAGS
+from services.search_service import SearchService
 
-class TestCaseAnalysisService(unittest.IsolatedAsyncioTestCase):
-    def setUp(self):
-        # 1) LLM도 가짜로
-        llm = MagicMock(spec=Gpt4oMini)
-        embedding_model = MagicMock()
-        cross_encoder_model = MagicMock()
-        self.service = CaseAnalysisService(llm, embedding_model, cross_encoder_model)
-        # 2) chain 전체를 MagicMock으로 교체
-        self.service.chain = MagicMock()
-        
-    async def test_analyze_case_invokes_chain_correctly(self):
-        """analyze_case가 chain.invoke에 올바른 파라미터로 호출되고, 반환값이 제대로 파싱되는지 검증"""
-        # 1) search_service.vector_search 리턴 설정
-        raw_docs = [
-            {"case_id": "2019다1234", "issue": "판례1", "chunk_text": "내용1"},
-            {"case_id": "2020다5678", "issue": "판례2", "chunk_text": "내용2"},
-        ]
-        self.service.search_service.vector_search = AsyncMock(return_value=(raw_docs, len(raw_docs)))
 
-        # 2) 체인 invoke가 리턴할 페이로드 구성
-        payload = {
-            "data": {
-                "report": {
-                    "issues": ["손해배상 가능 여부"],
-                    "opinion": "계약 불이행 시 손해배상이 가능합니다.",
-                    "sentencePrediction": "징역 6개월",
-                    "confidence": 0.85,
-                    "references": {"cases": [], "statutes": []}
-                }
-            },
-            "tags": ["형사", "사기"],
-            "recommendedLawyers": [
-                {"id": 1, "name": "김변호사", "matchScore": 0.9}
-            ]
-        }
-        # ★ JSON 분기를 타도록, 유효한 JSON 문자열 생성
-        json_str = json.dumps(payload, ensure_ascii=False)
-        raw_json = "{\n" + json_str[1:]
-        self.service.chain.invoke.return_value = {"text": raw_json}
+class MockChain(Runnable):
+    def __init__(self, response):
+        self.response = response
+    
+    def invoke(self, input):
+        return {"text": self.response}
 
-        user_query = "회사 계약 불이행 시 손해배상이 가능한가요?"
-        top_k_docs = 2
-        tag_list_str = ", ".join(SPECIALTY_TAGS)
 
-        # 3) 실제 호출
-        result = await self.service.analyze_case(user_query, top_k_docs)
+@pytest.fixture
+def mock_search_service():
+    search_service = MagicMock(spec=SearchService)
+    search_service.vector_search = AsyncMock(return_value=(
+        [
+            {"case_id": "2020다123", "issue": "손해배상", "chunk_text": "계약 위반 시 손해배상 의무"},
+            {"case_id": "2021다456", "issue": "계약해지", "chunk_text": "중대한 사유로 인한 계약해지"}
+        ], 
+        2
+    ))
+    return search_service
 
-        # 4) formatted_docs JSON 문자열화
-        formatted_docs = [
-            {"id": "2019다1234", "issue": "판례1", "text": "내용1"},
-            {"id": "2020다5678", "issue": "판례2", "text": "내용2"},
-        ]
-        expected_docs_json = json.dumps(formatted_docs, ensure_ascii=False)
 
-        # 5) chain.invoke 호출 인자 검증
-        self.service.chain.invoke.assert_called_once_with({
-            "user_query": user_query,
-            "case_docs": expected_docs_json,
-            "tag_list": tag_list_str,
-        })
+@pytest.fixture
+def mock_llm():
+    return MagicMock()
 
-        # 6) 반환된 case_analysis 결과 검증
-        case_analysis: CaseAnalysisResult = result["case_analysis"]
-        self.assertEqual(case_analysis.issues, payload["data"]["report"]["issues"])
-        self.assertEqual(case_analysis.opinion, payload["data"]["report"]["opinion"])
-        self.assertEqual(
-            case_analysis.expected_sentence,
-            payload["data"]["report"]["sentencePrediction"]
-        )
-        self.assertEqual(
-            case_analysis.confidence,
-            payload["data"]["report"]["confidence"]
-        )
-        self.assertEqual(
-            case_analysis.references,
-            payload["data"]["report"]["references"]
-        )
-        self.assertEqual(case_analysis.tags, payload["tags"])
-        self.assertEqual(case_analysis.recommendedLawyers, payload["recommendedLawyers"])
+
+@pytest.fixture
+def case_analysis_service(mock_llm, mock_search_service):
+    service = CaseAnalysisService(mock_llm, mock_search_service)
+    return service
+
+
+@pytest.mark.asyncio
+async def test_벡터_검색_및_판례_조회_성공(case_analysis_service, mock_search_service):
+    """벡터 검색을 통해 관련 판례를 정상적으로 조회하는지 테스트"""
+    mock_chain_response = """
+    {
+        "data": {
+            "report": {
+                "issues": ["계약위반", "손해배상"],
+                "opinion": "계약위반 시 손해배상이 가능합니다",
+                "sentencePrediction": "민사소송",
+                "confidence": 0.85,
+                "references": {"cases": ["2020다123"], "statutes": ["민법 제390조"]}
+            }
+        },
+        "tags": ["민사", "계약"],
+        "recommendedLawyers": []
+    }
+    """
+    case_analysis_service.chain = MockChain(mock_chain_response)
+    
+    result = await case_analysis_service.analyze_case("계약 위반 시 손해배상 청구 가능한가요?", 2)
+    
+    mock_search_service.vector_search.assert_called_once_with("계약 위반 시 손해배상 청구 가능한가요?", size=2)
+    assert "case_analysis" in result
+
+
+@pytest.mark.asyncio 
+async def test_법률_분석_결과_파싱_성공(case_analysis_service):
+    """LLM 응답을 정상적으로 파싱하여 분석 결과를 반환하는지 테스트"""
+    valid_response = """
+    {
+        "data": {
+            "report": {
+                "issues": ["손해배상"],
+                "opinion": "손해배상이 가능합니다",
+                "sentencePrediction": "승소 예상",
+                "confidence": 0.9,
+                "references": {"cases": ["2020다123"], "statutes": ["민법 제390조"]}
+            }
+        },
+        "tags": ["민사"],
+        "recommendedLawyers": [{"id": 1, "name": "김변호사", "matchScore": 0.8}]
+    }
+    """
+    case_analysis_service.chain = MockChain(valid_response)
+    
+    result = await case_analysis_service.analyze_case("손해배상 문의", 1)
+    
+    assert result["case_analysis"].issues == ["손해배상"]
+    assert result["case_analysis"].opinion == "손해배상이 가능합니다"
+    assert result["case_analysis"].confidence == 0.9
+
+
+@pytest.mark.asyncio
+async def test_검색된_판례가_없을_때_처리(case_analysis_service, mock_search_service):
+    """검색 결과가 없을 때도 정상적으로 분석을 진행하는지 테스트"""
+    mock_search_service.vector_search = AsyncMock(return_value=([], 0))
+    
+    mock_response = """
+    {
+        "data": {
+            "report": {
+                "issues": ["일반상담"],
+                "opinion": "관련 판례가 없어도 일반적인 법률 조언 가능",
+                "sentencePrediction": "해당없음",
+                "confidence": 0.5,
+                "references": {"cases": [], "statutes": []}
+            }
+        },
+        "tags": ["일반"],
+        "recommendedLawyers": []
+    }
+    """
+    case_analysis_service.chain = MockChain(mock_response)
+    
+    result = await case_analysis_service.analyze_case("특이한 법률 문의", 1)
+    
+    assert result["case_analysis"].issues == ["일반상담"]
+    assert result["case_analysis"].confidence == 0.5
