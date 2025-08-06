@@ -53,7 +53,7 @@ public class ClientController {
     Map<String ,Object> response = new LinkedHashMap<>();
     response.put("clientId", client.getUsername());
     response.put("oauthName", client.getOauthtName());
-    response.put("emial", client.getEmail());
+    response.put("email", client.getEmail());
     response.put("oauthProvider", client.getOauthProvider());
     response.put("oauthIdentifier", client.getOauthIndentifier());
 
