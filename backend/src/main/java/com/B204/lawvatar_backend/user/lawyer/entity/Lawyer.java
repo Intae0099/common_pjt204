@@ -1,6 +1,5 @@
 package com.B204.lawvatar_backend.user.lawyer.entity;
 
-import com.B204.lawvatar_backend.common.entity.Tag;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;

@@ -52,4 +52,6 @@ public interface LawyerRepository extends JpaRepository<Lawyer, Long> {
       Sort sort);
 
   List<Lawyer> findByCertificationStatus(CertificationStatus status);
+
+  List<Lawyer> findByCertificationStatus(CertificationStatus status, Sort sort);
 }

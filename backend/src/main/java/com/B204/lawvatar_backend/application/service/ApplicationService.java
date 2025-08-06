@@ -1,7 +1,6 @@
 package com.B204.lawvatar_backend.application.service;
 
 import com.B204.lawvatar_backend.application.dto.AddApplicationRequest;
-import com.B204.lawvatar_backend.application.dto.GetApplicationResponse;
 import com.B204.lawvatar_backend.application.dto.ModifyApplicationRequest;
 import com.B204.lawvatar_backend.application.entity.Application;
 import com.B204.lawvatar_backend.application.entity.ApplicationTag;
@@ -9,21 +8,17 @@ import com.B204.lawvatar_backend.application.repository.ApplicationRepository;
 import com.B204.lawvatar_backend.application.repository.ApplicationTagRepository;
 import com.B204.lawvatar_backend.appointment.entity.Appointment;
 import com.B204.lawvatar_backend.appointment.repository.AppointmentRepository;
-import com.B204.lawvatar_backend.common.entity.Tag;
-import com.B204.lawvatar_backend.common.repository.TagRepository;
+import com.B204.lawvatar_backend.common.tag.entity.Tag;
+import com.B204.lawvatar_backend.common.tag.repository.TagRepository;
 import com.B204.lawvatar_backend.user.client.entity.Client;
 
 import com.B204.lawvatar_backend.user.client.repository.ClientRepository;
-import org.springframework.http.*;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.NoSuchElementException;
 
 @Service
