@@ -85,7 +85,7 @@ const formatDateTime = (dateStr) => {
 
 const goToApplication = async (applicationId) => {
   showModal.value = true
-  const res = await axios.get(`https://i13b204.p.ssafy.io/api/applications/${applicationId}`)
+  const res = await axios.get(`api/applications/${applicationId}`)
   selectedApplication.value = res.data
   showModal.value = true
 }
@@ -94,8 +94,8 @@ onMounted(async () => {
 
   try {
     const [appointmentRes, lawyerRes] = await Promise.all([
-      axios.get('https://i13b204.p.ssafy.io/api/appointments/me'),
-      axios.get('https://i13b204.p.ssafy.io/api/lawyers/list')
+      axios.get('api/appointments/me'),
+      axios.get('api/lawyers/list')
     ])
 
     appointments.value = appointmentRes.data

@@ -39,6 +39,8 @@
           v-model="selectedDate"
           :inline="true"
           :format="'yyyy.MM.dd'"
+          :min-date="new Date()"
+          :highlighted="[{ date: new Date(), class: 'highlight-today' }]"
         />
       </div>
 
@@ -163,9 +165,19 @@ const goToHistory = () => {
   alert('상담내역 페이지로 이동 예정')
 }
 
-const handleWithdraw = () => {
-  if (confirm('정말 회원 탈퇴하시겠습니까?')) {
-    alert('회원탈퇴 처리 예정')
+const handleWithdraw = async () => {
+  if (!confirm('정말로 회원탈퇴하시겠습니까?')) return
+
+  try {
+    await axios.delete('/api/lawyers/me')  // ✅ API 경로 수정 필요
+    alert('회원탈퇴가 완료되었습니다.')
+    // 로그아웃 처리 및 홈 이동
+    localStorage.removeItem('accessToken')  // JWT 토큰 삭제
+    localStorage.removeItem('user_type')     // 사용자 타입 등도 삭제
+    window.location.href = '/'  // 홈으로 이동
+  } catch (error) {
+    console.error('회원탈퇴 실패:', error)
+    alert('회원탈퇴에 실패했습니다. 다시 시도해주세요.')
   }
 }
 

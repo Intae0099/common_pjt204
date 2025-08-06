@@ -1,88 +1,89 @@
 <template>
-  <div v-if="user && appointments.length !== null" class="mypage-container">
-    <div class="text-wrapper-4">마이페이지</div>
-
-    <!-- 프로필 카드 -->
-    <div class="element">
-      <div class="div">
-        <div class="overlap">
-          <div class="text-wrapper">{{ user.oauthName }}</div>
-          <div class="ellipse"></div>
-          <div class="text-wrapper">{{ user.email }}</div>
-        </div>
-
-        <hr />
-
-        <!-- 예약 일정 -->
-        <div class="text-wrapper-5">예약일정</div>
-        <div v-if="filteredAppointments.length === 0" class="no-reservations">
-          예약된 일정이 없습니다.
-        </div>
-        <div v-else>
-          <div
-            v-for="appt in filteredAppointments"
-            :key="appt.appointmentId"
-            class="overlap-group"
-          >
-            <div class="text-wrapper-6">
-              {{ lawyerMap[String(appt.lawyerId)] || '알 수 없음' }} 변호사
-            </div>
-            <div class="text-wrapper-7">{{ formatDateTime(appt.startTime) }}</div>
-            <div class="east">
-              <!-- <img class="vector" alt="Vector" src="@/assets/images/vector5.svg" /> -->
-            </div>
-          </div>
-          <hr />
-        </div>
-
-        <!-- 상담신청서 보관함 -->
-        <div class="text-wrapper-8">상담신청서 보관함</div>
-        <div v-for="form in applications" :key="form.applicationId" class="overlap-group">
-          <div class="text-wrapper-6">{{ form.title }}</div>
-          <div class="text-wrapper-7">{{ form.createdAt }}</div>
-          <div class="east">
-            <!-- <img class="vector" alt="Vector" src="@/assets/images/vector5.svg" /> -->
+  <div v-if="user && appointments !== null" class="mypage-container">
+    <!-- ✅ 프로필 영역 -->
+    <section class="profile-section">
+      <div class="profile-box">
+        <div class="profile-left">
+          <div class="profile-info">
+            <h3>{{ user.oauthName }}</h3>
+            <p class="email">이메일: {{ user.email || '등록된 이메일이 없습니다.' }}</p>
           </div>
         </div>
-        <hr />
-
-        <!-- 상담내역 -->
-        <div class="text-wrapper-9" @click="$router.push('/consult-history')">상담내역</div>
-        <hr />
-
-        <!-- 회원탈퇴 -->
-        <div class="text-wrapper-10">회원탈퇴</div>
+        <button class="setting-btn" @click="$router.push('/user/update')">계정설정</button>
       </div>
-    </div>
+    </section>
+
+    <!-- ✅ 예약 일정 -->
+    <section class="appointment-section">
+      <h4>예약된 상담</h4>
+      <ul v-if="filteredAppointments.length > 0" class="appointment-list">
+        <li
+          v-for="appt in filteredAppointments"
+          :key="appt.appointmentId"
+          class="appointment-item"
+        >
+          <div class="appt-info">
+            <div>
+              <p class="lawyer-name">{{ lawyerMap[String(appt.lawyerId)] || '알 수 없음' }} 변호사</p>
+              <p class="appt-time">{{ formatDateTime(appt.startTime) }}</p>
+            </div>
+          </div>
+        </li>
+      </ul>
+      <p v-else class="no-appt">예약된 일정이 없습니다.</p>
+    </section>
+
+    <!-- ✅ 상담신청서 보관함 -->
+    <section class="application-section">
+      <h4>상담신청서 보관함</h4>
+      <ul v-if="applications.length > 0" class="application-list">
+        <li
+          v-for="form in applications"
+          :key="form.applicationId"
+          class="appointment-item"
+        >
+          <div class="appt-info">
+            <div>
+              <p class="form-title">{{ form.title }}</p>
+              <p class="appt-time">{{ formatDateTime(form.createdAt) }}</p>
+            </div>
+          </div>
+        </li>
+      </ul>
+      <p v-else class="no-appt">상담신청서가 없습니다.</p>
+    </section>
+
+    <!-- ✅ 기타 메뉴 -->
+    <section class="menu-section">
+      <div class="menu-item" @click="$router.push('/consult-history')">
+        상담내역 보기
+        <span class="arrow">›</span>
+      </div>
+      <div class="menu-item" @click="handleWithdraw">
+        회원탈퇴
+        <span class="arrow">›</span>
+      </div>
+    </section>
   </div>
 
-  <div v-else>
-    마이페이지 정보를 불러오는 중입니다...
-  </div>
+  <div v-else class="loading">마이페이지 정보를 불러오는 중입니다...</div>
 </template>
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import axios from '@/lib/axios'
 
-// 사용자 정보
 const user = ref(null)
-
-// 예약 정보
 const appointments = ref([])
 const lawyerMap = ref({})
-
-// 상담신청서 목록
 const applications = ref([])
 
-// 필터링된 예약 정보 (오늘 이후)
 const filteredAppointments = computed(() => {
   const now = new Date()
   return appointments.value.filter(appt => new Date(appt.startTime) > now)
 })
 
-// 날짜 형식 함수
-const formatDateTime = dateStr => {
+const formatDateTime = (dateStr) => {
   const date = new Date(dateStr)
   return date.toLocaleString('ko-KR', {
     year: 'numeric',
@@ -93,8 +94,6 @@ const formatDateTime = dateStr => {
   })
 }
 
-
-// API 호출
 onMounted(async () => {
   try {
     const [userRes, appointmentRes, formRes, lawyerListRes] = await Promise.all([
@@ -103,7 +102,6 @@ onMounted(async () => {
       axios.get('/api/applications/me'),
       axios.get('/api/lawyers/list'),
     ])
-
     user.value = userRes.data
     appointments.value = appointmentRes.data
     applications.value = formRes.data
@@ -114,42 +112,160 @@ onMounted(async () => {
     })
     lawyerMap.value = map
 
+    console.log('user.value.email:', user.value?.email)
   } catch (err) {
     console.error('마이페이지 데이터 로딩 실패:', err)
   }
-  console.log('lawyerMap:', JSON.stringify(lawyerMap.value, null, 2))
-  console.log('appointments:', JSON.stringify(appointments.value, null, 2))
-
-
 })
+
+const handleWithdraw = async () => {
+  if (!confirm('정말로 회원탈퇴하시겠습니까? 탈퇴 후 복구할 수 없습니다.')) return
+
+  try {
+    await axios.delete('/api/clients/me')  // ✅ 탈퇴 API 호출
+    alert('회원탈퇴가 완료되었습니다.')
+
+    // JWT 토큰 및 사용자 타입 제거
+    localStorage.removeItem('accessToken')
+    localStorage.removeItem('user_type')
+
+    // 홈으로 이동
+    window.location.href = '/'
+  } catch (error) {
+    console.error('회원탈퇴 실패:', error)
+    alert('탈퇴 중 오류가 발생했습니다. 다시 시도해주세요.')
+  }
+}
+
 </script>
 
 <style scoped>
 .mypage-container {
-  padding: 1rem;
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 100px 20px;
+  font-family: 'Noto Sans KR', sans-serif;
 }
 
-.no-reservations {
-  padding: 20px;
-  text-align: center;
-  color: #888;
+/* 프로필 */
+.profile-section {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin-bottom: 60px;
 }
-
-/* 예시: 필요한 스타일은 추가로 보완하세요 */
-.text-wrapper-4 {
-  font-size: 1.5rem;
-  font-weight: bold;
-  margin-bottom: 1rem;
-}
-.overlap {
+.profile-box {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 1rem;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 20px;
+  width: 100%;
+  max-width: 100%;
+  margin-top: 30px;
 }
-.text-wrapper-6 {
+.profile-left {
+  display: flex;
+  align-items: center;
+}
+.profile-img {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-right: 16px;
+}
+.profile-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.profile-info h3 {
+  font-size: 1.4rem;
+  font-weight: bold;
+  margin-bottom: 4px;
+}
+.email {
+  color: #999;
+  font-size: 0.9rem;
+}
+.setting-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  font-size: 0.85rem;
+  color: #888;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+/* 예약/신청서 공통 */
+.appointment-section,
+.application-section {
+  margin-bottom: 40px;
+}
+h4 {
+  font-size: 1.2rem;
+  margin-bottom: 16px;
   font-weight: bold;
 }
-.text-wrapper-7 {
-  color: gray;
+.appointment-list,
+.application-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.appointment-item {
+  border: 1px solid #e0e0e0;
+  background: #f9f9f9;
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+.appt-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.lawyer-name,
+.form-title {
+  font-size: 1rem;
+  font-weight: bold;
+}
+.appt-time {
+  font-size: 0.95rem;
+  color: #333;
+  margin-top: 4px;
+}
+.no-appt {
+  margin-top: 20px;
+  color: #888;
+  text-align: center;
+}
+
+/* 메뉴 */
+.menu-section {
+  border-top: 1px solid #e0e0e0;
+}
+.menu-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 0;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.arrow {
+  font-size: 1.2rem;
+  color: #888;
+}
+.loading {
+  text-align: center;
+  margin-top: 40px;
 }
 </style>
