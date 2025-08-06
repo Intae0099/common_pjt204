@@ -1,5 +1,8 @@
 package com.B204.lawvatar_backend.common.tag.controller;
 
+import com.B204.lawvatar_backend.common.tag.dto.RecommendLawyerRequest;
+import com.B204.lawvatar_backend.common.tag.dto.RecommendLawyerResponse;
+import com.B204.lawvatar_backend.common.tag.dto.RecommendedLawyerDto;
 import com.B204.lawvatar_backend.common.tag.dto.TagResolveRequest;
 import com.B204.lawvatar_backend.common.tag.dto.TagResolveResponse;
 import com.B204.lawvatar_backend.common.tag.service.TagService;
@@ -26,11 +29,8 @@ public class TagController {
       @RequestBody @Valid TagResolveRequest request
   ) {
     List<Long> tagIds;
-
     try{
-
       tagIds = tagService.resolveTagIds(request.getTags());
-
     }catch (NoSuchElementException e){
       return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
     }
@@ -38,7 +38,15 @@ public class TagController {
     TagResolveResponse.Data data = new TagResolveResponse.Data(tagIds);
     TagResolveResponse response = new TagResolveResponse(data);
     return ResponseEntity.ok(response);
+  }
 
+  @PostMapping("/recommend")
+  public ResponseEntity<RecommendLawyerResponse> recommendLawyer(
+    @Valid @RequestBody RecommendLawyerRequest req
+  ){
+    List<RecommendedLawyerDto> list = tagService.recommendLawyers(req.getTagIds(), req.getLimit());
+    RecommendLawyerResponse.Data data = new RecommendLawyerResponse.Data(list);
+    return ResponseEntity.ok(new RecommendLawyerResponse(data));
   }
 
 }
