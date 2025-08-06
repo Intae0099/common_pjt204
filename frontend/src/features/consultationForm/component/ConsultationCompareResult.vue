@@ -58,7 +58,7 @@
       </div>
       <div class="right-buttons">
         <button class="copy-btn" @click="copyToUserForm">복사해서 수정하기</button>
-        <button class="submit-btn" @click="emit('submit')">상담신청서 저장하기</button>
+        <button class="submit-btn" @click="emit('submit', localUserData)">상담신청서 저장하기</button>
       </div>
     </div>
   </div>
@@ -94,7 +94,7 @@ const copyToUserForm = () => {
   localUserData.value.recommendedQuestions = [...props.aiData.recommendedQuestions]
   questionsInput.value = props.aiData.recommendedQuestions.join(', ')
 }
-
+/*
 const handleSubmit = async (formData) => {
   const applicationId = route.params.id
 
@@ -109,7 +109,7 @@ const handleSubmit = async (formData) => {
     alert('저장 실패')
   }
 }
-
+*/
 
 </script>
 

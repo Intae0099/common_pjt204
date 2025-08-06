@@ -37,13 +37,14 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import axios from '@/lib/axios'
+import axios, { fastapiApiClient }  from '@/lib/axios'
 
 import LayoutDefault from '@/components/layout/LayoutDefault.vue'
 import ConsultationFomLayout from '@/components/layout/ConsultationFomLayout.vue'
 import ConsultationForm from './component/ConsultationForm.vue'
 import ConsultationCompareResult from './component/ConsultationCompareResult.vue'
 import SaveAlertModal from './component/SaveAlertModal.vue'
+import { TAG_MAP } from '@/constants/lawyerTags'
 
 const isLoading = ref(true)
 const showCompareView = ref(false)
@@ -71,42 +72,105 @@ const handleFormSubmit = async (formData) => {
   userInput.value = formData
 
   try {
-    const res = await axios.post('api/consult/application', {
+    const res = await fastapiApiClient.post('/consult', {
       case: {
         title: formData.title,
-        summary: formData.summary,
+        summary: formData.summary || '',
         fullText: formData.content,
       },
       desiredOutcome: formData.outcome,
       weakPoints: formData.disadvantage,
     })
 
-    const app = res.data.data.application
-    aiResult.value = {
-      title: app.data.case.title,
-      summary: app.data.case.summary,
-      fullText: app.data.case.fullText,
-      outcome: app.desiredOutcome,
-      disadvantage: app.weakPoints,
-      recommendedQuestions: JSON.parse(res.data.data.questions),
-      tags: res.data.data.tags, // 실제 저장용에 사용
+     if (res.data.success) {
+      const responseData = res.data.data;
+      const applicationData = responseData.application;
+
+      aiResult.value = {
+        title: applicationData.case.title,
+        summary: applicationData.case.summary,
+        fullText: applicationData.case.fullText,
+        outcome: applicationData.desiredOutcome,
+        disadvantage: applicationData.weakPoints,
+        recommendedQuestions: responseData.questions,
+        tags: responseData.tags,
+      }
+      showCompareView.value = true
+    } else {
+      // API 응답이 success: false 일 경우 에러 처리
+      throw new Error(res.data.error.message || 'AI 상담서 생성에 실패했습니다.')
     }
 
     showCompareView.value = true
   } catch (err) {
     console.error('AI 상담서 생성 실패:', err)
+    alert(err.message || 'AI 상담서 생성 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.')
   } finally {
     isLoading.value = false
   }
 }
+const handleFinalSubmit = async (formData) => {
+  const hasPreviousApplication = applicationId.value !== null;
+  const tagNamesFromAI = aiResult.value.tags || [];
 
+  // ★★★ 핵심 변환 로직 ★★★
+  const tagIds = tagNamesFromAI
+    .map(tagName => {
+      // 각 태그 이름(tagName)에 해당하는 객체를 TAG_MAP에서 찾습니다.
+      return TAG_MAP.find(tagObject => tagObject.name === tagName);
+    })
+    .filter(foundTag => foundTag) // TAG_MAP에 없어서 못 찾은 경우(undefined)를 배열에서 제거합니다.
+    .map(foundTag => foundTag.id); // 찾아낸 객체에서 id 값만 추출하여 새로운 배열을 만듭니다.
+                                    // 결과: [7, 9]
+  // 서버로 보낼 데이터를 payload 변수로 먼저 만듭니다.
+   const payload = {
+    title: formData.title,
+    summary: formData.summary || '',
+    content: formData.content,
+    outcome: formData.outcome,
+    disadvantage: formData.disadvantage,
+    recommendedQuestion: {
+      additionalProp1: formData.recommendedQuestions[0] || '',
+      additionalProp2: formData.recommendedQuestions[1] || '',
+      additionalProp3: formData.recommendedQuestions[2] || '',
+    },
+    tags: tagIds, // 변환된 숫자 ID 배열을 payload에 담습니다.
+  };
+
+  // ★ 디버깅 팁: 데이터를 보내기 전에 콘솔에서 확인해보세요!
+  console.log('Converted Tag IDs:', tagIds);
+  console.log('Final payload being sent:', JSON.stringify(payload, null, 2));
+
+  try {
+    if (hasPreviousApplication) {
+      // hasPreviousApplication 로직에서는 PUT 또는 PATCH를 사용하는 것이 일반적이지만,
+      // 현재 로직에 따라 POST를 유지합니다. API 주소에 ID를 포함해야 할 수 있습니다.
+      await axios.patch(`api/applications/${applicationId.value}`, payload); // 예시: ID를 URL에 포함
+    } else {
+      const res = await axios.post('api/applications?isCompleted=true', payload);
+      applicationId.value = res.data.applicationId;
+    }
+
+    showSaveModal.value = true;
+  } catch (err) {
+    console.error('상담서 저장 실패:', err);
+    // 서버에서 오는 에러 메시지가 있다면 보여주는 것이 더 좋습니다.
+    const errorMessage = err.response?.data?.message || '저장에 실패했습니다.';
+    alert(errorMessage);
+  }
+};
+/*
 const handleFinalSubmit = async (formData) => {
   const hasPreviousApplication = applicationId.value !== null
 
   try {
     if (hasPreviousApplication) {
-      await axios.patch(`api/applications/${applicationId.value}`, {
-        ...formData,
+      await axios.post(`api/applications`, {
+        title: formData.title,
+        summary: formData.summary,
+        content: formData.content, // Spring Boot는 content를 받습니다.
+        outcome: formData.outcome,
+        disadvantage: formData.disadvantage,
         recommendedQuestion: {
           question1: formData.recommendedQuestions[0] || '',
           question2: formData.recommendedQuestions[1] || '',
@@ -135,7 +199,7 @@ const handleFinalSubmit = async (formData) => {
     alert('저장에 실패했습니다.')
   }
 }
-
+*/
 </script>
 
 <style scoped>
