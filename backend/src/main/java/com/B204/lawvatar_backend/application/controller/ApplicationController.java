@@ -12,7 +12,9 @@ import com.B204.lawvatar_backend.common.principal.LawyerPrincipal;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -36,47 +38,35 @@ public class ApplicationController {
      * @return 상담신청서 저장 결과를 응답
      */
     @PostMapping
+    @PreAuthorize("hasRole('CLIENT')")
     // 이 메서드의 isCompleted 쿼리 스트링은 true/false로만 분기처리할 거라서 그냥 boolean으로 받음
     public ResponseEntity<AddApplicationResponse> addApplicaiton (
-            Authentication authentication,
+            @AuthenticationPrincipal ClientPrincipal clientPrincipal,
             @RequestParam boolean isCompleted,
-            @RequestBody AddApplicationRequest request) throws Exception {
+            @RequestBody AddApplicationRequest request) {
 
-        // Principal 객체 얻기
-        Object principal = authentication.getPrincipal();
+        // 상담신청서 Service에 가서 상담신청서 DB에 저장하고 id값 리턴받기
+        Long applicationId = null;
 
-        // Principal 객체 의뢰인인지 검사하고 맞으면 비즈니스 로직 진행, 아니면 에러 응답
-        if(principal instanceof ClientPrincipal clientPrincipal) {
-            // 상담신청서 Service에 가서 상담신청서 DB에 저장하고 id값 리턴받기
-            Long applicationId = null;
-            try {
-                applicationId = applicationService.addApplication(clientPrincipal.getId(), isCompleted, request);
-            } catch (NoSuchElementException e) {
-                AddApplicationResponse addApplicationResponse = AddApplicationResponse.builder()
-                        .success(false)
-                        .message(e.getMessage())
-                        .build();
-
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(addApplicationResponse);
-            }
-
-            // 응답 dto 만들고 응답
-            AddApplicationResponse addApplicationResponse = AddApplicationResponse.builder()
-                    .success(true)
-                    .message("[ApplicationController - 001] 상담경위서(신청서) 저장 성공")
-                    .data(AddApplicationResponse.Data.builder().applicationId(applicationId).build())
-                    .build();
-
-            return ResponseEntity.status(HttpStatus.CREATED).body(addApplicationResponse);
-
-        } else {
+        try {
+            applicationId = applicationService.addApplication(clientPrincipal.getId(), isCompleted, request);
+        } catch (NoSuchElementException e) {
             AddApplicationResponse addApplicationResponse = AddApplicationResponse.builder()
                     .success(false)
-                    .message("[ApplicationController - 002] 의뢰인만 사용 가능한 기능입니다.")
+                    .message(e.getMessage())
                     .build();
 
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(addApplicationResponse);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(addApplicationResponse);
         }
+
+        // 응답 dto 만들고 응답
+        AddApplicationResponse addApplicationResponse = AddApplicationResponse.builder()
+                .success(true)
+                .message("[ApplicationController - 001] 상담경위서(신청서) 저장 성공")
+                .data(AddApplicationResponse.Data.builder().applicationId(applicationId).build())
+                .build();
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(addApplicationResponse);
     }
 
     /**
@@ -85,32 +75,26 @@ public class ApplicationController {
      * @return  상담신청서 목록조회 결과를 응답
      */
     @GetMapping("/me")
+    @PreAuthorize("hasRole('CLIENT')")
     // isCompleted를 아예 붙이지 않는 경우까지 고려하기 때문에, required 속성값 false로 주고, Boolean 래퍼 객체로 받음
-    public ResponseEntity<GetMyApplicationListResponse> getMyApplicationList(Authentication authentication, @RequestParam(required = false) Boolean isCompleted) throws Exception {
+    public ResponseEntity<GetMyApplicationListResponse> getMyApplicationList(
+        @AuthenticationPrincipal ClientPrincipal clientPrincipal,
+        @RequestParam(required = false) Boolean isCompleted
+    ) {
+        // 1) 자신의 신청서 목록 조회
+        List<Application> applicationList =
+            applicationService.getMyApplicationList(clientPrincipal.getId(), isCompleted);
 
-        // Principal 객체얻기
-        Object principal = authentication.getPrincipal();
+        // 2) DTO 변환
+        List<GetMyApplicationListResponse.Data.ApplicationDto> result =
+            applicationList.stream()
+                .map(application -> {
+                    // 이 Application의 태그 ID만 뽑아서
+                    List<Long> tags = application.getTags().stream()
+                        .map(at -> at.getTag().getId())
+                        .toList();
 
-        // 요청한 사용자가 의뢰인인지 검사하고 맞다면 비즈니스 로직 진행, 아니면 에러 응답
-        if (principal instanceof ClientPrincipal clientPrincipal) {
-
-            // 의뢰인이 맞다면 자신의 상담경위서 or 신청서 전체조회
-            List<Application> applicationList = applicationService.getMyApplicationList(clientPrincipal.getId(), isCompleted);
-
-            // 반환할 DTO 만들고 응답
-            // 태그 목록은 따로 만들기
-            List<Long> tags = new ArrayList<>();
-            for(Application application : applicationList) {
-                for(ApplicationTag applicationTag : application.getTags()) {
-                    tags.add(applicationTag.getTag().getId());
-                }
-            }
-
-            // application 목록 dto로 변환하고 응답
-            List<GetMyApplicationListResponse.Data.ApplicationDto> result = new ArrayList<>();
-
-            for(Application application : applicationList) {
-                GetMyApplicationListResponse.Data.ApplicationDto applicationDto = GetMyApplicationListResponse.Data.ApplicationDto.builder()
+                    return GetMyApplicationListResponse.Data.ApplicationDto.builder()
                         .applicationId(application.getId())
                         .clientId(application.getClient().getId())
                         .title(application.getTitle())
@@ -123,27 +107,19 @@ public class ApplicationController {
                         .createdAt(application.getCreatedAt())
                         .tags(tags)
                         .build();
+                })
+                .toList();
 
-                result.add(applicationDto);
-            }
+        // 3) 응답 생성
+        GetMyApplicationListResponse response = GetMyApplicationListResponse.builder()
+            .success(true)
+            .message("[ApplicationController - 003] 의뢰인 상담경위서(신청서) 목록 전체조회 성공")
+            .data(GetMyApplicationListResponse.Data.builder()
+                .applicationList(result)
+                .build())
+            .build();
 
-            GetMyApplicationListResponse getMyApplicationResponse = GetMyApplicationListResponse.builder()
-                    .success(true)
-                    .message("[ApplicationController - 003] 의뢰인 상담경위서(신청서) 목록 전체조회 성공")
-                    .data(GetMyApplicationListResponse.Data.builder()
-                            .applicationList(result)
-                            .build())
-                    .build();
-
-            return ResponseEntity.status(HttpStatus.OK).body(getMyApplicationResponse);
-        } else {
-            GetMyApplicationListResponse getMyApplicationListResponse = GetMyApplicationListResponse.builder()
-                    .success(false)
-                    .message("[ApplicationController - 004] 의뢰인만 사용 가능한 기능입니다.")
-                    .build();
-
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(getMyApplicationListResponse);
-        }
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -152,7 +128,10 @@ public class ApplicationController {
      * @return 상담신청서 상세조회 결과를 응답
      */
     @GetMapping("/{applicationId}")
-    public ResponseEntity<GetApplicationResponse> getApplication(Authentication authentication, @PathVariable Long applicationId) throws Exception {
+    public ResponseEntity<GetApplicationResponse> getApplication(
+        Authentication authentication,
+        @PathVariable Long applicationId
+    ) throws Exception {
 
         // Principal 객체얻기
         Object principal = authentication.getPrincipal();
