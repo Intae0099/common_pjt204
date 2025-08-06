@@ -22,7 +22,7 @@ public class AdminService implements UserDetailsService {
 
     return new org.springframework.security.core.userdetails.User(
         admin.getLoginEmail(),
-        admin.getLoginPasswordHash(),
+        admin.getPasswordHash(),
         AuthorityUtils.createAuthorityList("ROLE_ADMIN")
     );
   }

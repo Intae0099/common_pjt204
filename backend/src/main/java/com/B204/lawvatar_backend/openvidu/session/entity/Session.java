@@ -14,7 +14,6 @@ public class Session {
 
     // Field
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(columnDefinition = "int unsigned")
     private Long id;
 
     @OneToOne(fetch = FetchType.LAZY)
@@ -25,7 +24,7 @@ public class Session {
     @JoinColumn(name = "room_id", nullable = false)
     private Room room;
 
-    @Column(columnDefinition = "tinyint unsigned", nullable = false)
-    private int participantCount = 1; // 세션정보가 만들어졌다는 건 참여 인원수가 최소 1명이라는 것
+    @Column(columnDefinition = "tinyint unsigned")
+    private int participantCount;
 
 }

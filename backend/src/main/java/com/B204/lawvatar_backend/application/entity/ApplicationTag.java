@@ -13,7 +13,6 @@ public class ApplicationTag {
 
     // Field
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(columnDefinition = "int unsigned")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)

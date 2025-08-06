@@ -23,7 +23,7 @@ public interface LawyerRepository extends JpaRepository<Lawyer, Long> {
   @Query("""
         SELECT l
           FROM Lawyer l
-          JOIN l.lawyerTagList lt
+          JOIN l.tags lt
          WHERE lt.tag.id IN :tagIds
          GROUP BY l.id
         HAVING COUNT(DISTINCT lt.tag.id) = :tagCount
@@ -39,7 +39,7 @@ public interface LawyerRepository extends JpaRepository<Lawyer, Long> {
   @Query("""
         SELECT l
           FROM Lawyer l
-          JOIN l.lawyerTagList lt
+          JOIN l.tags lt
          WHERE lt.tag.id IN :tagIds
            AND LOWER(l.name) LIKE CONCAT('%', LOWER(:search), '%')
          GROUP BY l.id
