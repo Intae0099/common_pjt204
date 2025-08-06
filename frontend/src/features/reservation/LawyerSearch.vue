@@ -112,6 +112,9 @@ const tagMap = TAG_MAP
 
 const getTagName = (id) => {
   const tag = tagMap.find(t => t.id === Number(id))
+  if (!tag) {
+    console.warn('없는 태그 ID:', id)  // 로그로 확인
+  }
   return tag ? tag.name : '알 수 없음'
 }
 // 태그 선택 토글
@@ -144,6 +147,7 @@ const applyFilters = async () => {
     }
 
     const res = await axios.get(`/api/lawyers/list?${params.toString()}`)
+    console.log('API 응답 결과:', res.data)
 
     lawyers.value = res.data.map(l => ({
       ...l,
@@ -156,7 +160,7 @@ const applyFilters = async () => {
 
 onMounted(() => {
   applyFilters()
-  window.scrollTo(0, 0)   // 페이지 진입 시 최상단 이동
+  window.scrollTo(0, 0)   // 페이지 진입 시 최상단 이동)
 })
 
 const expandedCards = ref([])

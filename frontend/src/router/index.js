@@ -12,6 +12,7 @@ import KakaoCallback from '@/features/auth/user/KakaoCallback.vue'
 import LawyerMyPage from '@/features/profile/lawyer/LawyerMyPage.vue';
 import UserMyPage from '@/features/profile/user/UserMyPage.vue';
 import LawyerProfileUpdate from '@/features/profile/lawyer/LawyerProfileUpdate.vue';
+import UserProfileUpdate from '@/features/profile/user/UserProfileUpdate.vue';
 
 //AI상담
 import AiStep from '@/features/ai_consult/AIStep.vue'
@@ -102,6 +103,11 @@ const router = createRouter({
       path: '/lawyer/update',
       name: 'LawyerProfileUpdate',
       component: LawyerProfileUpdate
+    },
+    {
+      path: '/user/update',
+      name: 'UserProfileUpdate',
+      component: UserProfileUpdate
     },
     {
       path: '/consult-history',
