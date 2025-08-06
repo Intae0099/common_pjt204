@@ -26,6 +26,7 @@ import java.nio.file.attribute.UserPrincipal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Function;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -68,31 +69,43 @@ public class AppointmentController {
       @AuthenticationPrincipal Object principal,
       @RequestParam(value = "status", required = false) AppointmentStatus status
   ) {
-    List<Appointment> appts = List.of();
+    // 1. 사용자 타입 판별
+    final boolean isLawyer = principal instanceof LawyerPrincipal;
 
-    if (principal instanceof LawyerPrincipal lawyerPrincipal) {       // 변호사로 로그인 됐으면
-      Lawyer lawyer = lawyerRepo.findById(lawyerPrincipal.getId())
-          .orElseThrow(() -> new UsernameNotFoundException("변호사 없음: " + lawyerPrincipal.getId()));
-
-      appts = appointmentRepo.findByLawyer(lawyer);
-
-    } else if (principal instanceof ClientPrincipal clientPrincipal) {        // 의뢰인으로 로그인 됐으면
-      Client client = clientRepo.findById(clientPrincipal.getId())
-          .orElseThrow(() -> new UsernameNotFoundException("의뢰인 없음: " + clientPrincipal.getId()));
-
-      appts = appointmentRepo.findByClient(client);
-
+    // 2. 약간의 캐스팅 로직
+    List<Appointment> appts;
+    if (isLawyer) {
+      Long id = ((LawyerPrincipal) principal).getId();
+      appts = appointmentRepo.findByLawyer(
+          lawyerRepo.findById(id)
+              .orElseThrow(() -> new UsernameNotFoundException("변호사 없음: " + id))
+      );
+    } else {
+      Long id = ((ClientPrincipal) principal).getId();
+      appts = appointmentRepo.findByClient(
+          clientRepo.findById(id)
+              .orElseThrow(() -> new UsernameNotFoundException("의뢰인 없음: " + id))
+      );
     }
 
+    // 3. 상태 필터링(Optional)
     if (status != null) {
       appts = appts.stream()
           .filter(a -> a.getAppointmentStatus() == status)
           .toList();
     }
 
+    // 4. 사용할 팩토리 메서드 한 번만 결정
+    Function<Appointment, MyAppointmentDto> mapper =
+        isLawyer
+            ? MyAppointmentDto::fromLawyer
+            : MyAppointmentDto::fromClient;
+
+    // 5. 매핑
     List<MyAppointmentDto> dtoList = appts.stream()
-        .map(MyAppointmentDto::from)
+        .map(mapper)
         .toList();
+
     return ResponseEntity.ok(dtoList);
   }
 

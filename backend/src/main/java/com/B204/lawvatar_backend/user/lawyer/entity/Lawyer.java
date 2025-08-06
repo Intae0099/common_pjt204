@@ -3,6 +3,7 @@ package com.B204.lawvatar_backend.user.lawyer.entity;
 import com.B204.lawvatar_backend.appointment.entity.Appointment;
 import com.B204.lawvatar_backend.openvidu.participant.entity.Participant;
 import com.B204.lawvatar_backend.user.auth.entity.RefreshToken;
+
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;

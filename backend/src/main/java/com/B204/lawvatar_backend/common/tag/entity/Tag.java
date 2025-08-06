@@ -1,4 +1,4 @@
-package com.B204.lawvatar_backend.common.entity;
+package com.B204.lawvatar_backend.common.tag.entity;
 
 import com.B204.lawvatar_backend.application.entity.ApplicationTag;
 import com.B204.lawvatar_backend.user.lawyer.entity.LawyerTag;
