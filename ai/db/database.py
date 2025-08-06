@@ -3,28 +3,24 @@ import psycopg2
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm import declarative_base
-from dotenv import load_dotenv
-import os
-from utils.logger import setup_logger, get_logger
+from typing import Generator
 
-load_dotenv(dotenv_path=os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'config', '.env')) # Load environment variables from .env file
+from config.settings import get_database_settings
+from utils.logger import setup_logger, get_logger
 
 setup_logger()
 logger = get_logger(__name__)
 
-DB_USER = os.getenv("DB_USER")
-DB_PASSWORD = os.getenv("DB_PASSWORD")
-DB_HOST = os.getenv("DB_HOST")
-DB_PORT = os.getenv("DB_PORT")
-DB_NAME = os.getenv("DB_NAME")
+# 데이터베이스 설정 가져오기
+db_settings = get_database_settings()
 
-SQLALCHEMY_DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
-
-engine = create_engine(SQLALCHEMY_DATABASE_URL)
+# SQLAlchemy 설정
+engine = create_engine(db_settings.url)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
-def get_db():
+def get_db() -> Generator:
+    """SQLAlchemy 세션을 반환하는 의존성 주입 함수"""
     db = SessionLocal()
     try:
         yield db
@@ -35,13 +31,10 @@ def get_psycopg2_connection():
     """
     Returns a raw psycopg2 connection.
     """
-    return psycopg2.connect(
-        host=os.getenv("DB_HOST"), port=os.getenv("DB_PORT"),
-        dbname=os.getenv("DB_NAME"), user=os.getenv("DB_USER"), password=os.getenv("DB_PASSWORD")
-    )
+    return psycopg2.connect(**db_settings.psycopg2_params)
 
 if __name__ == "__main__":
-    logger.debug(f"Database URL: {SQLALCHEMY_DATABASE_URL}")
+    logger.debug(f"Database URL: {db_settings.url}")
     logger.info("Database engine created successfully.")
     try:
         with engine.connect() as connection:

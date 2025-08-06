@@ -7,7 +7,7 @@ from typing import List, Optional
 class CaseSnippet(BaseModel):
     caseId: str = Field(..., description="판례 일련번호")
     title: str = Field(..., description="사건명")
-    decisionDate: date = Field(..., description="선고일자")
+    decisionDate: Optional[date] = Field(None, description="선고일자")
     category: str = Field(..., description="사건 종류 (예: 민사)")
     issue: Optional[str] = Field(None, description="판시사항 일부 (스니펫)")
     summary: Optional[str] = Field(None, description="판시사항 일부 (스니펫)")
@@ -32,12 +32,12 @@ class CaseSearchResponse(BaseModel):
 class CaseDetail(BaseModel):
     caseId: str = Field(..., description="판례 일련번호")
     title: str = Field(..., description="사건명")
-    decisionDate: date = Field(..., description="선고일자")
+    decisionDate: Optional[date] = Field(None, description="선고일자")
     category: str = Field(..., description="사건 종류 (예: 민사)")
     issue: Optional[str] = Field(None, description="판시사항")
     summary: Optional[str] = Field(None, description="요약")
-    statutes: str = Field(..., description="참조 법령 (세미콜론 구분)")
-    precedents: str = Field(..., description="참조 판례 (세미콜론 구분)")
+    statutes: str = Field(default="", description="참조 법령 (세미콜론 구분)")
+    precedents: str = Field(default="", description="참조 판례 (세미콜론 구분)")
     fullText: str = Field(..., description="판례 전문 원문")
 
 class CaseDetailResponse(BaseModel):

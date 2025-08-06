@@ -2,43 +2,34 @@ from langchain.chains import LLMChain
 from langchain.llms.base import LLM
 from typing import List, Dict
 import json
-from pprint import pprint
 
 from config.tags import SPECIALTY_TAGS
-from llm.llm_response_parser import CotOutputParser, parse_case_analysis_output, CaseAnalysisResult
-from llm.prompt_templates import get_cot_prompt
-from services.search_service import SearchService # Changed import
-
-from langchain.chains import LLMChain
-from langchain.llms.base import LLM
-from typing import List, Dict
-import json
-
-from config.tags import SPECIALTY_TAGS
+from config.settings import get_llm_settings
 from llm.llm_response_parser import CotOutputParser, parse_case_analysis_output, CaseAnalysisResult
 from llm.prompt_templates import get_cot_prompt
 from llm.models.embedding_model import EmbeddingModel
 from llm.models.cross_encoder_model import CrossEncoderModel
+from services.search_service import SearchService
+from utils.logger import LoggerMixin
+from utils.exceptions import handle_service_exceptions, LLMError
 
-class CaseAnalysisService:
-    def __init__(self, llm: LLM, embedding_model: EmbeddingModel, cross_encoder_model: CrossEncoderModel):
+class CaseAnalysisService(LoggerMixin):
+    def __init__(self, llm: LLM, search_service: SearchService):
         """
-        LLM 객체와 임베딩/크로스인코더 모델 객체를 주입받아 초기화합니다.
+        LLM 객체와 검색 서비스를 주입받아 초기화합니다.
 
         Args:
             llm (LLM): LangChain의 LLM 인터페이스를 구현한 객체
-            embedding_model (EmbeddingModel): 임베딩 모델 인스턴스
-            cross_encoder_model (CrossEncoderModel): 크로스인코더 모델 인스턴스
+            search_service (SearchService): 검색 서비스 인스턴스
         """
         self.llm = llm
-        self.embedding_model = embedding_model
-        self.cross_encoder_model = cross_encoder_model
-        self.search_service = SearchService(embedding_model, cross_encoder_model) # Instantiate SearchService
+        self.search_service = search_service
         self.prompt_template = get_cot_prompt()
         self.parser = CotOutputParser()
         # `prompt | llm` 로 RunnableSequence를 만듭니다. (LangChain 0.1.17 이상 권장 방식)
         self.chain = self.prompt_template | self.llm
 
+    @handle_service_exceptions("법률 분석 처리 중 오류가 발생했습니다.")
     async def analyze_case(
             self,
             user_query: str,
@@ -49,6 +40,7 @@ class CaseAnalysisService:
                 user_query: 사용자가 물어본 질문
                 top_k_docs: 검색할 관련 판례의 개수
             """
+            self.logger.info(f"Starting case analysis for query: {user_query[:100]}...")
             # 1. 관련 판례 검색 (RAG)
             # Call vector_search method of SearchService
             retrieved_docs, _ = await self.search_service.vector_search(user_query, size=top_k_docs)
@@ -67,8 +59,8 @@ class CaseAnalysisService:
             docs_json = json.dumps(formatted_case_docs, ensure_ascii=False)
 
             # 디버깅: 프롬프트에 포함될 데이터의 길이 확인
-            print(f"User Query Length: {len(user_query)}")
-            print(f"Case Docs JSON Length: {len(docs_json)}")
+            self.logger.debug(f"User Query Length: {len(user_query)}")
+            self.logger.debug(f"Case Docs JSON Length: {len(docs_json)}")
 
             # SPECIALTY_TAGS를 쉼표로 구분된 문자열로 변환
             tag_list_str = ", ".join(SPECIALTY_TAGS)
@@ -89,6 +81,7 @@ class CaseAnalysisService:
             # parse_case_analysis_output을 사용하여 결론 텍스트를 구조화합니다.
             case_analysis_result = parse_case_analysis_output(conclusion_text)
 
+            self.logger.info("Case analysis completed successfully")
             return {
                 "case_analysis": case_analysis_result,
             }
