@@ -56,11 +56,14 @@ const toggleVideo = () => {
 }
 
 onBeforeUnmount(() => {
+  // 미디어 트랙을 중지시켜 카메라와 마이크를 해제합니다.
   if (publisher.value?.stream?.mediaStream) {
     publisher.value.stream.mediaStream.getTracks().forEach(track => track.stop())
   }
+
+  // 사용했던 OpenVidu 관련 객체들을 null로 만들어 메모리를 정리합니다.
   if (publisher.value) {
-    publisher.value.stream.dispose()
+    // publisher.value.stream.dispose() 줄을 완전히 삭제합니다.
     publisher.value = null
   }
   if (OV.value) {
