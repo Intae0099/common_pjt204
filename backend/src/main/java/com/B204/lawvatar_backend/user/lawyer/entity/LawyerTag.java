@@ -1,6 +1,6 @@
 package com.B204.lawvatar_backend.user.lawyer.entity;
 
-import com.B204.lawvatar_backend.common.entity.Tag;
+import com.B204.lawvatar_backend.common.tag.entity.Tag;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -16,6 +16,7 @@ public class LawyerTag {
 
     // Field
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(columnDefinition = "int unsigned")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)

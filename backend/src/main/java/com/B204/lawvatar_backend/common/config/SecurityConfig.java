@@ -312,6 +312,8 @@ public class SecurityConfig {
 
             .requestMatchers("/api/admin/login").permitAll()
 
+            .requestMatchers("/api/tag/**").permitAll()
+
             // refreshToken 발급
             .requestMatchers(
                 "/api/auth/**"
