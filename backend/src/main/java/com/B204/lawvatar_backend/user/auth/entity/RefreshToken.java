@@ -17,41 +17,40 @@ public class RefreshToken {
 
     // Field
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(columnDefinition = "int unsigned")
     private Long id;
 
-    // 리프레시 토큰의 소유자 (의뢰인 또는 변호사)
-    // nullable로 해야함ㅠㅠ
+    // 리프레시 토큰의 소유자 (의뢰인/변호사/관리자)
     // 의뢰인용 foreign key
-    @ManyToOne(fetch = FetchType.LAZY, optional = true)
-    @JoinColumn(name = "client_id")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "client_id") // optional = true는 기본값이라서 뺐습니다!
     private Client client;
 
     // 변호사용 foreign key
-    @ManyToOne(fetch = FetchType.LAZY, optional = true)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "lawyer_id")
     private Lawyer lawyer;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = true)
+    // 관리자용 foreign key
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "admin_id")
     private Admin admin;
 
-
-    @Column(name = "refresh_token", length = 1024, nullable = false)
+    @Column(length = 1024, nullable = false)
     // JWT는 보통 200~500자 정도이므로, JWT를 저장할 컬럼의 길이를 512 or 1024 바이트로 두는 것이 일반적. (2의 배수로 두는 것이 관례)
     private String refreshToken;
 
-    @Column(name = "issued_at", nullable = false)
+    @Column(nullable = false)
     private LocalDateTime issuedAt;
 
-    @Column(name = "revoked_at")
     private LocalDateTime revokedAt;
 
     // 생성자 및 편의 메서드
     public static RefreshToken ofForClient(
-        Client client,
-        String token,
-        LocalDateTime issuedAt,
-        long refreshExpirationMs) {
+            Client client,
+            String token,
+            LocalDateTime issuedAt,
+            long refreshExpirationMs) {
 
         RefreshToken rt = new RefreshToken();
         rt.client = client;
@@ -62,10 +61,10 @@ public class RefreshToken {
     }
 
     public static RefreshToken ofForLawyer(
-        Lawyer lawyer,
-        String token,
-        LocalDateTime issuedAt,
-        long refreshExpirationMs) {
+            Lawyer lawyer,
+            String token,
+            LocalDateTime issuedAt,
+            long refreshExpirationMs) {
         RefreshToken rt = new RefreshToken();
         rt.lawyer = lawyer;
         rt.refreshToken = token;
@@ -75,10 +74,10 @@ public class RefreshToken {
     }
 
     public static RefreshToken ofForAdmin(
-        Admin admin,
-        String token,
-        LocalDateTime issuedAt,
-        long refreshExpirationMs) {
+            Admin admin,
+            String token,
+            LocalDateTime issuedAt,
+            long refreshExpirationMs) {
         RefreshToken rt = new RefreshToken();
         rt.admin = admin;
         rt.refreshToken = token;
