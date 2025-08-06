@@ -173,7 +173,7 @@ const handleWithdraw = async () => {
     alert('회원탈퇴가 완료되었습니다.')
     // 로그아웃 처리 및 홈 이동
     localStorage.removeItem('accessToken')  // JWT 토큰 삭제
-    localStorage.removeItem('user_type')     // 사용자 타입 등도 삭제
+    localStorage.removeItem('userType')     // 사용자 타입 등도 삭제
     window.location.href = '/'  // 홈으로 이동
   } catch (error) {
     console.error('회원탈퇴 실패:', error)

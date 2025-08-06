@@ -127,7 +127,7 @@ const handleWithdraw = async () => {
 
     // JWT 토큰 및 사용자 타입 제거
     localStorage.removeItem('accessToken')
-    localStorage.removeItem('user_type')
+    localStorage.removeItem('userType')
 
     // 홈으로 이동
     window.location.href = '/'

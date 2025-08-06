@@ -40,7 +40,7 @@
 <script setup>
 import { useRouter } from 'vue-router'
 
-const userType = localStorage.getItem('user_type') // 예: 'LAWYER' 또는 'USER'
+const userType = localStorage.getItem('userType') // 예: 'LAWYER' 또는 'USER'
 
 
 defineProps({
