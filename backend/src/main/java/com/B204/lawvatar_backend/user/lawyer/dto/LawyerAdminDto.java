@@ -32,7 +32,7 @@ public class LawyerAdminDto {   // admin이 lawyer를 cetification_status에 따
         l.getRegistrationNumber(),
         l.getCertificationStatus(),
         l.getConsultationCount(),
-        l.getLawyerTagList().stream()
+        l.getTags().stream()
             .map(lt -> lt.getTag().getName())
             .collect(Collectors.toList())
     );
