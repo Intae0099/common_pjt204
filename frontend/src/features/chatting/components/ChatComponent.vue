@@ -83,10 +83,8 @@ watch(
 <style scoped>
 /* 기존 스타일은 그대로 유지 */
 .chat-container {
-  width: 400px;
-  height: 600px;
-  border: 1px solid #ccc;
-  border-radius: 8px;
+  width: 350px;
+  height: 660px;
   display: flex;
   flex-direction: column;
   font-family: Arial, sans-serif;
