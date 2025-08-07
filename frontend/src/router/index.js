@@ -43,6 +43,7 @@ import AdminLayout from '@/features/admin/AdminLayout.vue';
 import AdminLogin from '@/features/admin/AdminLogin.vue';
 import { useAuthStore } from '@/stores/auth';
 import LawyerCertifications from '@/features/admin/LawyerCertifications.vue';
+import ApplicationListView from '@/features/profile/user/ApplicationListView.vue';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -113,6 +114,11 @@ const router = createRouter({
       path: '/consult-history',
       name: 'ConsultHistory',
       component: () => import('@/features/profile/user/UserConsultHistory.vue')
+    },
+    {
+      path: '/user/applications/:applicationId',
+      name: 'ApplicationList',
+      component: ApplicationListView
     },
     //판례검색
     {
