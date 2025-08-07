@@ -27,7 +27,7 @@
         :aiData="aiResult"
         @submit="handleFinalSubmit"
         @back="() => (showCompareView.value = false)"
-        @regenerate="handleFormSubmit(userInput.value)"
+        @regenerate="handleFormSubmit"
       />
     </LayoutDefault>
   </ConsultationFomLayout>

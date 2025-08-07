@@ -9,7 +9,8 @@
         :hide-submit-button="true"
       />
       <div class="left-button">
-        <button class="refresh-btn" @click="emit('regenerate')">AI로 정보 수정하기</button>
+        <!-- <button class="refresh-btn" @click="emit('regenerate')">AI로 정보 수정하기</button> -->
+        <button class="refresh-btn" @click="handleRegenerate">AI로 정보 수정하기</button>
       </div>
     </div>
 
@@ -80,6 +81,16 @@ const localUserData = ref({ ...props.userData })
 const emit = defineEmits(['submit', 'back'])
 const questionsInput = ref(props.userData.recommendedQuestions?.join(', ') || '')
 
+const handleRegenerate = () => {
+  // 1. ConsultationForm의 submit 로직과 동일하게 questionsInput을 배열로 변환합니다.
+  localUserData.value.recommendedQuestions = questionsInput.value
+    .split(',')
+    .map(q => q.trim())
+    .filter(q => q.length > 0)
+
+  // 2. 가공된 최신 데이터를 담아 'regenerate' 이벤트를 발생시킵니다.
+  emit('regenerate', localUserData.value)
+}
 
 const copyToUserForm = () => {
   if (!confirm('AI 상담서 내용을 사용자 입력 폼에 복사하시겠습니까?')) return

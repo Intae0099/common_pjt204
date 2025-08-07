@@ -55,11 +55,11 @@
           </div>
 
           <!-- 궁금한 점 -->
-          <div v-if="data.recommendedQuestions?.length" class="form-group scrollable-group">
+          <div v-if="data.recommendedQuestions && Object.keys(data.recommendedQuestions).length > 0" class="form-group scrollable-group">
             <label>변호사에게 궁금한 점</label>
             <textarea
               class="scrollable-content"
-              :value="data.recommendedQuestions.join('\n')"
+              :value="Object.values(data.recommendedQuestions).join('\n')"
               readonly
             ></textarea>
           </div>
