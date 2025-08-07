@@ -9,38 +9,7 @@ services:
     restart: always
     ports:
       - "8997:8000"
-    environment:
-      # Database Configuration - 기존 postgres 컨테이너에 연결
-      - DB_HOST=postgres
-      - DB_PORT=${DB_PORT:-5432}
-      - DB_USER=${DB_USER:-postgres}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - DB_NAME=${DB_NAME:-postgres}
-      
-      # API Configuration
-      - API_HOST=${API_HOST:-0.0.0.0}
-      - API_PORT=${API_PORT:-8000}
-      
-      # LLM Configuration (Required)
-      - GMS_KEY=${GMS_KEY}
-      - MAX_HISTORY_TOKENS=${MAX_HISTORY_TOKENS:-3000}
-      - LLM_MAX_RETRIES=${LLM_MAX_RETRIES:-3}
-      
-      # Model Configuration
-      - EMBEDDING_MODEL_NAME=${EMBEDDING_MODEL_NAME:-sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2}
-      - CROSS_ENCODER_MODEL_NAME=${CROSS_ENCODER_MODEL_NAME:-cross-encoder/ms-marco-MiniLM-L-6-v2}
-      
-      # Search Configuration
-      - DEFAULT_PAGE_SIZE=${DEFAULT_PAGE_SIZE:-10}
-      - MAX_PAGE_SIZE=${MAX_PAGE_SIZE:-50}
-      - VECTOR_SEARCH_TOP_K=${VECTOR_SEARCH_TOP_K:-20}
-      - USE_RERANK_DEFAULT=${USE_RERANK_DEFAULT:-true}
-      
-      # Logging Configuration
-      - LOG_LEVEL=${LOG_LEVEL:-INFO}
-      
-      # CORS Configuration
-      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:5173}
+    # 환경변수는 컨테이너 내부의 config/.env에서 로드됨
     volumes:
       - ../data:/app/data
       - ../logs:/app/logs

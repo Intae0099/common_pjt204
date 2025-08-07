@@ -12,20 +12,24 @@ RUN apt-get update && apt-get install -y \
     libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
-# requirements.txt 복사 및 종속성 설치
-COPY requirements.txt .
-
 # 기본 패키지 먼저 설치
 RUN pip install --no-cache-dir --upgrade pip
 
-# PyTorch 먼저 설치 (CPU 버전)
+# PyTorch 먼저 설치 (CPU 버전)  
 RUN pip install --no-cache-dir torch==2.7.1 --index-url https://download.pytorch.org/whl/cpu
 
-# 나머지 패키지 설치
-RUN pip install --no-cache-dir -r requirements.txt
+# Git 레포지토리 클론 (최신 코드)
+ARG CACHEBUST=1
+ARG BRANCH=dev-AI
+# .env 파일 먼저 복사 (git에 없으므로)
+COPY config/.env config/.env
 
-# 애플리케이션 코드 복사
-COPY . .
+RUN GIT_TOKEN=$(grep -E '^GIT_TOKEN=' config/.env | cut -d'=' -f2 | tr -d '\r\n"'"'"'') && \
+    git clone -b $BRANCH https://oauth2:$GIT_TOKEN@lab.ssafy.com/s13-webmobile1-sub1/S13P11B204.git /tmp/repo && \
+    cp /tmp/repo/ai/requirements.txt . && \
+    pip install --no-cache-dir -r requirements.txt && \
+    cp -r /tmp/repo/ai/* /app/ && \
+    rm -rf /tmp/repo
 
 # 포트 노출
 EXPOSE 8000
