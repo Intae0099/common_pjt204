@@ -1,18 +1,11 @@
 # 🚀 AI 애플리케이션 Windows 로컬 배포
 
+stages:
+  - deploy
+
 variables:
-  DOCKERFILE_PATH: "docker/Dockerfile"
-  PORT: "8000"
-  
-  # 🚫 불필요한 스캔 비활성화 (속도 향상)
-  SAST_DISABLED: "true"
-  DEPENDENCY_SCANNING_DISABLED: "true" 
-  CONTAINER_SCANNING_DISABLED: "true"
-  DAST_DISABLED: "true"
-  
-  # 🎯 배포 전략
-  STAGING_ENABLED: "false"
-  REVIEW_DISABLED: "true"
+  GIT_STRATEGY: clone
+  GIT_DEPTH: 1
 
 # 📦 Windows 로컬 자동 배포
 deploy:
@@ -22,28 +15,32 @@ deploy:
     - docker
     - ai
   before_script:
-    # 환경변수 파일 확인 (이미 존재하는 로컬 .env 사용)
-    - if exist config\.env echo ✅ config/.env 파일 존재
-    - if not exist config\.env echo ❌ config/.env 파일 없음 - 수동으로 생성 필요
+    # 환경변수 파일 확인
+    - 'if (Test-Path "config\.env") { Write-Host "✅ config/.env 파일 존재" } else { Write-Host "❌ config/.env 파일 없음"; exit 1 }'
     
   script:
-    # 1️⃣ Docker 상태 확인
+    # 1️⃣ 현재 위치 확인
+    - 'Write-Host "현재 작업 디렉토리: $(Get-Location)"'
+    - 'Write-Host "파일 목록:"'
+    - Get-ChildItem
+    
+    # 2️⃣ Docker 상태 확인
     - docker --version
     - docker-compose --version
     
-    # 2️⃣ 기존 컨테이너 정리
-    - cd docker
+    # 3️⃣ 기존 컨테이너 정리
+    - Set-Location docker
     - docker-compose down
     
-    # 3️⃣ 새 빌드 및 배포
+    # 4️⃣ 새 빌드 및 배포
     - docker-compose up -d --build
     
-    # 4️⃣ 배포 확인 (Windows용 timeout)
-    - timeout /t 20 /nobreak
-    - curl -f http://localhost:8997/ || exit 1
-    - echo ✅ 배포 성공!
+    # 5️⃣ 배포 확인
+    - Start-Sleep 20
+    - 'try { Invoke-RestMethod -Uri "http://localhost:8997/" -Method Get } catch { Write-Host "❌ 배포 실패"; exit 1 }'
+    - 'Write-Host "✅ 배포 성공!"'
     
-    # 5️⃣ 상태 확인
+    # 6️⃣ 상태 확인
     - docker-compose ps
     - docker-compose logs --tail=50 ai-app
     
