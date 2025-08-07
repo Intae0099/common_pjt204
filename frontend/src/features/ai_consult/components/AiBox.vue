@@ -14,29 +14,48 @@
       <div class="ai-message-box">
 
         <!-- 🔹 판례 예측 전: 사건 요약만 -->
-        <template v-if="!verdictResult && response.report?.issues?.length">
-          <h4>사건 요약</h4>
-          <ul>
-            <li v-for="(issue, index) in response.report.issues" :key="index">
-              {{ issue }}
-            </li>
-          </ul>
+        <template v-if="!verdictResult && response.summary">
+          <!-- 사건 제목 -->
+          <h4 style="margin-bottom: 0.8rem;">{{ response.title }}</h4>
+          <!-- 한 줄 요약 -->
+          <p style="font-weight: 500; white-space: pre-wrap;">{{ response.summary }}</p>
+          <hr style="border: none; border-top: 1px solid #dbe6ee; margin: 1rem 0;" />
+          <!-- 정리된 본문 -->
+          <p style="font-size: 0.9rem; color: #333; white-space: pre-wrap;">{{ response.fullText }}</p>
         </template>
 
         <!-- 🔸 판례 예측 후: opinion 등 -->
         <template v-else-if="verdictResult">
-          <h4>AI 의견</h4>
-          <p>{{ verdictResult.opinion }}</p>
-          <p><strong>예상 형량:</strong> {{ verdictResult.sentencePrediction }}</p>
-          <p><strong>신뢰도:</strong> {{ verdictResult.confidence }}</p>
+          <h4>쟁점 및 AI 소견</h4>
+          <ul v-if="verdictResult.issues?.length">
+            <li v-for="(issue, index) in verdictResult.issues" :key="`issue-${index}`">
+              {{ issue }}
+            </li>
+          </ul>
+          <p style="margin-top: 1rem;">{{ verdictResult.opinion }}</p>
+          <p><strong>예상 형량:</strong> {{ verdictResult.expected_sentence }}</p>
+          <p><strong>신뢰도:</strong> {{ (verdictResult.confidence * 100).toFixed(0) }}%</p>
+          <div v-if="verdictResult.tags?.length" class="tags-wrapper">
+            <span v-for="tag in verdictResult.tags" :key="tag" class="tag">#{{ tag }}</span>
+          </div>
+
           <!-- ✅ 유사 판례 정보 -->
           <div v-if="verdictResult.references?.cases?.length" style="margin-top: 1rem;">
             <h4>📚 유사 판례</h4>
             <ul>
-              <li v-for="(caseItem, index) in verdictResult.references.cases" :key="index" style="margin-bottom: 0.5rem;">
-                <p><strong>사건명:</strong> {{ caseItem.name }}</p>
-                <p><strong>법원:</strong> {{ caseItem.court }}</p>
-                <p><strong>년도:</strong> {{ caseItem.year }}</p>
+              <li v-for="(caseItem, index) in verdictResult.references.cases" :key="`case-${index}`" style="margin-bottom: 0.5rem;">
+                <p><strong>사건:</strong> {{ caseItem.title }} ({{ caseItem.id }})</p>
+                <p><strong>분류:</strong> {{ caseItem.category }}</p>
+                <p><strong>판결일:</strong> {{ caseItem.decision_date }}</p>
+                <p class="summary-text"><strong>요약:</strong>{{ caseItem.chunk_summary }}</p>
+              </li>
+            </ul>
+          </div>
+          <div v-if="verdictResult.references?.statutes?.length" style="margin-top: 1rem;">
+            <h4>⚖️ 관련 법령</h4>
+            <ul>
+              <li v-for="(statute, index) in verdictResult.references.statutes" :key="`statute-${index}`">
+                <p>{{ statute.code }} 제{{ statute.article }}</p>
               </li>
             </ul>
           </div>
@@ -59,7 +78,7 @@
 defineProps({
   isLoading: Boolean,
   response: Object,
-  verdictResult: String,
+  verdictResult: Object,
 })
 
 defineEmits(['open-modal'])

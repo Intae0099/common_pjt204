@@ -6,7 +6,7 @@ export const useAuthStore = defineStore('auth', {
     accessToken: localStorage.getItem('access_token') || null,
 
     // 🔽 로그인한 사용자의 유형
-    userType: localStorage.getItem('user_type') || null,
+    userType: localStorage.getItem('userType') || null,
 
     // 변호사 회원가입 데이터 (1~3단계 입력값 저장용)
     signupData: {
@@ -23,6 +23,7 @@ export const useAuthStore = defineStore('auth', {
   getters: {
     isLoggedIn: (state) => !!state.accessToken,
     isLawyer: (state) => state.userType === 'LAWYER',
+    isAdmin: (state) => state.userType === 'ADMIN',
   },
 
   actions: {
@@ -34,14 +35,14 @@ export const useAuthStore = defineStore('auth', {
 
     setUserType(type) {
       this.userType = type
-      localStorage.setItem('user_type', type)
+      localStorage.setItem('userType', type)
     },
 
     clearAuth() {
       this.accessToken = null
       this.userType = null
       localStorage.removeItem('access_token')
-      localStorage.removeItem('user_type')
+      localStorage.removeItem('userType')
     },
 
     // 회원가입 관련

@@ -1,7 +1,7 @@
 <template>
   <!-- 각 카드 아이템을 감싸는 루트 div -->
    <router-link
-    :to="{ name: 'CaseDetail', params: { id: data.id } }"
+    :to="{ name: 'CaseDetail', params: { id: data.caseId } }"
     class="card-link"
   >
   <div class="case-card-container">
