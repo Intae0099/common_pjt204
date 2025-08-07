@@ -53,12 +53,12 @@ insert into client (id, oauth_name, oauth_provider, email, oauth_identifier)
 select * from lawyer;
 insert into lawyer (id, login_email, login_password_hash, name, introduction, photo, exam, registration_number, certification_status, consultation_count)
 	values
-		(1, 'songws81@hanmail.net', '', '송우석', '대한민국의 주권은 국민에게 있고, 모든 권력은 국민으로부터 나온다! 권력에 맞서 싸우겠습니다.', null, '사법시험', '1981', 'APPROVED', 801),
-        (2, 'taein918@hanmail.net', '', '김태인', '최선을 다해 변호하겠습니다! 믿고 맡겨주세요.', null, '사법시험', '6521', 'APPROVED', 120),
-        (3, 'zinzi9999@gmail.com', '', '황시목', '법은 날카로운 칼날과 같습니다. 감정은 배제하고 철저한 사실에 근거하여 변호하겠습니다.', null, '사법시험', '7988', 'APPROVED', 413),
-        (4, 'hyeseong221@naver.com', '', '장혜성', '국선 변호사 출신으로서, 진정성있는 변호를 보여드리겠습니다.', null, '사법시험', '8452', 'APPROVED', 201),
-        (5, 'wooyeongwooS2@gmail.com', '', '우영우', '돌고래가 보여요! 천재 변호사 우영우입니다🐳', null, '로스쿨', '15320', 'APPROVED', 512),
-        (6, 'eungyeong.biz@gmail.com', '', '차은경', '이혼사건은 저에게 맡겨주세요. 감사합니다.^^', null, '로스쿨', '10224', 'APPROVED', 451);
+		(1, 'songws81@hanmail.net', '$2a$10$g2NI1R0CvjK0MEe7eVHfdelmyHtoAtngTpO80NqPRZd2Hdp7yCB1e', '송우석', '대한민국의 주권은 국민에게 있고, 모든 권력은 국민으로부터 나온다! 권력에 맞서 싸우겠습니다.', null, '사법시험', '1981', 'APPROVED', 801),
+        (2, 'taein918@hanmail.net', '$2a$10$aRxKGbYZrjofb2JRD5r5P.1yQVq1rOUr1oO0AcW97PhrrC8m0GXT2', '김태인', '최선을 다해 변호하겠습니다! 믿고 맡겨주세요.', null, '사법시험', '6521', 'APPROVED', 120),
+        (3, 'zinzi9999@gmail.com', '$2a$10$Nll0dDJ8T4HZ1pexk.p9xujkGPqtugz6cXmSqk3MbiBVBCdqwmhBq', '황시목', '법은 날카로운 칼날과 같습니다. 감정은 배제하고 철저한 사실에 근거하여 변호하겠습니다.', null, '사법시험', '7988', 'APPROVED', 413),
+        (4, 'hyeseong221@naver.com', '$2a$10$rrMuSD6IeQ7nbGzjJBXIKe07i2AZhyjUzbR2UU.gBJW4n0e8M2V/G', '장혜성', '국선 변호사 출신으로서, 진정성있는 변호를 보여드리겠습니다.', null, '사법시험', '8452', 'APPROVED', 201),
+        (5, 'wooyeongwooS2@gmail.com', '$2a$10$lF4isyX60vVco.KyiafLNeitstkiEqAHLZ18ka/GNaLBRS4Jg87ZK', '우영우', '돌고래가 보여요! 천재 변호사 우영우입니다🐳', null, '로스쿨', '15320', 'APPROVED', 512),
+        (6, 'eungyeong.biz@gmail.com', '$2a$10$L8Ofrts091l4OraRqS4dGu3hcezBd6zPz80HYJTMrVtKya.v9qu/a', '차은경', '이혼사건은 저에게 맡겨주세요. 감사합니다.^^', null, '로스쿨', '10224', 'APPROVED', 451);
 
 -- -----------------------------------------
 

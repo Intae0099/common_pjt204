@@ -114,6 +114,14 @@ public class RoomController {
                         .build();
 
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(participateRoomResponse);
+            } catch(IllegalStateException e) {
+                // dto 만들고 응답
+                ParticipateRoomResponse participateRoomResponse = ParticipateRoomResponse.builder()
+                        .success(false)
+                        .message(e.getMessage())
+                        .build();
+
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(participateRoomResponse);
             }
         } else if(principal instanceof LawyerPrincipal lawyerPrincipal) {
             try {
@@ -126,6 +134,14 @@ public class RoomController {
                         .build();
 
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(participateRoomResponse);
+            } catch(IllegalStateException e) {
+                // dto 만들고 응답
+                ParticipateRoomResponse participateRoomResponse = ParticipateRoomResponse.builder()
+                        .success(false)
+                        .message(e.getMessage())
+                        .build();
+
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(participateRoomResponse);
             }
         }
 
