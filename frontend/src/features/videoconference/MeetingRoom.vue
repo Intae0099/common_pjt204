@@ -6,10 +6,10 @@
         <!-- 왼쪽: 변호사 + 의뢰인 세로 정렬 -->
         <div class="video-box vertical-video">
           <div class="video-inner" id="lawyer-video">
-            <p style="color:white; text-align:center">변호사</p>
+            <p class="role-label">변호사</p>
           </div>
           <div class="video-inner" id="publisher">
-            <p style="color:white; text-align:center">의뢰인</p>
+            <p class="role-label">의뢰인</p>
           </div>
         </div>
 
@@ -22,10 +22,10 @@
       <!-- 평소(공유 X) 화면: 좌우 나란히 -->
       <template v-else>
         <div class="video-box" id="lawyer-video">
-          <p style="color:white; text-align:center">변호사</p>
+          <p class="role-label">변호사</p>
         </div>
         <div class="video-box" id="publisher">
-          <p style="color:white; text-align:center">의뢰인</p>
+          <p class="role-label">의뢰인</p>
         </div>
       </template>
 
@@ -39,36 +39,37 @@
     </div>
   </div>
 
-<!-- 하단 컨트롤 영역 -->
+<!-- 하단 푸터 -->
 <div class="meeting-footer">
-  <!-- 왼쪽: 제어 버튼들 -->
+  <!-- 왼쪽 툴 모음 -->
   <div class="footer-left">
-    <!-- 그리기·지우기·포인터 -->
-    <button class="footer-btn" @click="setTool('pen')" :disabled="!isScreenSharing" :class="{ active: currentTool==='pen' }">
-      <Pencil class="footer-icon" />
+
+    <!-- ⋮ 버튼 (모바일 전용) -->
+    <button class="footer-btn ellipsis-btn" @click="isMenuOpen = !isMenuOpen">
+      <EllipsisVertical class="footer-icon" />
     </button>
-    <button class="footer-btn" @click="setTool('eraser')" :disabled="!isScreenSharing" :class="{ active: currentTool==='eraser' }">
-      <Eraser class="footer-icon" />
-    </button>
-    <button class="footer-btn" @click="setTool('pointer')" :disabled="!isScreenSharing" :class="{ active: currentTool==='pointer' }">
-      <MousePointer2 class="footer-icon" />
-    </button>
-    <!-- 화면공유버튼 -->
+
+    <!-- ▼ ① 툴그룹: “화면공유”를 빼고 나머지만 넣기 -->
+    <div class="tool-group" :class="{ show: isMenuOpen }">
+      <!-- 펜 / 지우개 / 포인터 -->
+      <button class="footer-btn" @click="setTool('pen')"     :disabled="!isScreenSharing" :class="{ active: currentTool==='pen' }"><Pencil class="footer-icon" /></button>
+      <button class="footer-btn" @click="setTool('eraser')"  :disabled="!isScreenSharing" :class="{ active: currentTool==='eraser' }"><Eraser class="footer-icon" /></button>
+      <button class="footer-btn" @click="setTool('pointer')" :disabled="!isScreenSharing" :class="{ active: currentTool==='pointer' }"><MousePointer2 class="footer-icon" /></button>
+
+      <!-- 카메라 / 마이크 -->
+      <button class="footer-btn" @click="toggleCamera"><component :is="isCameraOn ? Video : VideoOff" class="footer-icon" /></button>
+      <button class="footer-btn" @click="toggleMic"><component :is="isMicOn ? Mic : MicOff" class="footer-icon" /></button>
+    </div>
+
+    <!-- ▼ ② “화면공유” 버튼은 메뉴 밖, 항상 노출 -->
     <button class="footer-btn only-share" @click="shareScreen">
       <span class="footer-label">화면공유</span>
       <Share class="footer-icon" />
     </button>
-    <!-- 카메라 on/off -->
-    <button class="footer-btn" @click="toggleCamera">
-      <component :is="isCameraOn ? Video : VideoOff" class="footer-icon" />
-    </button>
-    <!-- 마이크 on/off -->
-    <button class="footer-btn" @click="toggleMic">
-      <component :is="isMicOn ? Mic : MicOff" class="footer-icon" />
-    </button>
+
   </div>
 
-  <!-- 오른쪽: 채팅/챗봇/나가기 -->
+  <!-- 오른쪽: 채팅·챗봇·나가기 (기존 그대로) -->
   <div class="footer-right">
     <div class="chat-btn-wrapper">
       <button class="footer-btn" @click="toggleChat('realtime')">
@@ -84,6 +85,7 @@
     </button>
   </div>
 </div>
+
 </template>
 
 
@@ -94,7 +96,7 @@ import { useRoute, useRouter } from 'vue-router'
 import axios from '@/lib/axios'
 import RealtimeChatView from '@/features/chatting/RealtimeChatView.vue'
 import ChatbotView from '@/features/chatting/ChatbotView.vue'
-import { Pencil, Eraser, MousePointer2, MessageSquareText, Share, Video, VideoOff, Mic, MicOff } from 'lucide-vue-next'
+import { EllipsisVertical,Pencil, Eraser, MousePointer2, MessageSquareText, Share, Video, VideoOff, Mic, MicOff } from 'lucide-vue-next'
 const activeChat = ref('realtime')
 const toggleChat = (type) => {
   activeChat.value = activeChat.value === type ? null : type
@@ -104,7 +106,7 @@ const OV = ref(null)                  // OpenVidu 객체 (엔진 역할)
 const session = ref(null)            // 세션 객체 (참여자 연결, 스트림 관리)
 const mainStreamManager = ref(null)  // 내 비디오 스트림을 담는 객체
 const subscribers = ref([])          // 다른 사람들(상대방)의 스트림 목록
-
+const isMenuOpen = ref(false)
 const route = useRoute()
 const router = useRouter()
 
@@ -327,6 +329,7 @@ onBeforeUnmount(() => {
 <style scoped>
 *{
   font-family: 'Noto Sans KR', sans-serif;
+  background-color: #131516;
 }
 .meeting-room {
   display: flex;
@@ -345,8 +348,9 @@ onBeforeUnmount(() => {
   flex: 1;
   min-width: 0;
   background-color: black;
-  margin: 0.5rem;
-  border-radius: 8px;
+  margin: 0.5rem 0.5rem 0 0.5rem ;
+  border-radius: 10px;
+  position: relative;
 }
 
 .vertical-video {
@@ -360,6 +364,26 @@ onBeforeUnmount(() => {
   background-color: black;
   margin: 0.25rem;
   border-radius: 8px;
+  position: relative;
+}
+
+/* 비디오 박스(또는 video-inner)가 좌표계 기준점이 되도록 */
+.video-box,
+.video-inner {
+  position: relative;   /* ⬅️ 추가 */
+}
+
+/* 왼쪽-하단 라벨 공통 스타일 */
+.role-label {
+  position: absolute;
+  bottom: 15px;
+  left: 15px;
+  margin: 0;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  text-shadow: 0 0 4px rgba(0, 0, 0, 0.6);
+  pointer-events: none; /* 클릭 막기 */
 }
 
 .shared-screen {
@@ -401,13 +425,46 @@ onBeforeUnmount(() => {
 .drawing-canvas.pen-cursor{ cursor:crosshair; }
 .drawing-canvas.eraser-cursor{ cursor:url('data:image/svg+xml;base64,PHN2Zy…') 6 6, crosshair; }
 
+
+/* 1) 기본값: 큰 화면에서는 점 아이콘 숨김, 원래 버튼 보이기 */
+.footer-btn.ellipsis-btn{ display: none; }
+.tool-group{ display: flex; gap: 1rem; }
+
+/* 2) 작은 화면일 때 (폭 960px 이하) */
+@media (max-width: 960px) {
+  .footer-btn.ellipsis-btn {          /* ⋮ 버튼 보이기 */
+    display: flex;
+  }
+  .tool-group {            /* 원래 버튼 숨기기 */
+    display: none;
+  }
+  /* 점 메뉴가 열렸을 때 */
+  .tool-group.show {
+    display: flex;         /* dropdown 으로 표시 */
+    position: absolute;
+    bottom: 60px;          /* footer 위로 살짝 띄우기 */
+    left: 8px;
+    flex-direction: column;
+    background: #232627;
+    padding: 0.6rem;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+    z-index: 20;
+  }
+  .tool-group.show .footer-btn {
+    width: 42px;           /* 버튼들을 작은 정사각형 형태로 */
+    height: 42px;
+    justify-content: center;
+    background: #232627;
+  }
+}
+
 .meeting-footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 0.6rem 1.1rem;
-  border-top: 1px solid #333;
-  background-color: #111;
+  background-color: #131516;
   height: 9.5vh;
 }
 
@@ -418,23 +475,9 @@ onBeforeUnmount(() => {
   gap: 1rem;
 }
 
-.footer-lef{
-  position: absolute;
-  bottom: 100px; /* 비디오 박스 바로 아래 느낌 */
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  gap: 1.5rem;
-  background-color: rgba(17, 17, 17, 0.8);
-  padding: 0.6rem 1.2rem;
-  border-radius: 12px;
-  z-index: 10;
-}
-
-
 /* 채팅 영역과 동일한 너비를 갖도록 */
 .footer-right {
-  width: 330px; /* 채팅 영역 너비와 일치 */
+  width: 380px; /* 채팅 영역 너비와 일치 */
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -446,7 +489,7 @@ onBeforeUnmount(() => {
 }
 
 .footer-btn {
-  background-color: #111;
+  background-color: #131516;
   padding: 0.5rem 0.75rem;
   cursor: pointer;
   transition: background-color 0.2s;
@@ -455,9 +498,6 @@ onBeforeUnmount(() => {
   gap: 0.5rem; /* 아이콘과 텍스트 사이 간격 */
   color: white;
   border: none;
-}
-.footer-btn.active{
-  background-color:#444;
 }
 
 .only-share {
@@ -489,8 +529,7 @@ onBeforeUnmount(() => {
   width: auto;
   display: flex;
   flex-direction: column;
-  border-left: 1px solid #ddd;
-  background-color: white;
+  background-color: #131516;
 }
 
 /* 채팅 콘텐츠 (스크롤 가능) */
@@ -502,7 +541,8 @@ onBeforeUnmount(() => {
 .leave-btn {
   color: white;
   font-size: 0.9rem;
-  padding: 0.4rem 1rem;
+  padding: 0.4rem 2rem;
+  border-radius: 10px;
   background-color: #c0392b;
 }
 
