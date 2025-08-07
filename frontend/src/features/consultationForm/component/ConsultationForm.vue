@@ -88,7 +88,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import IncidentSelect from './IncidentSelect.vue'
 import { InformationCircleIcon } from '@heroicons/vue/24/outline'
 
@@ -104,6 +104,14 @@ const props = defineProps({
 })
 const form = ref({ ...props.form })
 const questionsInput = ref(props.questionsInput || '')
+
+watch(() => props.form, (newForm) => {
+  form.value = { ...newForm }
+}, { deep: true }) // 객체 내부까지 감지
+
+watch(() => props.questionsInput, (newQuestions) => {
+  questionsInput.value = newQuestions
+})
 
 const submit = () => {
   // 쉼표 기준으로 분리
