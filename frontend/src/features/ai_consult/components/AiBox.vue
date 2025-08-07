@@ -85,14 +85,78 @@
 </template>
 
 <script setup>
-defineProps({
+import { watch } from 'vue'
+import { defineProps, defineEmits, defineExpose } from 'vue'
+import instance from '@/lib/axios'
+const props = defineProps({
   isLoading: Boolean,
   isFindingVerdict: Boolean, // 판례 검색 로딩 상태를 위한 prop 추가
   response: Object,
   verdictResult: Object,
 })
 
-defineEmits(['open-modal'])
+const emit = defineEmits(['open-modal'])
+
+const saveConsultationRecord = async () => {
+  // response 객체가 없거나 필요한 데이터가 없으면 실행하지 않음
+  if (!props.response || !props.response.title) {
+    console.error('저장할 데이터가 없습니다.');
+    return;
+  }
+
+  // API 요청에 필요한 데이터 구성
+  const payload = {
+    title: props.response.title,
+    summary: props.response.summary,
+    content: props.response.fullText,
+    outcome: null,
+    disadvantage: null,
+    recommendedQuestion: null,
+    tags: null
+  };
+
+  try {
+    // isCompleted=false 쿼리 파라미터와 함께 POST 요청
+    const response = await instance.post('/api/applications', payload, {
+      params: {
+        isCompleted: false
+      }
+    });
+
+    console.log('상담 경위서 저장 성공:', response.data);
+    // 성공 시 사용자에게 알림을 띄우는 로직을 추가할 수 있습니다 (예: toast 메시지)
+    alert('상담 내용이 임시 저장되었습니다.');
+
+  } catch (error) {
+    console.error('상담 경위서 저장 실패:', error);
+    // 실패 시 사용자에게 알림
+    if (error.response) {
+      alert(`저장에 실패했습니다: ${error.response.data.message}`);
+    } else {
+      alert('저장 중 오류가 발생했습니다.');
+    }
+  }
+};
+
+// ❗️ 부모 컴포넌트에서 이 함수를 호출할 수 있도록 노출시킵니다.
+defineExpose({
+  saveConsultationRecord
+});
+
+
+// ❗️ response 데이터가 변경될 때를 감지합니다.
+watch(() => props.response, (newResponse) => {
+  // ❗️ 조건: verdictResult가 없고(판례 검색 전) response.summary가 있을 때 (AI 요약 완료)
+  if (newResponse && newResponse.summary && !props.verdictResult) {
+    // 부모 컴포넌트에 모달을 열어달라는 이벤트를 보냅니다.
+    emit('open-modal');
+  }
+}, {
+  // 컴포넌트가 처음 마운트될 때도 watch를 실행할 수 있으나,
+  // response는 비동기로 받아오므로 깊은 감지가 더 적합할 수 있습니다.
+  deep: true
+});
+
 </script>
 
 <style scoped>
