@@ -36,7 +36,7 @@ const name = ref('')
 const email = ref('')
 
 const goBack = () => {
-  router.push('/mypage')
+  router.push('/user/mypage')
 }
 
 const saveChanges = async () => {

@@ -170,7 +170,7 @@ const prevItem = () => {
   justify-content: center;
   width: 100%;
   min-height: 100vh;
-  background-color: #e9f5ff;
+  /* background-color: #e9f5ff; */
   padding: 2rem;
   box-sizing: border-box;
 }

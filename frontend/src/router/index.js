@@ -44,6 +44,7 @@ import AdminLogin from '@/features/admin/AdminLogin.vue';
 import { useAuthStore } from '@/stores/auth';
 import LawyerCertifications from '@/features/admin/LawyerCertifications.vue';
 import ApplicationListView from '@/features/profile/user/ApplicationListView.vue';
+import LawyerFindPasswordView from '@/features/auth/lawyer/LawyerFindPasswordView.vue';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -79,8 +80,11 @@ const router = createRouter({
       name: 'LawyerLogin',
       component: LawyerLogin
     },
-
-
+    {
+      path: '/findpassword/lawyer',
+      name: 'LawyerFindPassword',
+      component: LawyerFindPasswordView
+    },
     //AI상담
     {
       path: '/ai-consult',

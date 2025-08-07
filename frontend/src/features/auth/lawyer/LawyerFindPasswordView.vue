@@ -14,24 +14,8 @@
           />
         </div>
 
-        <div class="form-group">
-          <label for="password">비밀번호</label>
-          <input
-            id="password"
-            type="password"
-            v-model="form.password"
-            placeholder="비밀번호 입력"
-            required
-          />
-        </div>
-
-        <button type="submit" class="lawyer-login">로그인</button>
+        <button type="submit" class="lawyer-find-password">비밀번호 초기화하기</button>
       </form>
-      <router-link to="/findpassword/lawyer">비밀번호를 잊어버리셨나요?</router-link>
-    </div>
-
-    <div class="footer-links">
-      <router-link to="/signup/step1">아직 회원이 아니신가요?</router-link>
     </div>
   </div>
 </template>
@@ -138,7 +122,7 @@ export default {
   font-size: 14px;
 }
 
-.lawyer-login {
+.lawyer-find-password {
   background-color: #0c2c46;
   color: white;
   border: none;
