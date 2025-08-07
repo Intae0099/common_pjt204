@@ -82,28 +82,25 @@ watch(
 
 <style scoped>
 /* 기존 스타일은 그대로 유지 */
+*{
+  font-family: 'Noto Sans KR', sans-serif;
+}
 .chat-container {
-  width: 350px;
+  width: 400px;
   height: 660px;
+  border-radius: 8px;
   display: flex;
   flex-direction: column;
   font-family: Arial, sans-serif;
   overflow: hidden;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border: none;
 }
-.chat-header {
-  padding: 15px;
-  background-color: #4A90E2;
-  color: white;
-  text-align: center;
-  border-bottom: 1px solid #ddd;
-}
-.chat-header h3 { margin: 0; font-size: 1.2em; }
 .message-area {
   flex-grow: 1;
   padding: 20px 10px;
   overflow-y: auto;
-  background-color: #f9f9f9;
+  background-color: #2C2C2C;
   display: flex;
   flex-direction: column;
 }
@@ -125,37 +122,36 @@ watch(
 /* [추가됨] 발신자 이름 스타일 */
 .sender-name {
   font-size: 0.8em;
-  color: #555;
+  color: #C5C5C5;
   margin-bottom: 4px;
   padding: 0 5px;
 }
 
 .message-bubble {
   padding: 10px 15px;
-  border-radius: 18px;
-  color: white;
+  border-radius: 10px;
   word-wrap: break-word; /* 긴 텍스트 줄바꿈 */
 }
 .my-message-container .message-bubble {
-  background-color: #4A90E2;
+  background-color: #C5C5C5;
 }
 .other-message-container .message-bubble {
-  background-color: #E5E5EA;
-  color: #333;
+  background-color: #5A5A5A;
+  color: #C5C5C5;
 }
 .input-area {
   display: flex;
   padding: 10px;
-  border-top: 1px solid #ddd;
-  background-color: #fff;
+  background-color: #2C2C2C;
 }
 .input-area input {
   flex-grow: 1;
-  border: 1px solid #ccc;
-  border-radius: 20px;
+  border-radius: 10px;
   padding: 10px 15px;
   font-size: 1em;
   margin-right: 10px;
+  border: none;
+  background-color: #C5C5C5;
 }
 .input-area input:focus {
   outline: none;
@@ -164,15 +160,15 @@ watch(
 .input-area button {
   padding: 10px 20px;
   border: none;
-  background-color: #4A90E2;
-  color: white;
-  border-radius: 20px;
+  background-color: #131516;
+  color: #B9D0DF;
+  border-radius: 10px;
   cursor: pointer;
   font-size: 1em;
   font-weight: bold;
 }
 .input-area button:hover {
-  background-color: #357ABD;
+  background-color: #1b1e1f;
 }
 .loading-bubble { display: flex; align-items: center; justify-content: center; }
 .loading-bubble span { animation: blink 1.4s infinite both; font-size: 2em; line-height: 0.5; }
