@@ -1,5 +1,6 @@
 package com.B204.lawvatar_backend.user.admin.controller;
 
+import java.time.LocalDateTime;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 public class AdminGenerator {
