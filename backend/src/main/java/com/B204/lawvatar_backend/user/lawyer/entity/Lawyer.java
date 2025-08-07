@@ -44,7 +44,7 @@ public class Lawyer {
     private String registrationNumber;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "varchar(100) default 'PENDING'")
     private CertificationStatus certificationStatus = CertificationStatus.PENDING;
 
     @Column(columnDefinition = "int unsigned default 0", nullable = false)
