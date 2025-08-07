@@ -60,20 +60,12 @@ public class RoomService {
         // 생성한 customSessionId 들고 sessionId 얻으러 가기
         String openviduSessionId = getSessionId(openviduCustomSessionId);
 
-        /// ///////////////////////////////////////////////////////
-        System.out.println("sessionId 획득 성공");
-        /// ///////////////////////////////////////////////////////
-
         // openvidu 관련 데이터들 가지고 Room 객체 생성해서 DB에 저장하기
         Room room = Room.builder().openviduCustomSessionId(openviduCustomSessionId).openviduSessionId(openviduSessionId).build();
         roomRepository.save(room);
 
         // sessionId 들고 connections 가서 토큰 얻어오기
         String openviduToken = getToken(openviduSessionId);
-
-        /// ///////////////////////////////////////////////////////
-        System.out.println("token 획득 성공!");
-        /// ///////////////////////////////////////////////////////
 
         // participant 테이블에 참가정보 저장하기
         // 유저타입에 따라 Participant 객체 만들어서 DB에 저장
@@ -120,13 +112,13 @@ public class RoomService {
             Client client = clientRepository.findById(userId).orElseThrow(() -> new NoSuchElementException("[RoomService - 006] 해당 ID 값을 가지는 Client가 없습니다."));
             
             // 여기서 다른방에 참여중인거 아닌지 검사
-            // 요청한 사람이 이미 화상상담방에 참여중인 사람인지 participant 테이블 뒤져서 찾기
-            // 결과물이 null이 아니면 IllegalStateException 터뜨리기
+            // 요청한 사람이 이미 화상상담방에 참여중인 사람인지 participant 테이블 조회해서 찾기
+            // 결과물이 null이 아니면 IllegalStateException 발생시키기
             if(participantRepository.findByClient(client) != null) {
                 throw new IllegalStateException("[RoomService - 007] 이미 화상상담방에 참여중인 사용자입니다.");
             }
 
-            // 이제 다시 room 기준으로 particicpant 테이블 뒤지기
+            // 이제 다시 room 기준으로 particicpant 테이블 조회하기
             Participant participant = participantRepository.findByRoom(room);
 
             // 얻은 Participant 객체의 client 자리에 client 넣기
@@ -153,10 +145,6 @@ public class RoomService {
 
         // sessionId 들고 토큰 받으러 가기
         String openviduToken = getToken(openviduSessionId);
-
-        /// ///////////////////////////////////////////////////////
-        System.out.println("token 획득 성공!");
-        /// ///////////////////////////////////////////////////////
 
         return openviduToken;
     }
@@ -204,7 +192,7 @@ public class RoomService {
                 appointment.setAppointmentStatus(AppointmentStatus.ENDED);
 
             }
-        } else if(userType.equals("LAWYER")) { // userType이 LAWYER 일 때도 똑같이 반복ㅠ
+        } else if(userType.equals("LAWYER")) { // userType이 LAWYER 일 때도 똑같이 반복
 
             if(participantCount >= 1) {
 
@@ -229,7 +217,7 @@ public class RoomService {
 
     public HttpStatusCode removeRoom(Long appointmentId) {
 
-        // 화상상담방을 파괴하고 싶은 Appointment 객체 얻기
+        // 화상상담방을 강제종료시키고 싶은 Appointment 객체 얻기
         Appointment appointment = appointmentRepository.findById(appointmentId).orElseThrow(() -> new NoSuchElementException("[RoomService - 013] 해당 ID 값을 가지는 Appointment가 없습니다."));
 
         // 이 Appointment에 해당하는 Session 객체 얻기
@@ -294,8 +282,7 @@ public class RoomService {
 
     private String getToken(String openviduSessionId) {
 
-        // 이제 sessionId 알고있으니깐(새로 생성됐으면 sessionId 리턴됐을거고, 이미 있는 customSessionId라 409 Conflict 발생했으면 그냥 기존에 알고있던 customSessionId를 sessionId로 쓰면 됨)
-        // 그 sessionId 들고 sessions/{sessionId}/connections가서 토큰얻어오기
+        // sessionId 들고 sessions/{sessionId}/connections가서 토큰얻어오기
         String url = MY_OPENVIDU_SERVER_URL + "/openvidu/api/sessions/" + openviduSessionId + "/connection";
 
         HttpHeaders headers = createHeaders();
