@@ -117,6 +117,7 @@ const submitReservation = async () => {
       startTime: startTime.replace('T', ' '),
       endTime: endTime
     })
+    console.log(startTime, endTime)
     alert('예약이 완료되었습니다!')
     emit('close')
     router.push('/user/mypage')
