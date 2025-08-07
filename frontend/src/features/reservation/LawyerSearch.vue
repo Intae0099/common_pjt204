@@ -1,41 +1,78 @@
 <template>
   <div class="lawyer-page-container">
-    <!-- 태그 필터 UI -->
-    <!-- 검색 UI 통합 박스 -->
-    <div class="search-row">
+    <!-- ▾ 필터 WRAPPER -------------------------------------------------- -->
+    <div class="filter-wrapper">
 
-      <!-- 태그 필터 -->
-      <div class="search-tags">
-        <p class="tag-label">상담 분야로 찾기:
-          <button class="reset-btn" @click="clearAll">초기화</button>
-        </p>
+      <!-- 헤더 : 대분류 / 소분류 / 검색창 + 토글 -->
+      <div class="filter-header-row">
+        <div class="filter-header-cells">
+          <span class="header-cell">대분류</span>
+          <span class="header-cell">소분류</span>
+        </div>
 
-        <button
-          v-for="tag in tagMap"
-          :key="tag.id"
-          @click="toggleTag(tag.id)"
-          :class="['tag-filter-btn', { selected: selectedTags.includes(tag.id) }]"
-        >
-          #{{ tag.name }}
+        <!-- 검색창 (폭을 줄여 배치) -->
+        <div class="search-box">
+          <MagnifyingGlassIcon class="search-icon" />
+          <input
+            v-model="searchQuery"
+            placeholder="변호사 이름을 검색해주세요."
+            @keyup.enter="applyFilters"
+          />
+        </div>
+
+        <button class="toggle-btn" @click="showFilters = !showFilters">
+          <ChevronDownIcon
+            :class="{ rotated: showFilters }"
+            class="chevron-icon"
+          />
         </button>
-
       </div>
 
-      <!-- 이름 검색 영역 -->
-      <div class="search-bar-full">
-        <input
-          v-model="searchQuery"
-          placeholder="이름으로 검색하세요"
-          @keyup.enter="applyFilters"
-        />
-        <button @click="applyFilters">
-          →
-        </button>
+      <!-- 펼쳐지는 상세 필터 (대분류 | 소분류 | 여백) -->
+      <transition name="fade">
+        <div v-if="showFilters" class="filter-table">
+          <!-- 대분류 -->
+          <div class="filter-col big-col">
+            <ul class="list">
+              <li
+                v-for="c in CATEGORY_MAP"
+                :key="c.catId"
+                @click="selectCategory(c.catId)"
+                :class="['list-item', { active: activeCatId === c.catId }]"
+              >{{ c.title }}</li>
+            </ul>
+          </div>
+
+          <!-- 소분류 -->
+          <div class="filter-col sub-col">
+            <ul class="list">
+              <li
+                v-for="tag in tagsOfActiveCategory"
+                :key="tag.id"
+                @click="toggleTag(tag.id)"
+                :class="['list-item', { selected: selectedTags.includes(tag.id) }]"
+              >{{ tag.name }}</li>
+            </ul>
+          </div>
+
+          <!-- 남은 공간(검색창 우측) -->
+          <div class="filter-col filler"></div>
+        </div>
+      </transition>
+
+      <!-- 선택된 태그 칩 -->
+      <div v-if="selectedTags.length" class="selected-tags">
+        <span
+          v-for="id in selectedTags"
+          :key="id"
+          class="tag selected-tag"
+          @click="toggleTag(id)"
+        >#{{ getTagName(id) }} <XMarkIcon class="remove-icon" /></span>
+        <button class="reset-btn" @click="clearAll">모두 해제</button>
       </div>
     </div>
 
-
-    <!-- 정렬 드롭다운 -->
+    <!-- ▼ 결과 / 정렬 / 카드 리스트 -------------------------------------------------- -->
     <div class="sort-dropdown-wrapper">
       <select class="sort-dropdown" v-model="sortOption" @change="applyFilters">
         <option value="name">이름순</option>
@@ -43,46 +80,20 @@
       </select>
     </div>
 
-    <!-- 검색 결과 개수 -->
-    <div class="search-summary">
-      총 {{ lawyers.length }}명의 변호사가 검색되었습니다.
-    </div>
+    <div class="search-summary">총 {{ lawyers.length }}명의 변호사가 검색되었습니다.</div>
 
-    <!-- 카드 리스트 -->
     <div class="lawyer-card-list">
       <div class="lawyer-card" v-for="lawyer in lawyers" :key="lawyer.id">
-        <img
-          v-if="lawyer.photo"
-          :src="`data:image/jpeg;base64,${lawyer.photo}`"
-          alt="변호사 프로필 이미지"
-          style="width: 150px; height: 150px; object-fit: cover"
-        />
+        <img v-if="lawyer.photo" :src="`data:image/jpeg;base64,${lawyer.photo}`" alt="프로필" />
         <div class="lawyer-bottom">
           <p class="lawyer-name">{{ lawyer.name }} 변호사</p>
           <div class="lawyer-tags">
-            <span
-              class="tag"
-              v-for="tag in lawyer.tags.slice(0, 2)"
-              :key="tag"
-            >
-              #{{ getTagName(tag) }}
-            </span>
-            <button
-              v-if="lawyer.tags.length > 2"
-              @click="toggleShowTags(lawyer.id)"
-              class="more-btn"
-            >
+            <span class="tag" v-for="tag in lawyer.tags.slice(0,2)" :key="tag">#{{ getTagName(tag) }}</span>
+            <button v-if="lawyer.tags.length>2" @click="toggleShowTags(lawyer.id)" class="more-btn">
               {{ expandedCards.includes(lawyer.id) ? '닫기' : '더보기' }}
             </button>
-            <!-- 나머지 태그 (보일 때만 렌더링) -->
             <div v-if="expandedCards.includes(lawyer.id)">
-              <span
-                class="tag"
-                v-for="tag in lawyer.tags.slice(2)"
-                :key="tag + '-more'"
-              >
-                #{{ getTagName(tag) }}
-              </span>
+              <span class="tag" v-for="tag in lawyer.tags.slice(2)" :key="tag+'-m'">#{{ getTagName(tag) }}</span>
             </div>
           </div>
           <button class="reserve-btn" v-if="!isLawyer" @click="goToReservation(lawyer)">상담 예약하기</button>
@@ -93,94 +104,85 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from '@/lib/axios'
 import { TAG_MAP } from '@/constants/lawyerTags'
+import { MagnifyingGlassIcon, ChevronDownIcon, XMarkIcon } from '@heroicons/vue/24/solid'
 
-const router = useRouter()
-
-const lawyers = ref([])
-const searchQuery = ref('')
+/* ----- 상태 ----- */
+const router       = useRouter()
+const showFilters  = ref(false)
+const lawyers      = ref([])
+const searchQuery  = ref('')
+const sortOption   = ref('name')
 const selectedTags = ref([])
 
-const sortOption = ref('name');  // 기본값 '이름순'
+/* 대분류 데이터 */
+const CATEGORY_MAP = [
+  { catId: 1, title: '형사 분야',          tagIds: [1,2,3,4,5,6] },
+  { catId: 2, title: '교통·사고·보험',      tagIds: [7,8,9] },
+  { catId: 3, title: '가사·가족',          tagIds: [10,11,12,13,14] },
+  { catId: 4, title: '민사·계약·채권',      tagIds: [15,16,17,18] },
+  { catId: 5, title: '파산·회생·채무조정',    tagIds: [19,20,21] },
+  { catId: 6, title: '상속·증여',          tagIds: [22,23,24] },
+  { catId: 7, title: '지식재산권',          tagIds: [25,26,27,28] },
+  { catId: 8, title: '노동·고용',          tagIds: [29,30,31,32] },
+  { catId: 9, title: '행정·조세',          tagIds: [33,34,35,36] },
+  { catId:10, title: '의료·생명·개인정보',    tagIds: [37,38,39,40] },
+  { catId:11, title: '환경·공공',          tagIds: [41,42,43] },
+  { catId:12, title: '금융·증권·기업',      tagIds: [44,45,46,47,48] },
+]
 
-const isLawyer = localStorage.getItem('userType') === 'LAWYER' // JWT 파싱 or 저장된 사용자 정보 이용
+const activeCatId = ref(CATEGORY_MAP[0].catId)
 
-const tagMap = TAG_MAP
-
-const getTagName = (id) => {
-  const tag = tagMap.find(t => t.id === Number(id))
-  if (!tag) {
-    console.warn('없는 태그 ID:', id)  // 로그로 확인
-  }
-  return tag ? tag.name : '알 수 없음'
-}
-// 태그 선택 토글
-const toggleTag = (tagId) => {
-  if (selectedTags.value.includes(tagId)) {
-    selectedTags.value = selectedTags.value.filter(id => id !== tagId)
-  } else {
-    selectedTags.value.push(tagId)
-  }
-  applyFilters()
-}
-
-// watch(searchQuery, () => {
-//   applyFilters()
-// })
-
-const clearAll = () => {
-  selectedTags.value = []
-  searchQuery.value = ''
-  applyFilters()
-}
-
-// 필터 적용 후 API 호출
-const applyFilters = async () => {
-  try {
-    const params = new URLSearchParams()
-    selectedTags.value.forEach(tagId => params.append('tags', tagId))
-    if (searchQuery.value.trim() !== '') {
-      params.append('search', searchQuery.value.trim())
-    }
-
-    const res = await axios.get(`/api/lawyers/list?${params.toString()}`)
-    console.log('API 응답 결과:', res.data)
-
-    lawyers.value = res.data.map(l => ({
-      ...l,
-      id: String(l.lawyerId)
-    }))
-  } catch (err) {
-    console.error('변호사 조회 실패:', err)
-  }
-}
-
-onMounted(() => {
-  applyFilters()
-  window.scrollTo(0, 0)   // 페이지 진입 시 최상단 이동)
+/* 계산된 소분류 */
+const tagsOfActiveCategory = computed(()=>{
+  const ids=CATEGORY_MAP.find(c=>c.catId===activeCatId.value)?.tagIds||[]
+  return TAG_MAP.filter(t=>ids.includes(t.id))
 })
 
-const expandedCards = ref([])
+/* ───── 함수들 ───── */
+const getTagName = (id)=>TAG_MAP.find(t=>t.id===id)?.name||''
 
-const toggleShowTags = (lawyerId) => {
-  if (expandedCards.value.includes(lawyerId)) {
-    expandedCards.value = expandedCards.value.filter(id => id !== lawyerId)
-  } else {
-    expandedCards.value.push(lawyerId)
-  }
+const selectCategory = (id)=>{ activeCatId.value=id }
+
+const toggleTag = (id)=>{
+  selectedTags.value.includes(id)
+    ?selectedTags.value=selectedTags.value.filter(t=>t!==id)
+    :selectedTags.value.push(id)
+  applyFilters()
 }
 
-const goToReservation = (lawyer) => {
-  const userType = localStorage.getItem('userType')
-  if (!userType) {
-    alert('로그인이 필요한 기능입니다. 로그인 페이지로 이동합니다.')
-    router.push('/login') // 로그인 라우트 이름에 맞게 수정
+const clearAll = ()=>{ selectedTags.value=[]; searchQuery.value=''; applyFilters() }
+
+const applyFilters = async()=>{
+  try{
+    const params=new URLSearchParams()
+    selectedTags.value.forEach(id=>params.append('tags',id))
+    if(searchQuery.value.trim()) params.append('search',searchQuery.value.trim())
+    if(sortOption.value) params.append('sort',sortOption.value)
+
+    const { data } = await axios.get(`/api/lawyers/list?${params.toString()}`)
+    lawyers.value=data.map(l=>({...l,id:String(l.lawyerId)}))
+  }catch(e){ console.error('변호사 조회 실패',e) }
+}
+
+onMounted(()=>{ applyFilters(); window.scrollTo(0,0) })
+
+/* 카드 관련 */
+const expandedCards = ref([])
+const isLawyer = localStorage.getItem('userType')==='LAWYER'
+const toggleShowTags = id => expandedCards.value.includes(id)
+  ? expandedCards.value=expandedCards.value.filter(i=>i!==id)
+  : expandedCards.value.push(id)
+const goToReservation = lawyer =>{
+  if(!localStorage.getItem('userType')){
+    alert('로그인이 필요한 기능입니다.');
+    router.push('/login')
     return
   }
-  router.push({ name: 'DetailReservation', params: { id: lawyer.id } })
+  router.push({ name:'DetailReservation', params:{ id: lawyer.id } })
 }
 </script>
 
@@ -194,85 +196,96 @@ const goToReservation = (lawyer) => {
   margin: 0 auto;
 }
 
-.search-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  gap: 12px;
-  margin-top: 120px;
+
+/* wrapper + 헤더 행 */
+.filter-wrapper{border:1px solid #e5e5e5;font-size:15px}
+.filter-header-row{display:flex;align-items:center;border-bottom:1px solid #e5e5e5}
+.filter-header-cells{display:flex;gap:1px;flex:1}
+.header-cell{flex:1;padding:18px;font-weight:600;text-align:center;border-right:1px solid #e5e5e5}
+
+/* 검색창 + 토글 버튼 */
+.search-box{flex:1.5;display:flex;align-items:center;gap:8px;padding:0 16px}
+.search-box{max-width:300px}
+
+.search-icon{width:21px}
+.search-box input{border:none;outline:none;width:100%;font-size:15px}
+.toggle-btn{width:68px;background:#1d2b50;color:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.chevron-icon{width:22px;height:22px;transition:transform .25s}
+.chevron-icon.rotated{transform:rotate(180deg)}
+.toggle-btn:hover{background:#33416c}
+
+/* 선택 태그 칩 영역 */
+.selected-tags{display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding:14px 18px;border-top:1px solid #e5e5e5}
+.selected-tag{background:#1d2b50;color:#fff;cursor:pointer;display:flex;align-items:center;gap:4px}
+.remove-icon{width:12px}
+
+.fade-enter-active,.fade-leave-active{transition:all .25s ease}
+.fade-enter-from,.fade-leave-to{opacity:0;transform:translateY(-8px)}
+
+
+/* 3열 비율 고정: 220px | 260px | 나머지 */
+.filter-table{
+  display:flex;
+}
+
+.filter-col.big-col{flex:0 0 220px}   /* 대분류 */
+.filter-col.sub-col{flex:0 0 260px}   /* 소분류 */
+.search-dummy{flex:1}
+
+/* 여기까지가 태그 관련 */
+/* 대분류소분류 스크롤 줄이기 */
+.big-list,.sub-list{
+  max-height:280px;        /* 헤더·패딩 감안해서 */
+  overflow-y:auto;
 }
 
 
-/* 태그 영역 */
-.search-tags {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 16px;
+/* radio 커스텀 – 체크박스와 동일한 비주얼 */
+.check-label input[type="radio"],
+.check-label input[type="checkbox"]{
+  appearance:none;width:20px;height:20px;border:1px solid #bbb;border-radius:3px;
+  position:relative;cursor:pointer
+}
+.check-label input:checked{background:#1d2b50;border-color:#1d2b50}
+.check-label input:checked::after{
+  content:"";position:absolute;left:5px;top:2px;width:6px;height:11px;
+  border:2px solid #fff;border-top:none;border-left:none;transform:rotate(45deg)
 }
 
-.tag-label {
-  width: 100%;
-  font-size: 14px;
-  font-weight: 500;
-  margin-bottom: 8px;
-  display: flex;               /* ✅ Flex로 수평 정렬 */
-  align-items: center;
-  font-size: 16px;
-  outline: none;
-  color: #888;
+/* ── 리스트 공통 ─────────────────────────── */
+.list{margin:0;padding:0;list-style:none;max-height:300px;overflow-y:auto}
+.list-item{
+  padding:12px 16px;border-bottom:1px solid #e5e5e5;cursor:pointer;
+  transition:background .15s;color:#333
+}
+.list-item:hover{background:#f1f1f1}
+
+/* 대분류 선택 시 */
+.list-item.active{
+  background:#1d2b50;color:#fff;font-weight:600
 }
 
-
-.tag-filter-btn.selected {
-  background-color: #1d2b50;
-  color: white;
-  border: none;
+/* 소분류 다중 선택 시 */
+.list-item.selected{
+  background:#33416c;color:#fff;font-weight:600
 }
 
-/* 이름 검색 input */
-.search-bar-full {
-  display: flex;
-  align-items: center;
-  border: 1px solid #ccc;
-  border-radius: 12px;
-  padding: 12px 16px;
-  width: 100%;
-  max-width: 500px;
-  background-color: white;
-  transition: border-color 0.2s ease;
+/* 선택 태그 칩 영역 */
+.selected-tags{
+  display:flex;flex-wrap:wrap;gap:8px;padding:14px 18px;border-top:1px solid #e5e5e5
 }
+.selected-tag{
+  background:#1d2b50;color:#fff;border-radius:16px;padding:4px 10px;
+  display:flex;align-items:center;gap:4px;cursor:pointer
+}
+.remove-icon{width:12px}
 
-.search-bar-full:hover {
-  border-color: #007bff;  /* 파란색 강조 */
-}
+.big-list::-webkit-scrollbar,
+.sub-list::-webkit-scrollbar{width:6px}
+.big-list::-webkit-scrollbar-thumb,
+.sub-list::-webkit-scrollbar-thumb{background:#9a9a9a;border-radius:3px}
 
-.search-bar-full input {
-  flex: 1;
-  border: none;
-  background-color: transparent;
-  font-size: 16px;
-  outline: none;
-  color: #333;
-}
-
-.search-bar-full input::placeholder {
-  color: #888;
-}
-
-.search-bar-full button {
-  border: none;
-  background: none;
-  cursor: pointer;
-  font-size: 18px;
-  color: #007bff;
-  transition: transform 0.2s ease;
-}
-
-.search-bar-full button:hover {
-  transform: scale(1.1);
-}
+/* 기존 toggle·header·search-box·fade 애니메이션 클래스는 그대로 사용 */
 
 
 .reset-btn {

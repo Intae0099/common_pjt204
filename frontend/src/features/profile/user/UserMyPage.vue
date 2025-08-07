@@ -4,6 +4,11 @@
     <section class="profile-section">
       <div class="profile-box">
         <div class="profile-left">
+          <img
+            src="C:\Users\SSAFY\Desktop\S13P11B204\frontend\src\assets\kakakoprofile.png"
+            alt="프로필 이미지"
+            class="profile-img"
+          />
           <div class="profile-info">
             <h3>{{ user.oauthName }}</h3>
             <p class="email">이메일: {{ user.email || '등록된 이메일이 없습니다.' }}</p>
@@ -152,7 +157,7 @@ const handleWithdraw = async () => {
   width: 100%;
   display: flex;
   justify-content: center;
-  margin-bottom: 60px;
+  margin-bottom: 40px;
 }
 .profile-box {
   position: relative;
@@ -164,18 +169,20 @@ const handleWithdraw = async () => {
   padding: 20px;
   width: 100%;
   max-width: 100%;
-  margin-top: 30px;
+  margin-top: 40px;
 }
 .profile-left {
   display: flex;
   align-items: center;
+  margin-left: 20px; /* ✅ 왼쪽 여백 추가 */
+  margin-top: 20px;
 }
 .profile-img {
-  width: 100px;
-  height: 100px;
+  width: 70px;
+  height: 70px;
   border-radius: 50%;
   object-fit: cover;
-  margin-right: 16px;
+  margin-right: 20px;
 }
 .profile-info {
   display: flex;
