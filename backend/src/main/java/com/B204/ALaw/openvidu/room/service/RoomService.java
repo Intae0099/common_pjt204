@@ -79,16 +79,26 @@ public class RoomService {
         // 유저타입에 따라 Participant 객체 만들어서 DB에 저장
         if(userType.equals("CLIENT")) {
             Client client = clientRepository.findById(userId).orElseThrow(() -> new NoSuchElementException("[RoomService - 002] 해당 ID 값을 가지는 Client가 없습니다."));
+
+            if(participantRepository.findByClient(client) != null) {
+                throw new IllegalStateException("[RoomService - 003] 이미 화상상담방에 참가중인 사용자입니다. 참가 중인 화상상담방에서 나온 후에 다시 요청해주세요.");
+            }
+
             Participant participant = Participant.builder().client(client).room(room).build();
             participantRepository.save(participant);
         } else if(userType.equals("LAWYER")) {
             Lawyer lawyer = lawyerRepository.findById(userId).orElseThrow(() -> new NoSuchElementException("[RoomService - 003] 해당 ID 값을 가지는 Lawyer가 없습니다."));
+
+            if(participantRepository.findByLawyer(lawyer) != null) {
+                throw new IllegalStateException("[RoomService - 004] 이미 화상상담방에 참가중인 사용자입니다. 참가 중인 화상상담방에서 나온 후에 다시 요청해주세요.");
+            }
+
             Participant participant = Participant.builder().lawyer(lawyer).room(room).build();
             participantRepository.save(participant);
         }
 
         // session 테이블에 세션정보 저장하기
-        Appointment appointment = appointmentRepository.findById(appointmentId).orElseThrow(() -> new NoSuchElementException("[RoomService - 004] 해당 ID 값을 가지는 Appointment가 없습니다."));
+        Appointment appointment = appointmentRepository.findById(appointmentId).orElseThrow(() -> new NoSuchElementException("[RoomService - 005] 해당 ID 값을 가지는 Appointment가 없습니다."));
         Session session = Session.builder().appointment(appointment).room(room).participantCount(1).build();
         sessionRepository.save(session);
         
@@ -107,13 +117,13 @@ public class RoomService {
         // Participant 테이블에 참가정보 저장하기
         // 유저타입에 따라 Participant 객체 만들어서 DB에 저장
         if(userType.equals("CLIENT")) {
-            Client client = clientRepository.findById(userId).orElseThrow(() -> new NoSuchElementException("[RoomService - 005] 해당 ID 값을 가지는 Client가 없습니다."));
+            Client client = clientRepository.findById(userId).orElseThrow(() -> new NoSuchElementException("[RoomService - 006] 해당 ID 값을 가지는 Client가 없습니다."));
             
             // 여기서 다른방에 참여중인거 아닌지 검사
             // 요청한 사람이 이미 화상상담방에 참여중인 사람인지 participant 테이블 뒤져서 찾기
             // 결과물이 null이 아니면 IllegalStateException 터뜨리기
             if(participantRepository.findByClient(client) != null) {
-                throw new IllegalStateException("[RoomService - 006] 이미 화상상담방에 참여중인 사용자입니다.");
+                throw new IllegalStateException("[RoomService - 007] 이미 화상상담방에 참여중인 사용자입니다.");
             }
 
             // 이제 다시 room 기준으로 particicpant 테이블 뒤지기
@@ -124,10 +134,10 @@ public class RoomService {
 
             // 더티체킹
         } else if(userType.equals("LAWYER")) {
-            Lawyer lawyer = lawyerRepository.findById(userId).orElseThrow(() -> new NoSuchElementException("[RoomService - 007] 해당 ID 값을 가지는 Lawyer가 없습니다."));
+            Lawyer lawyer = lawyerRepository.findById(userId).orElseThrow(() -> new NoSuchElementException("[RoomService - 008] 해당 ID 값을 가지는 Lawyer가 없습니다."));
 
             if(participantRepository.findByLawyer(lawyer) != null) {
-                throw new IllegalStateException("[RoomService - 008] 이미 화상상담방에 참여중인 사용자입니다.");
+                throw new IllegalStateException("[RoomService - 009] 이미 화상상담방에 참여중인 사용자입니다.");
             }
 
             Participant participant = participantRepository.findByRoom(room);
@@ -158,7 +168,7 @@ public class RoomService {
 
         // session 객체가 없다면, 에러 발생
         if(session == null) {
-            throw new NoSuchElementException("[RoomService - 009] 해당 ID 값을 가지는 Appointment는 열려있는 화상상담방이 없습니다.");
+            throw new NoSuchElementException("[RoomService - 010] 해당 ID 값을 가지는 Appointment는 열려있는 화상상담방이 없습니다.");
         }
 
         // 세션에서 나간다면 남는 인원수
@@ -190,7 +200,7 @@ public class RoomService {
                 roomRepository.delete(room);
 
                 // appointment 테이블에서 appointment_status 'ENDED'로 변경
-                Appointment appointment = appointmentRepository.findById(appointmentId).orElseThrow(() -> new NoSuchElementException("[RoomService - 010] 해당 ID 값을 가지는 Appointment가 없습니다."));
+                Appointment appointment = appointmentRepository.findById(appointmentId).orElseThrow(() -> new NoSuchElementException("[RoomService - 011] 해당 ID 값을 가지는 Appointment가 없습니다."));
                 appointment.setAppointmentStatus(AppointmentStatus.ENDED);
 
             }
@@ -211,7 +221,7 @@ public class RoomService {
 
                 roomRepository.delete(room);
 
-                Appointment appointment = appointmentRepository.findById(appointmentId).orElseThrow(() -> new NoSuchElementException("[RoomService - 011] 해당 ID 값을 가지는 Appointment가 없습니다."));
+                Appointment appointment = appointmentRepository.findById(appointmentId).orElseThrow(() -> new NoSuchElementException("[RoomService - 012] 해당 ID 값을 가지는 Appointment가 없습니다."));
                 appointment.setAppointmentStatus(AppointmentStatus.ENDED);
             }
         }
@@ -220,14 +230,14 @@ public class RoomService {
     public HttpStatusCode removeRoom(Long appointmentId) {
 
         // 화상상담방을 파괴하고 싶은 Appointment 객체 얻기
-        Appointment appointment = appointmentRepository.findById(appointmentId).orElseThrow(() -> new NoSuchElementException("[RoomService - 012] 해당 ID 값을 가지는 Appointment가 없습니다."));
+        Appointment appointment = appointmentRepository.findById(appointmentId).orElseThrow(() -> new NoSuchElementException("[RoomService - 013] 해당 ID 값을 가지는 Appointment가 없습니다."));
 
         // 이 Appointment에 해당하는 Session 객체 얻기
         Session session = sessionRepository.findByAppointment_Id(appointmentId);
 
         // 이 Appointment에 대해 활성화된 세션이 없다면, 404 NotFound 에러 응답
         if(session == null) {
-            throw new NoSuchElementException("[RoomService - 013] 해당 상담은 화상상담방이 열려있지 않습니다.");
+            throw new NoSuchElementException("[RoomService - 014] 해당 상담은 화상상담방이 열려있지 않습니다.");
         }
 
         // 이 Session이 참조중인 Room 객체 얻어내고 Session 데이터 DB에서 삭제하기
