@@ -37,10 +37,27 @@ deploy:
     # 4️⃣ 새 빌드 및 배포
     - docker-compose up -d --build
     
-    # 5️⃣ 배포 확인
-    - Start-Sleep 20
-    - 'try { Invoke-RestMethod -Uri "http://localhost:8997/" -Method Get } catch { Write-Host "❌ 배포 실패"; exit 1 }'
-    - 'Write-Host "✅ 배포 성공!"'
+    # 5️⃣ 배포 확인 (AI 모델 로딩 완료까지 대기)
+    - |
+      Write-Host "AI 서비스 시작 대기 중..."
+      $maxAttempts = 20
+      $attempt = 0
+      do {
+        $attempt++
+        Write-Host "헬스체크 시도 $attempt/$maxAttempts"
+        try {
+          Invoke-RestMethod -Uri "http://localhost:8997/" -Method Get -TimeoutSec 10
+          Write-Host "✅ AI 서비스 준비 완료!"
+          break
+        } catch {
+          Write-Host "대기 중... (30초 후 재시도)"
+          Start-Sleep 30
+        }
+      } while ($attempt -lt $maxAttempts)
+      if ($attempt -eq $maxAttempts) { 
+        Write-Host "❌ AI 서비스 시작 실패"
+        exit 1 
+      }
     
     # 6️⃣ 상태 확인
     - docker-compose ps
