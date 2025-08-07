@@ -1,29 +1,37 @@
 <template>
-  <div class="modal-overlay">
+  <div class="modal-overlay" @click.self="closeDropdown">
     <div class="modal-box">
       <h3 class="modal-title">
         {{ selectedDate }} {{ selectedTime }} 상담 예약
       </h3>
 
-      <select v-model="selectedApplicationId" class="application-select">
-        <option value="">상담신청서 선택</option>
-        <option
-          v-for="app in applications"
-          :value="app.applicationId"
-          :key="app.applicationId"
-        >
-          {{ app.title }}
-        </option>
-      </select>
+      <!-- ✅ [수정] 커스텀 드롭다운으로 변경 -->
+      <div class="custom-select-wrapper">
+        <div class="custom-select" @click="toggleDropdown">
+          <div class="custom-select-trigger">
+            <span>{{ selectedApplicationTitle || '상담신청서 선택' }}</span>
+            <div class="arrow" :class="{ 'open': isDropdownOpen }"></div>
+          </div>
+        </div>
+        <div class="custom-options" v-if="isDropdownOpen">
+          <div
+            class="custom-option"
+            v-for="app in applications"
+            :key="app.applicationId"
+            :title="app.title"
+            @click="selectApplication(app)"
+          >
+            {{ app.title }}
+          </div>
+        </div>
+      </div>
 
-      <p v-if="applications.length === 0" class="no-app-message">
+      <p class="no-app-message">
         상담신청서가 없나요?
         <button class="new-app-btn" @click="goToAiApplication">
         새 상담신청서 작성하기
         </button>
       </p>
-
-
 
       <div class="modal-buttons">
         <button
@@ -39,9 +47,8 @@
   </div>
 </template>
 
-
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue' // ✅ computed 추가
 import axios from '@/lib/axios'
 import { useRouter } from 'vue-router'
 
@@ -57,23 +64,57 @@ const applications = ref([])
 const selectedApplicationId = ref('')
 const router = useRouter()
 
+// ✅ [추가] 커스텀 드롭다운 상태 관리를 위한 ref
+const isDropdownOpen = ref(false)
+
+// ✅ [추가] 선택된 신청서의 제목을 표시하기 위한 computed 속성
+const selectedApplicationTitle = computed(() => {
+  const selectedApp = applications.value.find(
+    app => app.applicationId === selectedApplicationId.value
+  )
+  return selectedApp ? selectedApp.title : ''
+})
+
 const fetchApplications = async () => {
-  const res = await axios.get('/api/applications/me?isCompleted=true')
-  applications.value = res.data.data.aplicationList
+  try {
+    const res = await axios.get('/api/applications/me?isCompleted=true')
+    if (res.data && res.data.data && res.data.data.applicationList) {
+      applications.value = res.data.data.applicationList
+    } else {
+      applications.value = []
+    }
+  } catch (error) {
+    console.error('상담신청서 조회 중 오류가 발생했습니다:', error)
+    applications.value = []
+  }
 }
+
+// ✅ [추가] 커스텀 드롭다운 제어 함수들
+const toggleDropdown = () => {
+  isDropdownOpen.value = !isDropdownOpen.value
+}
+
+const closeDropdown = () => {
+  isDropdownOpen.value = false
+}
+
+const selectApplication = (app) => {
+  selectedApplicationId.value = app.applicationId
+  closeDropdown()
+}
+
 
 const submitReservation = async () => {
   try {
-    const startTime = `${props.selectedDate}T${props.selectedTime}:00`  // ISO 형식 조합
-
-    const end = new Date(`${props.selectedDate}T${props.selectedTime}:00`)
+    const startTime = `${props.selectedDate}T${props.selectedTime}:00`
+    const end = new Date(startTime)
     end.setMinutes(end.getMinutes() + 30)
-    const endTime = end.toISOString().split('.')[0].replace('T', ' ')  // "YYYY-MM-DD HH:MM:SS"
+    const endTime = end.toISOString().slice(0, 19).replace('T', ' ')
 
     await axios.post('/api/appointments', {
       lawyerId: props.lawyerId,
       applicationId: selectedApplicationId.value,
-      startTime: startTime.replace('T', ' '),  // 백엔드가 공백 포맷 기대 시
+      startTime: startTime.replace('T', ' '),
       endTime: endTime
     })
     alert('예약이 완료되었습니다!')
@@ -125,15 +166,75 @@ onMounted(fetchApplications)
   color: #333;
 }
 
-.application-select {
+/* --- ✅ [수정/추가] 커스텀 드롭다운 스타일 --- */
+.custom-select-wrapper {
+  position: relative;
   width: 100%;
-  padding: 10px;
+  margin-bottom: 12px;
+}
+
+.custom-select {
+  position: relative;
+  cursor: pointer;
   border: 1px solid #ddd;
   border-radius: 6px;
-  margin-bottom: 12px;
+  background: #fff;
+  padding: 10px;
   font-size: 14px;
   color: #333;
 }
+
+.custom-select-trigger {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  /* 말줄임표 스타일 */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.arrow {
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 5px solid #333;
+  transition: transform 0.2s ease;
+}
+
+.arrow.open {
+  transform: rotate(180deg);
+}
+
+.custom-options {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-top: 0;
+  border-radius: 0 0 6px 6px;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 1001; /* 모달 위로 올라오도록 설정 */
+  margin-top: -1px; /* select 박스와 경계선 겹치게 */
+}
+
+.custom-option {
+  padding: 10px;
+  cursor: pointer;
+  font-size: 14px;
+  /* 말줄임표 스타일 */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.custom-option:hover {
+  background-color: #f0f0f0;
+}
+/* --- 여기까지 커스텀 드롭다운 스타일 --- */
+
 
 .no-app-message {
   font-size: 13px;
