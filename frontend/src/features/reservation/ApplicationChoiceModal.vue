@@ -106,18 +106,31 @@ const selectApplication = (app) => {
 
 const submitReservation = async () => {
   try {
-    const startTime = `${props.selectedDate}T${props.selectedTime}:00`
-    const end = new Date(startTime)
-    end.setMinutes(end.getMinutes() + 30)
-    const endTime = end.toISOString().slice(0, 19).replace('T', ' ')
+    // 1. startTime을 "yyyy-mm-dd hh:mm:ss" 형식으로 조합
+    const startTimeStr = `${props.selectedDate} ${props.selectedTime}:00`
+
+    // 2. endTime을 계산하기 위해 Date 객체 생성
+    const startDate = new Date(`${props.selectedDate}T${props.selectedTime}:00`)
+    startDate.setMinutes(startDate.getMinutes() + 30)
+
+    // 3. endTime을 "yyyy-mm-dd hh:mm:ss" 형식으로 포맷팅
+    const pad = (num) => num.toString().padStart(2, '0')
+    const year = startDate.getFullYear()
+    const month = pad(startDate.getMonth() + 1)
+    const day = pad(startDate.getDate())
+    const hours = pad(startDate.getHours())
+    const minutes = pad(startDate.getMinutes())
+    const seconds = pad(startDate.getSeconds())
+    const endTimeStr = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
 
     await axios.post('/api/appointments', {
       lawyerId: props.lawyerId,
       applicationId: selectedApplicationId.value,
-      startTime: startTime.replace('T', ' '),
-      endTime: endTime
+      startTime: startTimeStr,
+      endTime: endTimeStr
     })
-    console.log(startTime, endTime)
+
+    console.log('예약 정보:', { startTime: startTimeStr, endTime: endTimeStr });
     alert('예약이 완료되었습니다!')
     emit('close')
     router.push('/user/mypage')

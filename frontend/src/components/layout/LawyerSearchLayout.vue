@@ -1,12 +1,12 @@
-<!-- src/components/layout/ConsultationFomLayout.vue -->
+<!-- src/components/layout/LawyerSearchLayout.vue -->
 <template>
-  <div class="case-layout">
+  <div class="search-layout">
     <!-- 배너 영역 -->
      <div class="banner-wrapper">
        <div class="banner">
-         <img src="@/assets/banner-bg2.png" alt="배경" class="banner-bg" />
+         <img src="@/assets/banner-lawyersearch.png" alt="배경" class="banner-bg" />
          <div class="banner-text">
-           <p><span class="highlight">AI기반</span> 변호사 상담,<br />쉽고 빠르게 신청하세요!</p>
+           <p><span class="highlight">분야별 전문가</span> 조회,<br />원하는 변호사에게 빠르게 상담 신청하세요!</p>
          </div>
        </div>
      </div>
@@ -23,7 +23,7 @@
 </script>
 
 <style scoped>
-.case-layout {
+.search-layout {
   overflow-x: hidden;
 }
 .banner-wrapper {
@@ -57,8 +57,8 @@
   top: 55%;
   left: 35%;
   transform: translateY(-50%);
-  color: white;
-  font-size: 35px;
+  color: rgb(58, 58, 58);
+  font-size: 32px;
   font-weight: 350;
   line-height: 1.4;
 }
