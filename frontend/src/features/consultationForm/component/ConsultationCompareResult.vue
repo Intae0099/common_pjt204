@@ -67,8 +67,7 @@
 
 <script setup>
 import { ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import axios from '@/lib/axios'
+
 import ConsultationForm from './ConsultationForm.vue'
 import { InformationCircleIcon } from '@heroicons/vue/24/outline'
 
@@ -76,8 +75,7 @@ const props = defineProps({
   userData: Object,
   aiData: Object
 })
-const route = useRoute()
-const router = useRouter()
+
 const localUserData = ref({ ...props.userData })
 const emit = defineEmits(['submit', 'back'])
 const questionsInput = ref(props.userData.recommendedQuestions?.join(', ') || '')

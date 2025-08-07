@@ -216,18 +216,13 @@ onMounted(async () => {
   width: 100%;         /* ✅ 부모 영역(mypage-container)에 꽉 차게 */
   max-width: 100%;
   margin-top: 30px; /* ✅ 위에 여백 추가 */
+
 }
 .profile-left {
   display: flex;
   align-items: center;
 }
-.profile-img {
-  width: 100px;
-  height: 100px;
-  border-radius: 50%;
-  object-fit: cover;
-  margin-right: 16px;
-}
+
 .profile-info {
   display: flex;
   flex-direction: column; /* 수직 정렬 */
