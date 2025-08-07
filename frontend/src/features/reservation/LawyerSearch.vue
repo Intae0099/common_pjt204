@@ -1,93 +1,97 @@
 <template>
-  <div class="lawyer-page-container">
+  <LawyerSearchLayout>
+    <LayoutDefault>
+      <div class="lawyer-page-container">
 
-    <div class="filter-wrapper">
-      <div class="filter-header">
-        <span class="header-title">태그를 선택해주세요.</span>
-        <button class="toggle-btn" @click="showFilters = !showFilters">
-          <ChevronDownIcon :class="{ rotated: showFilters }" class="chevron-icon" />
-        </button>
-      </div>
-
-      <div class="search-box">
-        <MagnifyingGlassIcon class="search-icon" />
-        <input
-          v-model="searchQuery"
-          placeholder="변호사 이름을 검색해주세요."
-          @keyup.enter="applyFilters"
-        />
-        <button class="search-btn" @click="applyFilters">검색</button>
-      </div>
-
-      <transition name="fade">
-        <div v-if="showFilters" class="filter-content">
-          <div class="filter-table">
-            <div class="filter-col big-col">
-              <ul class="list">
-                <li
-                  v-for="c in CATEGORY_MAP"
-                  :key="c.catId"
-                  @click="selectCategory(c.catId)"
-                  :class="['list-item', { active: activeCatId === c.catId }]"
-                >{{ c.title }}
-                <ChevronRightIcon class="arrow-icon" /></li>
-
-              </ul>
-            </div>
-
-            <div class="filter-col sub-col">
-              <ul class="list">
-                <li
-                  v-for="tag in tagsOfActiveCategory"
-                  :key="tag.id"
-                  @click="toggleTag(tag.id)"
-                  :class="['list-item', { selected: selectedTags.includes(tag.id) }]"
-                >{{ tag.name }}</li>
-              </ul>
-            </div>
-          </div>
-
-          <div v-if="selectedTags.length" class="selected-tags">
-            <span
-              v-for="id in selectedTags"
-              :key="id"
-              class="tag selected-tag"
-              @click="toggleTag(id)"
-            >#{{ getTagName(id) }} <XMarkIcon class="remove-icon" /></span>
-            <button class="reset-btn" @click="clearAll">모두 해제</button>
-          </div>
-        </div>
-      </transition>
-    </div>
-
-    <div class="sort-dropdown-wrapper">
-      <select class="sort-dropdown" v-model="sortOption" @change="applyFilters">
-        <option value="name">이름순</option>
-        <option value="many">상담많은순</option>
-      </select>
-    </div>
-
-    <div class="search-summary">총 {{ lawyers.length }}명의 변호사가 검색되었습니다.</div>
-
-    <div class="lawyer-card-list" id="lawyer-results">
-      <div class="lawyer-card" v-for="lawyer in lawyers" :key="lawyer.id">
-        <img v-if="lawyer.photo" :src="`data:image/jpeg;base64,${lawyer.photo}`" alt="프로필" />
-        <div class="lawyer-bottom">
-          <p class="lawyer-name">{{ lawyer.name }} 변호사</p>
-          <div class="lawyer-tags">
-            <span class="tag" v-for="tag in lawyer.tags.slice(0,2)" :key="tag">#{{ getTagName(tag) }}</span>
-            <button v-if="lawyer.tags.length>2" @click="toggleShowTags(lawyer.id)" class="more-btn">
-              {{ expandedCards.includes(lawyer.id) ? '닫기' : '더보기' }}
+        <div class="filter-wrapper">
+          <div class="filter-header">
+            <span class="header-title">태그를 선택해주세요.</span>
+            <button class="toggle-btn" @click="showFilters = !showFilters">
+              <ChevronDownIcon :class="{ rotated: showFilters }" class="chevron-icon" />
             </button>
-            <div v-if="expandedCards.includes(lawyer.id)">
-              <span class="tag" v-for="tag in lawyer.tags.slice(2)" :key="tag+'-m'">#{{ getTagName(tag) }}</span>
+          </div>
+
+          <div class="search-box">
+            <MagnifyingGlassIcon class="search-icon" />
+            <input
+              v-model="searchQuery"
+              placeholder="변호사 이름을 검색해주세요."
+              @keyup.enter="applyFilters"
+            />
+            <button class="search-btn" @click="applyFilters">검색</button>
+          </div>
+
+          <transition name="fade">
+            <div v-if="showFilters" class="filter-content">
+              <div class="filter-table">
+                <div class="filter-col big-col">
+                  <ul class="list">
+                    <li
+                      v-for="c in CATEGORY_MAP"
+                      :key="c.catId"
+                      @click="selectCategory(c.catId)"
+                      :class="['list-item', { active: activeCatId === c.catId }]"
+                    >{{ c.title }}
+                    <ChevronRightIcon class="arrow-icon" /></li>
+
+                  </ul>
+                </div>
+
+                <div class="filter-col sub-col">
+                  <ul class="list">
+                    <li
+                      v-for="tag in tagsOfActiveCategory"
+                      :key="tag.id"
+                      @click="toggleTag(tag.id)"
+                      :class="['list-item', { selected: selectedTags.includes(tag.id) }]"
+                    >{{ tag.name }}</li>
+                  </ul>
+                </div>
+              </div>
+
+              <div v-if="selectedTags.length" class="selected-tags">
+                <span
+                  v-for="id in selectedTags"
+                  :key="id"
+                  class="tag selected-tag"
+                  @click="toggleTag(id)"
+                >#{{ getTagName(id) }} <XMarkIcon class="remove-icon" /></span>
+                <button class="reset-btn" @click="clearAll">모두 해제</button>
+              </div>
+            </div>
+          </transition>
+        </div>
+
+        <div class="sort-dropdown-wrapper">
+          <select class="sort-dropdown" v-model="sortOption" @change="applyFilters">
+            <option value="name">이름순</option>
+            <option value="many">상담많은순</option>
+          </select>
+        </div>
+
+        <div class="search-summary">총 {{ lawyers.length }}명의 변호사가 검색되었습니다.</div>
+
+        <div class="lawyer-card-list" id="lawyer-results">
+          <div class="lawyer-card" v-for="lawyer in lawyers" :key="lawyer.id">
+            <img v-if="lawyer.photo" :src="`data:image/jpeg;base64,${lawyer.photo}`" alt="프로필" />
+            <div class="lawyer-bottom">
+              <p class="lawyer-name">{{ lawyer.name }} 변호사</p>
+              <div class="lawyer-tags">
+                <span class="tag" v-for="tag in lawyer.tags.slice(0,2)" :key="tag">#{{ getTagName(tag) }}</span>
+                <button v-if="lawyer.tags.length>2" @click="toggleShowTags(lawyer.id)" class="more-btn">
+                  {{ expandedCards.includes(lawyer.id) ? '닫기' : '더보기' }}
+                </button>
+                <div v-if="expandedCards.includes(lawyer.id)">
+                  <span class="tag" v-for="tag in lawyer.tags.slice(2)" :key="tag+'-m'">#{{ getTagName(tag) }}</span>
+                </div>
+              </div>
+              <button class="reserve-btn" v-if="!isLawyer" @click="goToReservation(lawyer)">상담 예약하기</button>
             </div>
           </div>
-          <button class="reserve-btn" v-if="!isLawyer" @click="goToReservation(lawyer)">상담 예약하기</button>
         </div>
       </div>
-    </div>
-  </div>
+    </LayoutDefault>
+  </LawyerSearchLayout>
 </template>
 
 <script setup>
@@ -96,6 +100,8 @@ import { useRouter } from 'vue-router'
 import axios from '@/lib/axios'
 import { TAG_MAP } from '@/constants/lawyerTags'
 import { MagnifyingGlassIcon, ChevronDownIcon, XMarkIcon, ChevronRightIcon } from '@heroicons/vue/24/solid'
+import LawyerSearchLayout from '@/components/layout/LawyerSearchLayout.vue';
+import LayoutDefault from '@/components/layout/LayoutDefault.vue'
 
 /* ----- 상태 ----- */
 const router       = useRouter()
@@ -162,7 +168,8 @@ const applyFilters = async (shouldScroll = true) =>{
   }catch(e){ console.error('변호사 조회 실패',e) }
 }
 
-onMounted(()=>{ applyFilters(); window.scrollTo(0,0) })
+onMounted(()=>{ applyFilters(false);
+  window.scrollTo(0, 0);})
 
 /* 카드 관련 */
 const expandedCards = ref([])
@@ -183,7 +190,7 @@ const goToReservation = lawyer =>{
 <style scoped>
 /* ── Universal Layout ─────────────────────────── */
 .lawyer-page-container {
-  padding: 60px 20px 20px;
+  padding: 0px 0px 20px;
   max-width: 1200px;
   margin: 60px auto;
 }
@@ -192,7 +199,8 @@ const goToReservation = lawyer =>{
 .filter-wrapper {
   border: 1px solid #e5e5e5;
   font-size: 15px;
-
+  margin-top: -100px;
+  padding-top: -100px;
   /* 반응형 레이아웃을 위한 Grid 설정 */
   display: grid;
   grid-template-columns: 2fr 1fr; /* 2열: 남은공간 | 자동너비 */

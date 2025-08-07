@@ -56,6 +56,7 @@ const route = useRoute()
 const router = useRouter()
 
 onMounted(() => {
+  window.scrollTo(0, 0);
   setTimeout(() => {
     isLoading.value = false
 
