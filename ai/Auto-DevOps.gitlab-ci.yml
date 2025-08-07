@@ -1,0 +1,53 @@
+# 🚀 AI 애플리케이션 Windows 로컬 배포
+
+variables:
+  DOCKERFILE_PATH: "docker/Dockerfile"
+  PORT: "8000"
+  
+  # 🚫 불필요한 스캔 비활성화 (속도 향상)
+  SAST_DISABLED: "true"
+  DEPENDENCY_SCANNING_DISABLED: "true" 
+  CONTAINER_SCANNING_DISABLED: "true"
+  DAST_DISABLED: "true"
+  
+  # 🎯 배포 전략
+  STAGING_ENABLED: "false"
+  REVIEW_DISABLED: "true"
+
+# 📦 Windows 로컬 자동 배포
+deploy:
+  stage: deploy
+  tags:
+    - windows
+    - docker
+    - ai
+  before_script:
+    # 환경변수 파일 확인 (이미 존재하는 로컬 .env 사용)
+    - if exist config\.env echo ✅ config/.env 파일 존재
+    - if not exist config\.env echo ❌ config/.env 파일 없음 - 수동으로 생성 필요
+    
+  script:
+    # 1️⃣ Docker 상태 확인
+    - docker --version
+    - docker-compose --version
+    
+    # 2️⃣ 기존 컨테이너 정리
+    - cd docker
+    - docker-compose down
+    
+    # 3️⃣ 새 빌드 및 배포
+    - docker-compose up -d --build
+    
+    # 4️⃣ 배포 확인 (Windows용 timeout)
+    - timeout /t 20 /nobreak
+    - curl -f http://localhost:8997/ || exit 1
+    - echo ✅ 배포 성공!
+    
+    # 5️⃣ 상태 확인
+    - docker-compose ps
+    - docker-compose logs --tail=50 ai-app
+    
+  only:
+    - dev-AI
+    - feature/S13P11B204-488
+  allow_failure: false

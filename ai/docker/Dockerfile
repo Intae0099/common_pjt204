@@ -18,18 +18,13 @@ RUN pip install --no-cache-dir --upgrade pip
 # PyTorch 먼저 설치 (CPU 버전)  
 RUN pip install --no-cache-dir torch==2.7.1 --index-url https://download.pytorch.org/whl/cpu
 
-# Git 레포지토리 클론 (최신 코드)
-ARG CACHEBUST=1
-ARG BRANCH=dev-AI
-# .env 파일 먼저 복사 (git에 없으므로)
+# 로컬 파일 복사 (GitLab Runner에서 이미 최신 코드 보유)
 COPY config/.env config/.env
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-RUN GIT_TOKEN=$(grep -E '^GIT_TOKEN=' config/.env | cut -d'=' -f2 | tr -d '\r\n"'"'"'') && \
-    git clone -b $BRANCH https://oauth2:$GIT_TOKEN@lab.ssafy.com/s13-webmobile1-sub1/S13P11B204.git /tmp/repo && \
-    cp /tmp/repo/ai/requirements.txt . && \
-    pip install --no-cache-dir -r requirements.txt && \
-    cp -r /tmp/repo/ai/* /app/ && \
-    rm -rf /tmp/repo
+# 애플리케이션 코드 복사
+COPY . /app/
 
 # 포트 노출
 EXPOSE 8000

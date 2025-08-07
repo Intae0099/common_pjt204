@@ -73,6 +73,19 @@ tokenizer_config.json
 # Data files
 data/
 
+# GitLab Runner artifacts
+config.toml
+builds/
+cache/
+gitlab-runner.exe
+
+# Docker artifacts
+.dockerignore
+
+# Environment files (보안 중요!)
+config/.env
+!config/.env.example
+
 # Temporary files
 *.tmp
 *.swp
