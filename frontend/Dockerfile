@@ -1,10 +1,10 @@
 # 1. Build Stage
-FROM node:18-alpine as builder
+FROM node:18-slim As builder
 WORKDIR /app
 
 # Best Practice 적용 (캐싱 최적화)
-COPY package.json package-lock.json* ./
-RUN npm ci
+COPY package.json ./
+RUN npm install
 
 COPY . .
 RUN npm run build
