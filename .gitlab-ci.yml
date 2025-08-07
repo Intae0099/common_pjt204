@@ -98,5 +98,4 @@ deploy:
     
   only:
     - dev-AI
-    - feature/S13P11B204-488
   allow_failure: false
