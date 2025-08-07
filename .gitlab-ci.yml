@@ -13,6 +13,10 @@ deploy:
   before_script:
     # AI 프로젝트 폴더로 이동
     - Set-Location ai
+    
+    # 로컬 config/.env 파일을 빌드 디렉토리로 복사
+    - 'if (Test-Path "F:\S13P11B204\ai\config\.env") { Copy-Item "F:\S13P11B204\ai\config\.env" "config\.env" -Force; Write-Host "✅ config/.env 복사 완료" } else { Write-Host "❌ 로컬 config/.env 파일 없음"; exit 1 }'
+    
     # 환경변수 파일 확인
     - 'if (Test-Path "config\.env") { Write-Host "✅ config/.env 파일 존재" } else { Write-Host "❌ config/.env 파일 없음"; exit 1 }'
     
