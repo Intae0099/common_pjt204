@@ -9,12 +9,14 @@ import com.B204.lawvatar_backend.appointment.entity.Appointment;
 import com.B204.lawvatar_backend.appointment.repository.AppointmentRepository;
 import com.B204.lawvatar_backend.common.principal.ClientPrincipal;
 import com.B204.lawvatar_backend.common.principal.LawyerPrincipal;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -43,7 +45,7 @@ public class ApplicationController {
     public ResponseEntity<AddApplicationResponse> addApplicaiton (
             @AuthenticationPrincipal ClientPrincipal clientPrincipal,
             @RequestParam boolean isCompleted,
-            @RequestBody AddApplicationRequest request) {
+            @RequestBody @Valid AddApplicationRequest request) {
 
         // 상담신청서 Service에 가서 상담신청서 DB에 저장하고 id값 리턴받기
         Long applicationId = null;
