@@ -1,0 +1,101 @@
+# 🚀 AI 애플리케이션 Windows 로컬 배포
+
+stages:
+  - deploy
+
+variables:
+  GIT_STRATEGY: clone
+  GIT_DEPTH: 1
+
+# 📦 Windows 로컬 자동 배포
+deploy:
+  stage: deploy
+  before_script:
+    # AI 프로젝트 폴더로 이동
+    - Set-Location ai
+    
+    # 로컬 config/.env 파일을 빌드 디렉토리로 복사
+    - 'if (Test-Path "F:\S13P11B204\ai\config\.env") { Copy-Item "F:\S13P11B204\ai\config\.env" "config\.env" -Force; Write-Host "✅ config/.env 복사 완료" } else { Write-Host "❌ 로컬 config/.env 파일 없음"; exit 1 }'
+    
+    # 환경변수 파일 확인
+    - 'if (Test-Path "config\.env") { Write-Host "✅ config/.env 파일 존재" } else { Write-Host "❌ config/.env 파일 없음"; exit 1 }'
+    
+  script:
+    # 1️⃣ 현재 위치 확인
+    - 'Write-Host "현재 작업 디렉토리: $(Get-Location)"'
+    - 'Write-Host "파일 목록:"'
+    - Get-ChildItem
+    
+    # 2️⃣ Docker 상태 확인
+    - docker --version
+    - docker-compose --version
+    
+    # 3️⃣ 기존 컨테이너 정리
+    - Set-Location docker
+    - docker-compose down
+    
+    # 4️⃣ 새 빌드 및 배포
+    - docker-compose up -d --build
+    
+    # 5️⃣ 배포 확인 (AI 모델 로딩 완료까지 대기)
+    - |
+      Write-Host "AI 서비스 시작 대기 중..."
+      $maxAttempts = 20
+      $attempt = 0
+      do {
+        $attempt++
+        Write-Host "헬스체크 시도 $attempt/$maxAttempts"
+        try {
+          Invoke-RestMethod -Uri "http://localhost:8997/" -Method Get -TimeoutSec 10
+          Write-Host "✅ AI 서비스 준비 완료!"
+          break
+        } catch {
+          Write-Host "대기 중... (30초 후 재시도)"
+          Start-Sleep 30
+        }
+      } while ($attempt -lt $maxAttempts)
+      if ($attempt -eq $maxAttempts) { 
+        Write-Host "❌ AI 서비스 시작 실패"
+        exit 1 
+      }
+    
+    # 6️⃣ 상태 확인
+    - docker-compose ps
+    - docker-compose logs --tail=50 ai-app
+    
+  after_script:
+    # Mattermost 알림 (성공/실패)
+    - |
+      $webhook = $env:MATTERMOST_WEBHOOK_URL
+      $commitShort = $env:CI_COMMIT_SHORT_SHA
+      $branch = $env:CI_COMMIT_REF_NAME
+      $commitMsg = $env:CI_COMMIT_MESSAGE
+      $pipelineUrl = $env:CI_PIPELINE_URL
+      $jobUrl = $env:CI_JOB_URL
+      
+      if ($env:CI_JOB_STATUS -eq "success") {
+        Write-Host "배포 성공 알림 전송..."
+        $payload = @{
+          text = "### :white_check_mark: AI 애플리케이션 배포 성공!`n`n**브랜치**: ``$branch```n**커밋**: ``$commitShort`` - $commitMsg`n**배포 URL**: http://122.38.210.80:8997/`n**파이프라인**: [링크]($pipelineUrl)"
+          username = "GitLab CI Bot"
+          icon_emoji = ":rocket:"
+        } | ConvertTo-Json -Depth 3
+      } else {
+        Write-Host "배포 실패 알림 전송..."
+        $payload = @{
+          text = "### :x: AI 애플리케이션 배포 실패!`n`n**브랜치**: ``$branch```n**커밋**: ``$commitShort`` - $commitMsg`n**실패 원인**: 파이프라인 실행 중 오류 발생`n**로그 확인**: [링크]($jobUrl)"
+          username = "GitLab CI Bot"
+          icon_emoji = ":warning:"
+        } | ConvertTo-Json -Depth 3
+      }
+      
+      try {
+        Invoke-RestMethod -Uri $webhook -Method Post -Body $payload -ContentType "application/json"
+        Write-Host "✅ Mattermost 알림 전송 완료"
+      } catch {
+        Write-Host "❌ Mattermost 알림 전송 실패: $($_.Exception.Message)"
+      }
+    
+  only:
+    - dev-AI
+  allow_failure: false

@@ -11,8 +11,8 @@ from dotenv import load_dotenv
 # .env 파일 경로를 절대경로로 설정
 ENV_FILE_PATH = Path(__file__).parent / ".env"
 
-# .env 파일을 명시적으로 로드
-load_result = load_dotenv(ENV_FILE_PATH, override=True)
+# .env 파일을 명시적으로 로드 (환경변수 우선)
+load_result = load_dotenv(ENV_FILE_PATH, override=False)
 
 
 class DatabaseSettings(BaseSettings):
@@ -31,11 +31,11 @@ class DatabaseSettings(BaseSettings):
         # 환경변수에서 직접 값 로드
         if not data:
             data = {
-                'user': os.environ.get('DB_USER', ''),
+                'user': os.environ.get('DB_USER', 'postgres'),
                 'password': os.environ.get('DB_PASSWORD', ''),
-                'host': os.environ.get('DB_HOST', ''),
+                'host': os.environ.get('DB_HOST', 'localhost'),
                 'port': int(os.environ.get('DB_PORT', '5432')),
-                'name': os.environ.get('DB_NAME', '')
+                'name': os.environ.get('DB_NAME', 'postgres')
             }
         super().__init__(**data)
     

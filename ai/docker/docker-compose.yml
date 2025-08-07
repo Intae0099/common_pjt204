@@ -1,0 +1,21 @@
+version: "3.8"
+
+services:
+  ai-app:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: ai-app
+    restart: always
+    ports:
+      - "8997:8000"
+    # 환경변수는 컨테이너 내부의 config/.env에서 로드됨
+    volumes:
+      - ../data:/app/data
+      - ../logs:/app/logs
+    networks:
+      - db_default
+
+networks:
+  db_default:
+    external: true
