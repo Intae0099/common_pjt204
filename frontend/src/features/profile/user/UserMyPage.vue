@@ -46,6 +46,8 @@
           v-for="form in applications"
           :key="form.applicationId"
           class="appointment-item"
+          @click="openDetailModal(form.applicationId)"
+          style="cursor: pointer;"
         >
           <div class="appt-info">
             <div>
@@ -72,16 +74,27 @@
   </div>
 
   <div v-else class="loading">마이페이지 정보를 불러오는 중입니다...</div>
+
+  <ApplicationDetail
+    v-if="isDetailModalOpen"
+    :data="selectedApplication"
+    @close="isDetailModalOpen = false"
+  />
+
 </template>
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import axios from '@/lib/axios'
+import ApplicationDetail from './ApplicationDetail.vue'
 
 const user = ref(null)
 const appointments = ref([])
 const lawyerMap = ref({})
 const applications = ref([])
+
+const isDetailModalOpen = ref(false)
+const selectedApplication = ref(null)
 
 const filteredAppointments = computed(() => {
   const now = new Date()
@@ -109,7 +122,10 @@ onMounted(async () => {
     ])
     user.value = userRes.data
     appointments.value = appointmentRes.data
-    applications.value = formRes.data
+    applications.value = formRes.data.data.applicationList
+
+    console.log(appointmentRes)
+    console.log(formRes)
 
     const map = {}
     lawyerListRes.data.forEach(lawyer => {
@@ -117,11 +133,29 @@ onMounted(async () => {
     })
     lawyerMap.value = map
 
-    console.log('user.value.email:', user.value?.email)
   } catch (err) {
     console.error('마이페이지 데이터 로딩 실패:', err)
+    user.value = {} // 로딩 상태를 해제하기 위해 빈 객체 할당
+    appointments.value = []
+    applications.value = []
   }
 })
+
+const openDetailModal = async (applicationId) => {
+  try {
+    const res = await axios.get(`/api/applications/${applicationId}`)
+    if (res.data.success) {
+      // API 응답 데이터 구조에 맞게 selectedApplication에 할당
+      selectedApplication.value = res.data.data.application
+      isDetailModalOpen.value = true // 데이터 로딩 성공 시 모달 열기
+    } else {
+      throw new Error(res.data.message)
+    }
+  } catch (error) {
+    console.error('상세 정보 로딩 실패:', error)
+    alert(error.message || '상세 정보를 불러오는 데 실패했습니다.')
+  }
+}
 
 const handleWithdraw = async () => {
   if (!confirm('정말로 회원탈퇴하시겠습니까? 탈퇴 후 복구할 수 없습니다.')) return
