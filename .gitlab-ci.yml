@@ -10,10 +10,6 @@ variables:
 # 📦 Windows 로컬 자동 배포
 deploy:
   stage: deploy
-  tags:
-    - windows
-    - docker
-    - ai
   before_script:
     # AI 프로젝트 폴더로 이동
     - Set-Location ai
