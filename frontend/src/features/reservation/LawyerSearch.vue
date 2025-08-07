@@ -1,18 +1,5 @@
 <template>
   <div class="lawyer-page-container">
-    <div class="intro-container">
-      <div class="intro-image-wrapper">
-        <img src="C:\Users\SSAFY\Desktop\S13P11B204\frontend\src\assets\ai-consult-bot.png" alt="AI Lawyer" class="intro-image" />
-      </div>
-      <div class="intro-text-box">
-        <h2 class="intro-title">
-          분야별 전문가 조희,
-        </h2>
-        <p class="intro-subtitle">
-          원하는 변호사에게 빠르게 상담 신청하기
-        </p>
-      </div>
-    </div>
 
     <div class="filter-wrapper">
       <div class="filter-header">
@@ -199,67 +186,6 @@ const goToReservation = lawyer =>{
   padding: 60px 20px 20px;
   max-width: 1200px;
   margin: 60px auto;
-}
-
-/* Intro Section */
-.intro-container {
-  display: flex; /* Use flexbox to align the image and text horizontally */
-  align-items: center; /* Vertically center the image and text */
-  gap: 40px; /* Add some space between the image and the text */
-  margin-bottom: 20px; /* Add space below this section and above the search bar */
-  padding: 20px;
-  justify-content: center;
-}
-
-.intro-image-wrapper {
-  position: relative;
-  width: 170px; /* 이미지 너비 */
-  height: 200px; /* 이미지 높이 */
-  overflow: hidden; /* 이 부분이 중요합니다: 이미지가 wrapper를 벗어나면 숨김 */
-}
-
-.intro-image {
-  position: absolute;
-  top: -20px; /* 이미지를 위로 살짝 올려 아래쪽이 가려지게 함 */
-  width: 200px;
-  height: auto;
-}
-
-.intro-text-box {
-  display: flex;
-  flex-direction: column; /* Stack the title and subtitle vertically */
-  justify-content: center;
-}
-
-.intro-title {
-  font-size: 28px;
-  font-weight: bold;
-  color: #333;
-  margin: 0;
-}
-
-.intro-subtitle {
-  font-size: 22px;
-  color: #555;
-  margin: 5px 0 0;
-}
-
-/* ── Responsive Layout (Mobile) ─────────────────── */
-@media (max-width: 768px) {
-  .intro-container {
-    flex-direction: column; /* Stack the image and text vertically on small screens */
-    text-align: center;
-    gap: 10px;
-  }
-  .intro-image {
-    width: 80px; /* Smaller image on mobile */
-  }
-  .intro-title {
-    font-size: 20px;
-  }
-  .intro-subtitle {
-    font-size: 16px;
-  }
 }
 
 /* ── Filter & Search Section ─────────────────────────── */

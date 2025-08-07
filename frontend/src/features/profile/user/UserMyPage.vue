@@ -5,7 +5,7 @@
       <div class="profile-box">
         <div class="profile-left">
           <img
-            src="C:\Users\SSAFY\Desktop\S13P11B204\frontend\src\assets\kakakoprofile.png"
+            src="@/assets/kakakoprofile.png"
             alt="프로필 이미지"
             class="profile-img"
           />
