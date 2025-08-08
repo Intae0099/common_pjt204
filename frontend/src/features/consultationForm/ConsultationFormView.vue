@@ -27,7 +27,7 @@
         :aiData="aiResult"
         @submit="handleFinalSubmit"
         @back="() => (showCompareView.value = false)"
-        @regenerate="handleFormSubmit(userInput.value)"
+        @regenerate="handleFormSubmit"
       />
     </LayoutDefault>
   </ConsultationFomLayout>
@@ -56,6 +56,7 @@ const route = useRoute()
 const router = useRouter()
 
 onMounted(() => {
+  window.scrollTo(0, 0);
   setTimeout(() => {
     isLoading.value = false
 
