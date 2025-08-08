@@ -96,12 +96,12 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute, } from 'vue-router'
 import axios from '@/lib/axios'
 import { ChevronLeftIcon, ChevronRightIcon, XMarkIcon } from '@heroicons/vue/24/solid'
 
 const route = useRoute()
-const router = useRouter()
+
 
 const items = ref([])
 const loading = ref(true)
