@@ -1,16 +1,14 @@
 <template>
   <div class="chat-input-box">
-    <!-- 프로필 이미지 -->
-    <img class="avatar" :src="userAvatarUrl" alt="user" />
-
     <!-- 입력창 -->
     <div class="input-area">
       <textarea
-        v-model="text"
+        ref="textareaRef" v-model="text"
         class="textarea"
         :placeholder="placeholder"
         :disabled="disabled"
         @keydown.enter.prevent="submit"
+        @input="handleInput"
       ></textarea>
 
 
@@ -33,7 +31,7 @@
 <script setup>
 import { ref } from 'vue'
 import { ArrowRightIcon } from '@heroicons/vue/24/solid'
-const { placeholder, disabled, userAvatarUrl } = defineProps({
+const { placeholder, disabled} = defineProps({
   placeholder: {
     type: String,
     default: '질문을 입력해주세요...'
@@ -42,17 +40,19 @@ const { placeholder, disabled, userAvatarUrl } = defineProps({
     type: Boolean,
     default: false
   },
-  userAvatarUrl: {
-    type: String,
-    default: 'default-profile.png' // 👉 사용자 이미지 URL (ex: 로그인된 유저 프로필)
-  }
 })
 
 const emit = defineEmits(['submit'])
 
 const text = ref('')
-
 const showWarning = ref(false)
+const textareaRef = ref(null)
+
+const handleInput = (e) => {
+  const textarea = e.target
+  textarea.style.height = 'auto'
+  textarea.style.height = `${textarea.scrollHeight}px`
+}
 
 const submit = () => {
   if (disabled) return
@@ -66,6 +66,10 @@ const submit = () => {
   showWarning.value = false
   emit('submit', text.value.trim())
   text.value = ''
+
+  if (textareaRef.value) {
+    textareaRef.value.style.height = '120px' // 기존 CSS에 설정된 min-height 값
+  }
 }
 </script>
 
@@ -79,21 +83,15 @@ const submit = () => {
   align-items: flex-start;
   gap: 10px;
   position: relative;
+  flex: 1; /* 왼쪽 컬럼의 공간을 차지하도록 flex 속성 추가 */
+  max-width: 500px;
+  min-width: 350px;
+  margin-top: 81px;
 }
 
 .input-area {
   position: relative;
   width: 100%;
-  max-width: 500px;
-}
-
-.avatar {
-  width: 60px;
-  height: 60px;
-  object-fit: cover;
-  border-radius: 50%;
-  margin-bottom: 20px;
-  box-shadow: 0 4px 8px rgba(0, 132, 255, 0.1);
 }
 
 .input-wrapper {
@@ -103,17 +101,20 @@ const submit = () => {
 }
 
 .textarea {
+  box-sizing: border-box;
   width: 100%;
-  min-width: 350px;
   min-height: 120px;
   border: 1px solid #e0ecf5;
   border-radius: 12px;
-  padding: 16px;
+  padding: 16px 16px 40px 16px;
   font-size: 16px;
   resize: none;
   box-shadow: 0 0 6px rgba(0, 132, 255, 0.1);
   outline: none;
   background: white;
+  overflow-y: hidden;
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
 }
 .textarea::placeholder {
   color: #d1dee8;
@@ -121,6 +122,10 @@ const submit = () => {
 .textarea:disabled {
   background-color: #f5f5f5;
   color: #aaa;
+}
+/* Webkit 브라우저(크롬, 사파리 등)용 스크롤바 숨기기 */
+.textarea::-webkit-scrollbar {
+  display: none;
 }
 
 .submit-button {

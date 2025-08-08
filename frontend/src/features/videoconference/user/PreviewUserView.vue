@@ -1,6 +1,5 @@
 <template>
   <div class="preview-page">
-    <!-- 왼쪽: 카메라 미리보기 -->
     <div class="preview-left">
       <h2>화면 미리보기</h2>
       <PreviewCamera />
@@ -20,17 +19,16 @@
       </div>
     </div>
 
-    <!-- 오른쪽: 상담 리스트 -->
     <div class="preview-right">
       <h3>오늘 예약된 상담</h3>
       <div class="appointment-wrapper">
-        <!-- 예약 존재 -->
         <div v-if="appointments.length">
           <div
-            v-for="(appointment, index) in appointments"
+            v-for="appointment in appointments"
             :key="appointment.appointmentId"
             class="appointment-card"
-            :class="{ selected: index === 0 }"
+            :class="{ selected: selectedAppointmentId === appointment.appointmentId }"
+            @click="selectAppointment(appointment.appointmentId)"
           >
             <div class="card-header">
               <span class="card-time">
@@ -58,12 +56,11 @@
                   </span>
                 </div>
               </div>
-              <button class="view-btn" @click="goToApplication(appointment.applicationId)">상담신청서 확인하기</button>
+              <button class="view-btn" @click.stop="goToApplication(appointment.applicationId)">상담신청서 확인하기</button>
             </div>
           </div>
         </div>
 
-        <!-- 예약 없음 -->
         <div v-else class="no-appointments">
           <img src="@/assets/bot-no-consult.png" class="no-img" />
           <p class="no-msg">앗! 상담 일정이 없어요!</p>
@@ -77,8 +74,8 @@
       <div class="enter-btn-wrapper">
         <button
           class="enter-btn"
-          :disabled="!appointments.length || !canEnterMeeting(appointments[0].startTime, appointments[0].endTime)"
-          @click="enterMeeting(appointments[0]?.appointmentId)"
+          :disabled="!selectedAppointment || !canEnterMeeting(selectedAppointment.startTime, selectedAppointment.endTime)"
+          @click="enterMeeting(selectedAppointmentId)"
         >
           화상상담 입장하기
         </button>
@@ -92,144 +89,164 @@
   </div>
 </template>
 
-
 <script setup>
-import PreviewCamera from '../components/PreviewCamera.vue'
-import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import axios from '@/lib/axios'
-import ApplicationDetail from '@/features/profile/user/ApplicationDetail.vue'
-import { Smile, MoveRight } from 'lucide-vue-next'
-import { TAG_MAP } from '@/constants/lawyerTags'
+import PreviewCamera from '../components/PreviewCamera.vue';
+import { ref, onMounted, computed } from 'vue'; // computed 추가
+import { useRouter } from 'vue-router';
+import axios from '@/lib/axios';
+import ApplicationDetail from '@/features/profile/user/ApplicationDetail.vue';
+import { Smile, MoveRight } from 'lucide-vue-next';
+import { TAG_MAP as tagList } from '@/constants/lawyerTags';
 
-const appointments = ref([])
-const defaultImage = '/default-profile.png'
-const router = useRouter()
-const showDetailModal = ref(false)
-const selectedApplicationData = ref(null)
-const tagMap = TAG_MAP
+const appointments = ref([]);
+const defaultImage = '/default-profile.png';
+const router = useRouter();
+const showDetailModal = ref(false);
+const selectedApplicationData = ref(null);
+
+const selectedAppointmentId = ref(null); // ✅ 2. 선택된 상담 ID를 저장할 ref 추가
+
+const tagMap = tagList.reduce((map, tag) => {
+  map[tag.id] = tag.name;
+  return map;
+}, {});
+
+// ✅ 3. 선택된 상담 객체를 찾아내는 computed 속성 추가
+const selectedAppointment = computed(() => {
+  if (!selectedAppointmentId.value) return null;
+  return appointments.value.find(
+    (app) => app.appointmentId === selectedAppointmentId.value
+  );
+});
+
+// ✅ 3. 상담 카드를 선택하는 함수 추가
+const selectAppointment = (id) => {
+  if (selectedAppointmentId.value === id) {
+    selectedAppointmentId.value = null; // 이미 선택된 항목을 다시 클릭하면 선택 해제
+  } else {
+    selectedAppointmentId.value = id; // 새로운 항목 선택
+  }
+};
 
 const formatFullDateTime = (datetimeStr) => {
-  const date = new Date(datetimeStr)
+  const date = new Date(datetimeStr);
   return date.toLocaleString('ko-KR', {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
     hour: '2-digit',
-    minute: '2-digit'
-  })
-}
+    minute: '2-digit',
+  });
+};
 
 const formatTime = (datetimeStr) => {
-  const date = new Date(datetimeStr)
+  const date = new Date(datetimeStr);
   return date.toLocaleTimeString('ko-KR', {
     hour: '2-digit',
     minute: '2-digit',
-    hour12: true
-  })
-}
-
+    hour12: true,
+  });
+};
 
 const getTimeDifference = (startTime) => {
-  const start = new Date(startTime)
-  const now = new Date()
+  const start = new Date(startTime);
+  const now = new Date();
 
-  if (isNaN(start)) return '시간 정보 오류'
+  if (isNaN(start)) return '시간 정보 오류';
 
-  const diffMs = start - now
-  const diffMinutes = Math.floor(diffMs / (1000 * 60))
+  const diffMs = start - now;
+  const diffMinutes = Math.floor(diffMs / (1000 * 60));
 
-  if (diffMinutes < 0) return '이미 시작됨'
-  if (diffMinutes < 60) return `${diffMinutes}분 후`
+  if (diffMinutes < 0) return '이미 시작됨';
+  if (diffMinutes < 60) return `${diffMinutes}분 후`;
 
-  const hours = Math.floor(diffMinutes / 60)
-  const minutes = diffMinutes % 60
-  return `${hours}시간 ${minutes}분 후`
-}
+  const hours = Math.floor(diffMinutes / 60);
+  const minutes = diffMinutes % 60;
+  return `${hours}시간 ${minutes}분 후`;
+};
 
 const canEnterMeeting = (startTime, endTime) => {
-  const now = new Date()
-  const start = new Date(startTime)
-  const end = new Date(endTime)
+  // const now = new Date();
+  // const start = new Date(startTime);
+  // const end = new Date(endTime);
 
-  return now >= new Date(start.getTime() - 10 * 60 * 1000) && now < end
-}
+  // return now >= new Date(start.getTime() - 10 * 60 * 1000) && now < end;
 
-
+  return true
+};
 
 onMounted(async () => {
-
   try {
-    const { data: appointmentData } = await axios.get('/api/appointments/me')
-
+    const { data: appointmentData } = await axios.get('/api/appointments/me');
     const appointmentsWithLawyerInfo = await Promise.all(
       appointmentData.map(async (appointment) => {
         try {
-          const { data: lawyer } = await axios.get(`/api/lawyers/${appointment.lawyerId}`)
+          const { data: lawyer } = await axios.get(`/api/lawyers/${appointment.lawyerId}`);
           return {
             ...appointment,
             lawyerName: lawyer.name,
             profileImage: lawyer.photo,
-            tags: lawyer.tags
-          }
+            tags: lawyer.tags,
+          };
         } catch (e) {
-          console.error('변호사 정보 불러오기 실패:', e)
-          return appointment
+          console.error('변호사 정보 불러오기 실패:', e);
+          return { ...appointment, tags: [] };
         }
       })
-    )
+    );
 
-    appointments.value = appointmentsWithLawyerInfo.length
+    appointments.value = appointmentsWithLawyerInfo;
   } catch (e) {
-    console.error('상담 일정 불러오기 실패:', e)
-
+    console.error('상담 일정 불러오기 실패:', e);
   }
-})
-
+});
 
 const goToApplication = async (applicationId) => {
   try {
-    const { data } = await axios.get(`/api/applications/${applicationId}`)
-    const questions = Object.values(data.recommendedQuestion || {})
+    const { data } = await axios.get(`/api/applications/${applicationId}`);
+    const questions = Object.values(data.recommendedQuestion || {});
 
     selectedApplicationData.value = {
       ...data,
-      recommendedQuestions: questions
-    }
-    showDetailModal.value = true
+      recommendedQuestions: questions,
+    };
+    showDetailModal.value = true;
   } catch (err) {
-    console.error('상담신청서 상세 조회 실패:', err)
-    alert('상담신청서를 불러오는 데 실패했습니다.')
+    console.error('상담신청서 상세 조회 실패:', err);
+    alert('상담신청서를 불러오는 데 실패했습니다.');
   }
-}
+};
 
 const enterMeeting = async (appointmentId) => {
+  if (!appointmentId) {
+    alert('입장할 상담을 선택해주세요.');
+    return;
+  }
   try {
-    const res = await axios.post(`/api/rooms/${appointmentId}`)
-    const token = res.data.data.openviduToken
-    router.push({ name: 'MeetingRoom', query: { token, appointmentId } })
+    const res = await axios.post(`/api/rooms/${appointmentId}`);
+    const token = res.data.data.openviduToken;
+    router.push({ name: 'MeetingRoom', query: { token, appointmentId } });
   } catch (err) {
     if (err.response?.status === 409) {
       try {
-        const res = await axios.post(`/api/rooms/${appointmentId}/participants`)
-        const token = res.data.data.openviduToken
-        router.push({ name: 'MeetingRoom', query: { token, appointmentId } })
+        const res = await axios.post(`/api/rooms/${appointmentId}/participants`);
+        const token = res.data.data.openviduToken;
+        router.push({ name: 'MeetingRoom', query: { token, appointmentId } });
       } catch (err2) {
-        console.error('방 참가 실패:', err2)
-        alert('화상상담 입장에 실패했습니다.')
+        console.error('방 참가 실패:', err2);
+        alert('화상상담 입장에 실패했습니다.');
       }
     } else {
-      console.error('방 생성 실패:', err)
-      alert('화상상담 방 생성에 실패했습니다.')
+      console.error('방 생성 실패:', err);
+      alert('화상상담 방 생성에 실패했습니다.');
     }
   }
-}
-
-
+};
 </script>
 
 <style scoped>
-*{
+/* CSS는 변경할 필요가 없습니다. 기존 스타일이 그대로 적용됩니다. */
+* {
   font-family: 'Noto Sans KR', sans-serif;
 }
 .preview-page {
@@ -241,64 +258,62 @@ const enterMeeting = async (appointmentId) => {
 
 .preview-left {
   width: 60%;
-  h2 {
-    text-align: center;
-    margin-bottom: 1rem;
-    color: #82A0B3;
-    font-size: 1rem;
-    font-weight: bold;
-  }
+}
+.preview-left h2 {
+  text-align: center;
+  margin-bottom: 1rem;
+  color: #82a0b3;
+  font-size: 1rem;
+  font-weight: bold;
+}
 
-  .before-consult-msg {
-    margin-top: 2rem;
-    .title {
-      font-weight: bold;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      color: #072D45;
-    }
-    .smile-icon {
-      width: 20px;
-      height: 20px;
-      color: #82A0B3;
-    }
-    .desc {
-      margin: 0.5rem 0;
-      color: #82A0B3;
-      font-size: 0.9rem;
-    }
-    .ai-link {
-      font-weight: medium;
-      color: #2A5976;
-      text-decoration: none;
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-    }
-
-    .arrow-icon {
-      width: 16px;
-      height: 16px;
-      stroke-width: 2;
-    }
-
-  }
+.before-consult-msg {
+  margin-top: 2rem;
+}
+.before-consult-msg .title {
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #072d45;
+}
+.before-consult-msg .smile-icon {
+  width: 20px;
+  height: 20px;
+  color: #82a0b3;
+}
+.before-consult-msg .desc {
+  margin: 0.5rem 0;
+  color: #82a0b3;
+  font-size: 0.9rem;
+}
+.before-consult-msg .ai-link {
+  font-weight: medium;
+  color: #2a5976;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.before-consult-msg .arrow-icon {
+  width: 16px;
+  height: 16px;
+  stroke-width: 2;
 }
 
 /* 최종 스타일 */
 .preview-right {
   width: 37%;
 }
-.preview-right h3{
-  color: #072D45;
+.preview-right h3 {
+  color: #072d45;
   font-size: 1rem;
   font-weight: bold;
   margin-bottom: 1rem;
   margin-left: 10px;
 }
 .appointment-wrapper {
-  border: 1px solid #B9D0DF;
+  border: 1px solid #b9d0df;
   border-radius: 12px;
   padding: 1.5rem;
   height: 480px;
@@ -312,11 +327,12 @@ const enterMeeting = async (appointmentId) => {
   margin-bottom: 1rem;
   background-color: #f9fbff;
   transition: all 0.3s;
+  cursor: pointer; /* 클릭 가능하도록 커서 변경 */
 }
 
 .appointment-card.selected {
-  border-color: #2E90FA;
-  box-shadow: 0 0 0 2px #2E90FA33;
+  border-color: #2e90fa;
+  box-shadow: 0 0 0 2px #2e90fa33;
 }
 
 .card-header {
@@ -327,14 +343,14 @@ const enterMeeting = async (appointmentId) => {
 }
 
 .card-time {
-  color: #1D2939;
+  color: #1d2939;
   font-weight: bold;
   font-size: 0.95rem;
 }
 
 .time-diff {
   font-size: 0.85rem;
-  color: #94A3B8;
+  color: #94a3b8;
 }
 
 .card-body {
@@ -348,25 +364,24 @@ const enterMeeting = async (appointmentId) => {
   height: 100px;
   border-radius: 12px;
   object-fit: cover;
-  border: 1px solid #E0E7ED;
+  border: 1px solid #e0e7ed;
 }
 
 .card-info {
   flex-grow: 1;
 }
-.card-time{
-  color: #072D45;
+.card-time {
+  color: #072d45;
 }
 .lawyer-name {
   margin-bottom: 10px;
-  .name-bold {
-    font-weight: 700; /* 또는 bold */
-  }
+}
+.lawyer-name .name-bold {
+  font-weight: 700; /* 또는 bold */
+}
 
-  .name-medium {
-    font-weight: 500; /* medium (보통 500 정도) */
-  }
-
+.lawyer-name .name-medium {
+  font-weight: 500; /* medium (보통 500 정도) */
 }
 
 .tags {
@@ -376,8 +391,8 @@ const enterMeeting = async (appointmentId) => {
 }
 
 .tag {
-  background-color: #E6EDF5;
-  color: #516F90;
+  background-color: #e6edf5;
+  color: #516f90;
   font-size: 0.75rem;
   padding: 0.2rem 0.6rem;
   border-radius: 8px;
@@ -387,7 +402,7 @@ const enterMeeting = async (appointmentId) => {
   margin-top: 75px;
   font-size: 0.8rem;
   background-color: transparent;
-  color: #B9D0DF;
+  color: #b9d0df;
   border-radius: 6px;
   cursor: pointer;
   white-space: nowrap;
@@ -395,24 +410,24 @@ const enterMeeting = async (appointmentId) => {
 }
 .no-appointments {
   text-align: center;
-  .no-img {
-    width: 200px;
-    margin-top: 40px;
-    margin-bottom: 1rem;
-  }
-  .no-msg {
-    font-weight: bold;
-    color: #82A0B3;
-  }
-  .links {
-    margin: 0.5rem 0;
-    color: #2A5976;
-    font-weight: bold;
-    a {
-      color: inherit;
-      text-decoration: none;
-    }
-  }
+}
+.no-appointments .no-img {
+  width: 200px;
+  margin-top: 40px;
+  margin-bottom: 1rem;
+}
+.no-appointments .no-msg {
+  font-weight: bold;
+  color: #82a0b3;
+}
+.no-appointments .links {
+  margin: 0.5rem 0;
+  color: #2a5976;
+  font-weight: bold;
+}
+.no-appointments .links a {
+  color: inherit;
+  text-decoration: none;
 }
 .enter-btn-wrapper {
   display: flex;
@@ -421,7 +436,7 @@ const enterMeeting = async (appointmentId) => {
 }
 
 .enter-btn {
-  background-color: #2E90FA;
+  background-color: #2e90fa;
   color: white;
   padding: 0.6rem 1.5rem;
   font-size: 0.95rem;
@@ -432,9 +447,8 @@ const enterMeeting = async (appointmentId) => {
 }
 
 .enter-btn:disabled {
-  background-color: #E4EEF5;
-  color: #B9D0DF;
+  background-color: #e4eef5;
+  color: #b9d0df;
   cursor: not-allowed;
 }
-
 </style>

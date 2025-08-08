@@ -8,15 +8,20 @@
             :disabled="isLoading || isFindingVerdict"
             @submit="handleUserInput"
           />
-          <!-- 오른쪽: AiBox는 작성중 / 결과 표시 -->
-          <LoadingDots/>
+
+          <div v-if="isLoading || isFindingVerdict" class="loading-dots-wrapper">
+            <LoadingDots />
+          </div>
+
           <AiBox
+            ref="aiBoxRef"
             :isLoading="isLoading"
+            :isFindingVerdict="isFindingVerdict"
             :response="aiResponse"
             :userText="userInput"
             :showPredictButton="!verdictResult"
             :verdictResult="verdictResult"
-            @open-modal="showModal = true"
+            @open-modal="handleOpenSaveModal"
             @predict="handlePredictVerdict"
           />
         </div>
@@ -35,8 +40,12 @@
           @route="handleModalRoute"
         />
 
-        <!-- 판례 찾는 중 표시 -->
-        <VerdictFindingBox v-if="isFindingVerdict" />
+        <SaveModal
+          v-if="showSaveModal"
+          @confirm-save="handleConfirmSave"
+          @close="showSaveModal = false"
+        />
+
         <div v-if="verdictResult && canShowRecommendBtn && !showRecommendList" class="recommend-button-wrapper">
           <button class="recommend-button" @click="showLawyers">
             변호사 추천받기
@@ -58,12 +67,14 @@ import ChatInputBox from './components/ChatInputBox.vue'
 import AiBox from './components/AiBox.vue'
 import BottomActionBar from './components/BottomActionBar.vue'
 import SuggestModal from './components/SuggestModal.vue'
-import VerdictFindingBox from './components/VerdictFindingBox.vue'
+import SaveModal from './components/SaveModal.vue'
 import LawyerRecommendList from './components/LawyerRecommendList.vue'
-import LoadingDots from './components/LoadingDots.vue'
 // import axios from 'axios'
 import { fastapiApiClient } from '@/lib/axios';
+import LoadingDots from './components/LoadingDots.vue'
 
+const aiBoxRef = ref(null)
+const showSaveModal = ref(false)
 
 const userInput = ref('')
 const aiResponse = ref(null)
@@ -100,6 +111,17 @@ const handleUserInput = async (text) => {
   }
 }
 
+const handleOpenSaveModal = () => {
+  showSaveModal.value = true;
+}
+
+// ❗️ handleConfirmSave 함수는 이제 모달을 닫는 로직도 포함합니다.
+const handleConfirmSave = () => {
+  if (aiBoxRef.value) {
+    aiBoxRef.value.saveConsultationRecord();
+  }
+  showSaveModal.value = false; // 저장 후 모달 닫기
+}
 
 const handlePredictVerdict = async () => {
   // const token = localStorage.getItem('access_token') // 또는 적절한 로그인 상태 체크 방식
@@ -173,23 +195,34 @@ const handleModalRoute = (target) => {
   background-color: #F7FCFF;
 }
 .container{
-  padding: 40px 16px;
+  padding: 100px 16px;
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
   min-height: 100vh; /* 화면 전체 가운데 정렬을 위한 높이 */
 }
 .wrapper {
+  position: relative;
   display: flex;
   justify-content: center;
   align-items: flex-start;
   gap: 50px;
-  flex-wrap: wrap;
   max-width: 1200px;
+  width: 100%;
   margin: 0 auto;
   padding-top: 40px;
 }
-@media (max-width: 990px) {
+.loading-dots-wrapper {
+  position: absolute;
+  /* 상단에서부터의 위치. 필요시 px 값을 조정하세요. */
+  top: 150px;
+  /* 수평 중앙 정렬 */
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10; /* 다른 요소들 위에 오도록 설정 */
+}
+/* 화면이 768px보다 좁아질 때 세로로 배치되도록 수정합니다. */
+@media (max-width: 768px) {
   .wrapper {
     flex-direction: column;
     align-items: center;
@@ -198,7 +231,7 @@ const handleModalRoute = (target) => {
 .recommend-button-wrapper {
   display: flex;
   justify-content: center;
-  margin-top: 200px;
+  margin-top: 100px;
 }
 
 .recommend-button {
@@ -213,7 +246,7 @@ const handleModalRoute = (target) => {
   align-items: center;
   gap: 8px;
   transition: all 0.2s ease-in-out;
-  box-shadow: 0px 1px 5px rgba(224, 234, 239, 0.2);
+  box-shadow: 0px 2px 4px rgba(77, 130, 200, 0.081);
 }
 
 .recommend-button:hover {

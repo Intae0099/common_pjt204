@@ -4,6 +4,11 @@
     <section class="profile-section">
       <div class="profile-box">
         <div class="profile-left">
+          <img
+            src="@/assets/kakakoprofile.png"
+            alt="프로필 이미지"
+            class="profile-img"
+          />
           <div class="profile-info">
             <h3>{{ user.oauthName }}</h3>
             <p class="email">이메일: {{ user.email || '등록된 이메일이 없습니다.' }}</p>
@@ -35,12 +40,17 @@
 
     <!-- ✅ 상담신청서 보관함 -->
     <section class="application-section">
-      <h4>상담신청서 보관함</h4>
+      <h4 @click="goToAllApplications" class="section-title-link">
+        상담신청서 보관함
+        <span class="arrow">›</span>
+      </h4>
       <ul v-if="applications.length > 0" class="application-list">
         <li
           v-for="form in applications"
           :key="form.applicationId"
           class="appointment-item"
+          @click="openDetailModal(form.applicationId)"
+          style="cursor: pointer;"
         >
           <div class="appt-info">
             <div>
@@ -67,16 +77,29 @@
   </div>
 
   <div v-else class="loading">마이페이지 정보를 불러오는 중입니다...</div>
+
+  <ApplicationDetail
+    v-if="isDetailModalOpen"
+    :data="selectedApplication"
+    @close="isDetailModalOpen = false"
+  />
+
 </template>
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import axios from '@/lib/axios'
+import ApplicationDetail from './ApplicationDetail.vue'
+import { useRouter } from 'vue-router'
 
+const router = useRouter()
 const user = ref(null)
 const appointments = ref([])
 const lawyerMap = ref({})
 const applications = ref([])
+
+const isDetailModalOpen = ref(false)
+const selectedApplication = ref(null)
 
 const filteredAppointments = computed(() => {
   const now = new Date()
@@ -104,7 +127,10 @@ onMounted(async () => {
     ])
     user.value = userRes.data
     appointments.value = appointmentRes.data
-    applications.value = formRes.data
+    applications.value = formRes.data.data.applicationList
+
+    console.log(appointmentRes)
+    console.log(formRes)
 
     const map = {}
     lawyerListRes.data.forEach(lawyer => {
@@ -112,11 +138,43 @@ onMounted(async () => {
     })
     lawyerMap.value = map
 
-    console.log('user.value.email:', user.value?.email)
   } catch (err) {
     console.error('마이페이지 데이터 로딩 실패:', err)
+    user.value = {} // 로딩 상태를 해제하기 위해 빈 객체 할당
+    appointments.value = []
+    applications.value = []
   }
 })
+
+const openDetailModal = async (applicationId) => {
+  try {
+    const res = await axios.get(`/api/applications/${applicationId}`)
+    if (res.data.success) {
+      // API 응답 데이터 구조에 맞게 selectedApplication에 할당
+      selectedApplication.value = res.data.data.application
+      isDetailModalOpen.value = true // 데이터 로딩 성공 시 모달 열기
+      console.log(res)
+    } else {
+      throw new Error(res.data.message)
+    }
+  } catch (error) {
+    console.error('상세 정보 로딩 실패:', error)
+    alert(error.message || '상세 정보를 불러오는 데 실패했습니다.')
+  }
+}
+
+const goToAllApplications = () => {
+  // 상담신청서 목록이 비어있지 않은 경우에만 페이지 이동
+  if (applications.value && applications.value.length > 0) {
+    // 목록의 가장 첫 번째 항목의 ID를 가져옵니다.
+    const firstApplicationId = applications.value[0].applicationId
+    // 해당 ID를 파라미터로 하여 상세 뷰 페이지로 이동합니다.
+    router.push(`/user/applications/${firstApplicationId}`)
+  } else {
+    // 신청서가 없을 경우 사용자에게 알림을 줄 수 있습니다 (선택 사항).
+    alert('보관된 상담신청서가 없습니다.')
+  }
+}
 
 const handleWithdraw = async () => {
   if (!confirm('정말로 회원탈퇴하시겠습니까? 탈퇴 후 복구할 수 없습니다.')) return
@@ -140,6 +198,15 @@ const handleWithdraw = async () => {
 </script>
 
 <style scoped>
+.section-title-link {
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.section-title-link:hover {
+  color: #007bff; /* 호버 시 색상 변경 (예시) */
+}
 .mypage-container {
   max-width: 700px;
   margin: 0 auto;
@@ -152,7 +219,7 @@ const handleWithdraw = async () => {
   width: 100%;
   display: flex;
   justify-content: center;
-  margin-bottom: 60px;
+  margin-bottom: 40px;
 }
 .profile-box {
   position: relative;
@@ -164,18 +231,20 @@ const handleWithdraw = async () => {
   padding: 20px;
   width: 100%;
   max-width: 100%;
-  margin-top: 30px;
+  margin-top: 40px;
 }
 .profile-left {
   display: flex;
   align-items: center;
+  margin-left: 20px; /* ✅ 왼쪽 여백 추가 */
+  margin-top: 20px;
 }
 .profile-img {
-  width: 100px;
-  height: 100px;
+  width: 70px;
+  height: 70px;
   border-radius: 50%;
   object-fit: cover;
-  margin-right: 16px;
+  margin-right: 20px;
 }
 .profile-info {
   display: flex;
