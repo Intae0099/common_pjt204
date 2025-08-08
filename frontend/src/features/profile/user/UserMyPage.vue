@@ -65,7 +65,7 @@
 
     <!-- ✅ 기타 메뉴 -->
     <section class="menu-section">
-      <div class="menu-item" @click="$router.push('/consult-history')">
+      <div class="menu-item" @click="$router.push('/user/consult-history')">
         상담내역 보기
         <span class="arrow">›</span>
       </div>
