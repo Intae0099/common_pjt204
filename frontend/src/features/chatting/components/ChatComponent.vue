@@ -130,7 +130,8 @@ watch(
 .message-bubble {
   padding: 10px 15px;
   border-radius: 10px;
-  word-wrap: break-word; /* 긴 텍스트 줄바꿈 */
+  word-wrap: break-word;
+   white-space: pre-wrap;
 }
 .my-message-container .message-bubble {
   background-color: #C5C5C5;
