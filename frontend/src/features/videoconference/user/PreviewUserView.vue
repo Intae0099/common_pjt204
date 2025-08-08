@@ -222,22 +222,47 @@ const enterMeeting = async (appointmentId) => {
     alert('입장할 상담을 선택해주세요.');
     return;
   }
+  // --- 메인 로직 시작 (try-catch로 에러 관리) ---
   try {
+    // 1. 방 생성을 먼저 시도합니다. (상담의 첫 입장자일 경우)
+    // 서버에 '이 상담 ID로 화상상담 방을 만들어달라'고 요청합니다.
     const res = await axios.post(`/api/rooms/${appointmentId}`);
+
+    console.log("하하하q111111");
+
+    // 성공적으로 방이 생성되면, 서버로부터 OpenVidu에 접속할 수 있는 토큰을 받습니다.
     const token = res.data.data.openviduToken;
+
+    console.log("하하하");
+
+    // 받은 토큰과 상담 ID를 가지고 실제 화상상담 페이지(MeetingRoom)로 이동합니다.
     router.push({ name: 'MeetingRoom', query: { token, appointmentId } });
+
   } catch (err) {
+    // 2. 위 try 블록(방 생성)에서 409 에러가 발생했을 경우의 처리입니다.
+    // 만약 발생한 에러가 '409 Conflict'라면, 이는 방이 이미 존재한다는 의미입니다.
     if (err.response?.status === 409) {
       try {
+        // 2-1. 이미 방이 존재하므로, 이번엔 '참가자'로서 입장을 시도합니다.
+        // 서버에 '이미 있는 이 방에 참가자로 들어갈게요'라고 요청합니다.
         const res = await axios.post(`/api/rooms/${appointmentId}/participants`);
+
+        // 참가자용 토큰을 성공적으로 받아옵니다.
         const token = res.data.data.openviduToken;
+
+        // 화상상담 페이지로 이동합니다.
         router.push({ name: 'MeetingRoom', query: { token, appointmentId } });
+
       } catch (err2) {
+        // 방이 이미 있는데도 참가에 실패한 경우입니다.
         console.error('방 참가 실패:', err2);
         alert('화상상담 입장에 실패했습니다.');
       }
     } else {
+      // 2-2. 409가 아닌 다른 모든 에러(예: 500 서버 에러, 네트워크 문제 등)를 처리합니다.
+      // 개발자를 위해 콘솔에 상세 에러를 출력하고,
       console.error('방 생성 실패:', err);
+      // 사용자에게는 실패했다는 알림을 표시합니다.
       alert('화상상담 방 생성에 실패했습니다.');
     }
   }

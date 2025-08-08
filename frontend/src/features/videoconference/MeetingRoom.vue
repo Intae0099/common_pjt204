@@ -222,11 +222,18 @@ async function initCanvas(){
 // 세션 참가 함수 (컴포넌트 마운트 시 자동 실행)
 onMounted(async () => {
 
+  // 디버깅
+  console.log("onMounted 진입");
+
+  // OpenVidu 서버의 주소 (URL)
+  const OPENVIDU_SERVER_URL = "https://i13b204.p.ssafy.io:5443";
   // 1. OpenVidu 객체 생성
-  OV.value = new OpenVidu()
+  OV.value = new OpenVidu(OPENVIDU_SERVER_URL)
+
 
   // 2. 세션 초기화 (로컬에서 관리할 세션 객체 생성)
   session.value = OV.value.initSession()
+
 
   // 3. 상대방이 입장해 스트림을 게시하면 구독하기
   session.value.on('streamCreated', (event) => {
@@ -247,6 +254,7 @@ onMounted(async () => {
   await session.value.connect(token, {
     clientData: '사용자 이름 등', // 이름, 역할 등 원하는 데이터 문자열로 전달 가능
   })
+
 
   // 6. 내 비디오/오디오 스트림 초기화
   const publisher = await OV.value.initPublisher(undefined, {
@@ -370,7 +378,7 @@ onBeforeUnmount(() => {
 /* 비디오 박스(또는 video-inner)가 좌표계 기준점이 되도록 */
 .video-box,
 .video-inner {
-  position: relative;   /* ⬅️ 추가 */
+  position: relative;
 }
 
 /* 왼쪽-하단 라벨 공통 스타일 */
@@ -383,7 +391,10 @@ onBeforeUnmount(() => {
   font-size: 14px;
   font-weight: 500;
   text-shadow: 0 0 4px rgba(0, 0, 0, 0.6);
-  pointer-events: none; /* 클릭 막기 */
+  pointer-events: none;
+}
+#publisher > .role-label {
+  transform: scaleX(-1); /* 좌우 반전을 다시 한번 적용해 원상태로 복구 */
 }
 
 .shared-screen {
