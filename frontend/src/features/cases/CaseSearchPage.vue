@@ -81,6 +81,9 @@ import CaseCard from '@/features/cases/CaseCard.vue';
 import LayoutDefault from '@/components/layout/LayoutDefault.vue'
 import { useCasesStore } from '@/stores/cases';
 import { storeToRefs } from 'pinia';
+import { onMounted } from 'vue'
+
+onMounted(()=>{ window.scrollTo(0, 0);})
 
 // 1. 스토어 인스턴스 생성
 const casesStore = useCasesStore();
