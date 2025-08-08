@@ -18,7 +18,7 @@
       <ConsultationForm
         v-else-if="!showCompareView"
         @submitted="handleFormSubmit"
-        @application-selected="(id) => applicationId.value = id"
+        @application-selected="handleApplicationSelect"
       />
 
       <ConsultationCompareResult
@@ -67,6 +67,10 @@ onMounted(() => {
     }
   }, 1000)  // 1초 로딩 후 처리
 })
+
+const handleApplicationSelect = (id) => {
+  applicationId.value = id;
+};
 
 const handleFormSubmit = async (formData) => {
   isLoading.value = true
