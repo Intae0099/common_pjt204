@@ -6,6 +6,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface SessionRepository extends JpaRepository<Session, Long> {
 
     // Abstract Method
-    Session findByAppointment_Id(Long appointmentId);
-
+    Session findByAppointmentId(Long appointmentId);
 }
