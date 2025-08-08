@@ -249,6 +249,7 @@ onMounted(async () => {
       (sub) => sub.stream.streamId !== event.stream.streamId
     )
   })
+
   console.log(`현재 토큰 모임ㅎㅎ: ${token}`)
   // 5. 발급받은 토큰으로 세션 연결
   await session.value.connect(token, {
