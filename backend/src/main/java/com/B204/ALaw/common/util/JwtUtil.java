@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
 public class JwtUtil {
 
   private final Key key;
-  private final long accessTokenValidMs  = 15 * 60 * 1000;     // 15분
+  private final long accessTokenValidMs  = 60 * 60 * 1000;     // 1시간
   private final long refreshTokenValidMs = 7L * 24 * 60 * 60 * 1000; // 7일
 
   public JwtUtil(@Value("${jwt.secret}") String secret) {
