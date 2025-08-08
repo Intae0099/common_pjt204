@@ -1,0 +1,95 @@
+# IDE and Editor settings
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.python-version
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+*.egg
+.eggs/
+
+# Virtual environments
+.env
+.venv/
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.env.local
+.env.*.local
+
+# Testing and coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.cache
+.pytest_cache/
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+
+# Type checker caches
+.mypy_cache/
+.dmypy.json
+.pyre/
+.pytype/
+
+# PyBuilder
+target/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints
+
+# OS-specific files
+.DS_Store
+
+# Logs and databases
+*.log
+logs/
+*.sqlite3
+
+# AI/ML artifacts
+# Model weights, tokenizers, etc.
+*.pt
+*.pth
+*.bin
+tokenizer_config.json
+*.ckpt
+
+# Data files
+data/
+
+# GitLab Runner artifacts
+config.toml
+builds/
+cache/
+gitlab-runner.exe
+
+# Docker artifacts
+.dockerignore
+
+# Environment files (보안 중요!)
+config/.env
+!config/.env.example
+
+# Temporary files
+*.tmp
+*.swp
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
