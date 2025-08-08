@@ -13,6 +13,8 @@ import LawyerMyPage from '@/features/profile/lawyer/LawyerMyPage.vue';
 import UserMyPage from '@/features/profile/user/UserMyPage.vue';
 import LawyerProfileUpdate from '@/features/profile/lawyer/LawyerProfileUpdate.vue';
 import UserProfileUpdate from '@/features/profile/user/UserProfileUpdate.vue';
+import UserConsultHistory from '@/features/profile/user/UserConsultHistory.vue';
+import LawyerConsultHistory from '@/features/profile/lawyer/LawyerConsultHistory.vue';
 
 //AI상담
 import AiStep from '@/features/ai_consult/AIStep.vue'
@@ -45,6 +47,7 @@ import { useAuthStore } from '@/stores/auth';
 import LawyerCertifications from '@/features/admin/LawyerCertifications.vue';
 import ApplicationListView from '@/features/profile/user/ApplicationListView.vue';
 import LawyerFindPasswordView from '@/features/auth/lawyer/LawyerFindPasswordView.vue';
+
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -110,14 +113,19 @@ const router = createRouter({
       component: LawyerProfileUpdate
     },
     {
+      path: '/lawyer/consult-history',
+      name: 'LawyerConsultHistory',
+      component: LawyerConsultHistory
+    },
+    {
       path: '/user/update',
       name: 'UserProfileUpdate',
       component: UserProfileUpdate
     },
     {
-      path: '/consult-history',
-      name: 'ConsultHistory',
-      component: () => import('@/features/profile/user/UserConsultHistory.vue')
+      path: '/user/consult-history',
+      name: 'UserConsultHistory',
+      component: UserConsultHistory
     },
     {
       path: '/user/applications/:applicationId',
