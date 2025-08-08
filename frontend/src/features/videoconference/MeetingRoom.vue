@@ -226,7 +226,7 @@ onMounted(async () => {
   console.log("onMounted 진입");
 
   // OpenVidu 서버의 주소 (URL)
-  const OPENVIDU_SERVER_URL = "https://i13b204.p.ssafy.io:5443";
+  const OPENVIDU_SERVER_URL = "https://i13b204.p.ssafy.io/openvidu";
   // 1. OpenVidu 객체 생성
   OV.value = new OpenVidu(OPENVIDU_SERVER_URL)
 

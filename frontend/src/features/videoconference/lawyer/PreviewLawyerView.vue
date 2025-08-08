@@ -1,17 +1,14 @@
 <template>
   <div class="preview-page">
-    <!-- 왼쪽: 카메라 미리보기 -->
     <div class="preview-left">
       <h2>화면 미리보기</h2>
       <PreviewCamera />
     </div>
 
-    <!-- 오른쪽: 오늘 예약된 상담 -->
     <div class="preview-right">
       <h3>오늘 예약된 상담</h3>
 
       <div class="appointment-wrapper">
-        <!-- 상담 있음 -->
         <div v-if="appointments.length">
           <div
             class="appointment-card"
@@ -31,7 +28,7 @@
             </div>
             <div class="client-row">
               <p class="client">
-                <span class="client-name">{{ appointment.clientName }}</span>
+                <span class="client-name">{{ appointment.counterpartName }}</span>
                 <span class="client-label"> 의뢰인</span>
               </p>
               <button class="check-btn" @click.stop="goToApplication(appointment.applicationId)">
@@ -41,14 +38,12 @@
           </div>
         </div>
 
-        <!-- 상담 없음 -->
         <div v-else class="no-appointment">
           <img src="@/assets/bot-no-consult.png" />
           <p>앗! 상담 일정이 없어요</p>
         </div>
       </div>
 
-      <!-- 입장 버튼 -->
       <div class="enter-btn-wrapper">
         <button
           class="enter-btn"
@@ -62,9 +57,9 @@
   </div>
 
   <ApplicationDetail
-  v-if="showDetailModal"
-  :data="selectedApplicationData"
-  @close="showDetailModal = false"
+    v-if="showDetailModal"
+    :data="selectedApplicationData"
+    @close="showDetailModal = false"
   />
 
 </template>
@@ -113,12 +108,13 @@ const getTimeDifference = (startTime) => {
   const diffMs = start - now
   const diffMinutes = Math.floor(diffMs / (1000 * 60))
 
-  if (diffMinutes < 0) return '이미 시작됨'
-  if (diffMinutes < 60) return `${diffMinutes}분 전`
+  // "진행중" 또는 "N분 후"로 표시되도록 수정
+  if (diffMinutes < 0) return '진행중'
+  if (diffMinutes < 60) return `${diffMinutes}분 후`
 
   const hours = Math.floor(diffMinutes / 60)
   const minutes = diffMinutes % 60
-  return `${hours}시간 ${minutes}분 전`
+  return `${hours}시간 ${minutes}분 후`
 }
 
 
@@ -134,7 +130,6 @@ const selectAppointment = (id) => {
 
 
 const goToApplication = async (applicationId) => {
-
   try {
     const { data } = await axios.get(`/api/applications/${applicationId}`)
     const app = data.data.application
@@ -202,16 +197,37 @@ const enterMeeting = async (appointmentId) => {
 
 onMounted(async () => {
   try {
-    const { data } = await axios.get('/api/appointments/me')
-    appointments.value = data
+    const { data: allAppointments } = await axios.get('/api/appointments/me');
+
+    // 오늘 날짜의, 아직 끝나지 않은 예약만 필터링합니다.
+    const now = new Date();
+    const todaysAppointments = allAppointments.filter(
+      (appointment) => {
+        const startTime = new Date(appointment.startTime);
+        const endTime = new Date(appointment.endTime);
+
+        // 조건 1: 상담 시작일이 오늘인지 확인 (연, 월, 일 비교)
+        const isToday =
+          startTime.getFullYear() === now.getFullYear() &&
+          startTime.getMonth() === now.getMonth() &&
+          startTime.getDate() === now.getDate();
+
+        // 조건 2: 상담 종료 시간이 현재 시간 이후인지 확인
+        const hasNotEnded = endTime > now;
+
+        return isToday && hasNotEnded;
+      }
+    );
+
+    appointments.value = todaysAppointments;
   } catch (e) {
-    console.error('상담 일정 불러오기 실패:', e)
+    console.error('상담 일정 불러오기 실패:', e);
   }
-})
+});
 </script>
 
 <style scoped>
-*{
+* {
   font-family: 'Noto Sans KR', sans-serif;
 }
 .preview-page {
@@ -329,8 +345,8 @@ onMounted(async () => {
   margin-bottom: 1rem;
 }
 .no-appointment p {
-    font-weight: bold;
-    color: #82A0B3;
+  font-weight: bold;
+  color: #82A0B3;
 }
 
 .enter-button,
@@ -363,4 +379,3 @@ onMounted(async () => {
   margin-top: 1rem;
 }
 </style>
-
