@@ -39,47 +39,47 @@
                 {{ getTimeDifference(appointment.startTime) }}
               </span>
             </div>
-          <div class="card-body">
-            <img :src="appointment.profileImage || defaultImage" class="lawyer-img" />
-          <div class="card-info">
-            <p class="lawyer-name">
-              <strong class="name-bold">{{ appointment.lawyerName }}</strong>
-              <span class="name-medium"> 변호사</span>
-            </p>
+            <div class="card-body">
+              <img :src="appointment.profileImage || defaultImage" class="lawyer-img" />
+              <div class="card-info">
+                <p class="lawyer-name">
+                  <strong class="name-bold">{{ appointment.lawyerName }}</strong>
+                  <span class="name-medium"> 변호사</span>
+                </p>
 
-            <div class="tags">
-              <span
-                class="tag"
-                v-for="tagId in appointment.tags.slice(0, 3)"
-                :key="tagId"
-              >
-                #{{ tagMap[tagId] || '기타' }}
-              </span>
+                <div class="tags">
+                  <span
+                    class="tag"
+                    v-for="tagId in appointment.tags.slice(0, 3)"
+                    :key="tagId"
+                  >
+                    #{{ tagMap[tagId] || '기타' }}
+                  </span>
 
-              <button
-                v-if="appointment.tags.length > 3"
-                class="more-tags-btn"
-                @click.stop="toggleTags(appointment.appointmentId)"
-              >
-                <ChevronUp v-if="expandedCards.has(appointment.appointmentId)" class="more-tags-icon" />
-                <ChevronDown v-else class="more-tags-icon" />
-              </button>
+                  <button
+                    v-if="appointment.tags.length > 3"
+                    class="more-tags-btn"
+                    @click.stop="toggleTags(appointment.appointmentId)"
+                  >
+                    <ChevronUp v-if="expandedCards.has(appointment.appointmentId)" class="more-tags-icon" />
+                    <ChevronDown v-else class="more-tags-icon" />
+                  </button>
 
-              <template v-if="expandedCards.has(appointment.appointmentId)">
-                <span
-                  class="tag"
-                  v-for="tagId in appointment.tags.slice(3)"
-                  :key="tagId"
-                >
-                  #{{ tagMap[tagId] || '기타' }}
-                </span>
-              </template>
-            </div>
+                  <template v-if="expandedCards.has(appointment.appointmentId)">
+                    <span
+                      class="tag"
+                      v-for="tagId in appointment.tags.slice(3)"
+                      :key="tagId"
+                    >
+                      #{{ tagMap[tagId] || '기타' }}
+                    </span>
+                  </template>
+                </div>
 
-          <button class="view-btn" @click.stop="goToApplication(appointment.applicationId)">
-            상담신청서 확인하기
-          </button>
-          </div>
+                <button class="view-btn" @click.stop="goToApplication(appointment.applicationId)">
+                  상담신청서 확인하기
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -95,13 +95,26 @@
       </div>
 
       <div class="enter-btn-wrapper">
-        <button
+        <!-- <button
           class="enter-btn"
           :disabled="!selectedAppointment || !canEnterMeeting(selectedAppointment.startTime, selectedAppointment.endTime)"
           @click="enterMeeting(selectedAppointmentId)"
         >
           화상상담 입장하기
+        </button> -->
+
+        <!-- 아래는 개발용. 나중에 삭제예정 -->
+        <button
+          class="enter-btn"
+
+          :disabled="!selectedAppointment"
+
+          @click="enterMeeting(selectedAppointmentId)"
+        >
+          화상상담 입장하기
         </button>
+        <!-- 여기까지 개발용 -->
+
       </div>
     </div>
     <ApplicationDetail
@@ -204,7 +217,10 @@ const canEnterMeeting = (startTime, endTime) => {
 
 onMounted(async () => {
   try {
-    const { data: appointmentData } = await axios.get('/api/appointments/me');
+    // API 호출 시 params를 추가하여 승인된 상담만 가져오도록
+    const { data: appointmentData } = await axios.get('/api/appointments/me', {
+      params: { status: 'CONFIRMED' },
+    });
     const appointmentsWithLawyerInfo = await Promise.all(
       appointmentData.map(async (appointment) => {
         try {
@@ -222,27 +238,33 @@ onMounted(async () => {
       })
     );
 
+    //실제코드. 나중에 주석 해제해야함
     // 오늘 날짜의, 아직 끝나지 않은 예약만 필터링합니다.
-    const now = new Date();
-    const todaysAppointments = appointmentsWithLawyerInfo.filter(
-      (appointment) => {
-        const startTime = new Date(appointment.startTime);
-        const endTime = new Date(appointment.endTime);
+    // const now = new Date();
+    // const todaysAppointments = appointmentsWithLawyerInfo.filter(
+    //   (appointment) => {
+    //     const startTime = new Date(appointment.startTime);
+    //     const endTime = new Date(appointment.endTime);
 
         // 조건 1: 상담 시작일이 오늘인지 확인 (연, 월, 일 비교)
-        const isToday =
-          startTime.getFullYear() === now.getFullYear() &&
-          startTime.getMonth() === now.getMonth() &&
-          startTime.getDate() === now.getDate();
+        // const isToday =
+        //   startTime.getFullYear() === now.getFullYear() &&
+        //   startTime.getMonth() === now.getMonth() &&
+        //   startTime.getDate() === now.getDate();
 
         // 조건 2: 상담 종료 시간이 현재 시간 이후인지 확인
-        const hasNotEnded = endTime > now;
+    //     const hasNotEnded = endTime > now;
 
-        return isToday && hasNotEnded;
-      }
-    );
+    //     return isToday && hasNotEnded;
+    //   }
+    // );
+    // appointments.value = todaysAppointments;
+    //여기까지 실제코드
 
-    appointments.value = todaysAppointments;
+    // [개발용] 모든 예약 목록을 표시하도록 수정
+    appointments.value = appointmentsWithLawyerInfo;
+    //여기까지 개발용
+
   } catch (e) {
     console.error('상담 일정 불러오기 실패:', e);
   }
@@ -306,7 +328,11 @@ const enterMeeting = async (appointmentId) => {
 </script>
 
 <style scoped>
-/* CSS는 변경할 필요가 없습니다. 기존 스타일이 그대로 적용됩니다. */
+/* 💡 [수정] 카메라 좌우 반전을 위한 CSS 추가 */
+.preview-left :deep(video) {
+  transform: scaleX(-1);
+}
+
 * {
   font-family: 'Noto Sans KR', sans-serif;
 }

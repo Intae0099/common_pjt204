@@ -32,8 +32,8 @@
       <!-- 오른쪽: 채팅 -->
       <div class="chat-area">
         <div class="chat-content">
-          <RealtimeChatView v-if="activeChat === 'realtime'" />
-          <ChatbotView v-if="activeChat === 'chatbot'" />
+          <RealtimeChatView v-show="activeChat === 'realtime'" />
+          <ChatbotView v-show="activeChat === 'chatbot'" />
         </div>
       </div>
     </div>
@@ -249,7 +249,7 @@ onMounted(async () => {
       (sub) => sub.stream.streamId !== event.stream.streamId
     )
   })
-
+  console.log(`현재 토큰 모임ㅎㅎ: ${token}`)
   // 5. 발급받은 토큰으로 세션 연결
   await session.value.connect(token, {
     clientData: '사용자 이름 등', // 이름, 역할 등 원하는 데이터 문자열로 전달 가능
