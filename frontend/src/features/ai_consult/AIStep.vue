@@ -14,13 +14,14 @@
           </div>
 
           <AiBox
+            ref="aiBoxRef"
             :isLoading="isLoading"
             :isFindingVerdict="isFindingVerdict"
             :response="aiResponse"
             :userText="userInput"
             :showPredictButton="!verdictResult"
             :verdictResult="verdictResult"
-            @open-modal="showModal = true"
+            @open-modal="handleOpenSaveModal"
             @predict="handlePredictVerdict"
           />
         </div>
@@ -37,6 +38,12 @@
           v-if="showModal"
           @close="showModal = false"
           @route="handleModalRoute"
+        />
+
+        <SaveModal
+          v-if="showSaveModal"
+          @confirm-save="handleConfirmSave"
+          @close="showSaveModal = false"
         />
 
         <div v-if="verdictResult && canShowRecommendBtn && !showRecommendList" class="recommend-button-wrapper">
@@ -60,11 +67,14 @@ import ChatInputBox from './components/ChatInputBox.vue'
 import AiBox from './components/AiBox.vue'
 import BottomActionBar from './components/BottomActionBar.vue'
 import SuggestModal from './components/SuggestModal.vue'
+import SaveModal from './components/SaveModal.vue'
 import LawyerRecommendList from './components/LawyerRecommendList.vue'
 // import axios from 'axios'
 import { fastapiApiClient } from '@/lib/axios';
 import LoadingDots from './components/LoadingDots.vue'
 
+const aiBoxRef = ref(null)
+const showSaveModal = ref(false)
 
 const userInput = ref('')
 const aiResponse = ref(null)
@@ -101,6 +111,17 @@ const handleUserInput = async (text) => {
   }
 }
 
+const handleOpenSaveModal = () => {
+  showSaveModal.value = true;
+}
+
+// ❗️ handleConfirmSave 함수는 이제 모달을 닫는 로직도 포함합니다.
+const handleConfirmSave = () => {
+  if (aiBoxRef.value) {
+    aiBoxRef.value.saveConsultationRecord();
+  }
+  showSaveModal.value = false; // 저장 후 모달 닫기
+}
 
 const handlePredictVerdict = async () => {
   // const token = localStorage.getItem('access_token') // 또는 적절한 로그인 상태 체크 방식
