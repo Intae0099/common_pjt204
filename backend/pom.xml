@@ -9,10 +9,10 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.B204</groupId>
-	<artifactId>backend</artifactId>
+	<artifactId>ALaw</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>Backend</name>
-	<description>Backend Server for LawAId</description>
+	<name>ALaw</name>
+	<description>Backend Server for ALaw</description>
 	<url/>
 	<licenses>
 		<license/>
