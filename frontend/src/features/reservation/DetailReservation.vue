@@ -1,8 +1,22 @@
 <template>
 
   <div class="reservation-wrapper">
+
     <div class="back-button" @click="$router.back()">
       <span class="arrow-icon">←</span> <span>이전</span>
+    </div>
+
+    <div v-if="showApplicationPopup" class="application-popup">
+      <div class="popup-content">
+        <button class="close-btn" @click="closePopup">
+          <span class="icon">×</span>
+        </button>
+        <p><strong>상담신청서를 작성하셨나요?</strong></p>
+        <p>원활한 상담을 위해 예약 전 <strong>상담신청서</strong>를 먼저 작성해주세요. 📄</p>
+        <span class="application-link" @click="goToApplicationForm">
+          AI 상담신청서 작성하기 ➡️
+        </span>
+      </div>
     </div>
 
     <!-- ✅ 2. 두 박스는 같은 선상 수평 정렬 -->
@@ -78,10 +92,11 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import axios from '@/lib/axios'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import ApplicationChoiceModal from '@/features/reservation/ApplicationChoiceModal.vue'
 import { TAG_MAP } from '@/constants/lawyerTags'
 
+const router = useRouter()
 const route = useRoute()
 const lawyerId = route.params.id
 const lawyer = ref(null)
@@ -98,6 +113,7 @@ const allTimeSlots = [
 
 // ✅ 태그 ID ↔ 이름 매핑
 const tagMap = TAG_MAP
+const showApplicationPopup = ref(true) // 팝업 상태 추가
 
 const getTagName = (id) => {
   const tag = tagMap.find(t => String(t.id) === String(id))  // 문자열 매핑 안전하게
@@ -110,6 +126,16 @@ onMounted(async () => {
   await fetchUnavailableSlots()
   window.scrollTo(0, 0)   // 페이지 진입 시 최상단 이동
 })
+
+const closePopup = () => {
+  showApplicationPopup.value = false;
+};
+
+const goToApplicationForm = () => {
+  // TODO: 실제 AI 상담신청서 페이지 경로로 수정해주세요.
+  alert('AI 상담신청서 페이지로 이동합니다.');
+  router.push('/consult-form');
+};
 
 const fetchLawyerInfo = async () => {
   const res = await axios.get(`/api/lawyers/list`)
@@ -171,6 +197,69 @@ const openModal = () => {
 @media (min-width: 1024px) {
   .reservation-wrapper {
     padding: 120px 80px 0 80px;  /* ← 넉넉하게 여백 줌 */
+  }
+}
+
+/* ── 상담신청서 팝업 스타일 추가 ──────────────────── */
+.application-popup {
+  background-color: #f0f8ff; /* 연한 하늘색 배경 */
+  border: 1px solid #cce5ff;
+  border-radius: 8px;
+  padding: 15px 20px;
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.popup-content {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+.popup-content p {
+  margin: 0;
+  font-size: 15px;
+  color: #333;
+}
+
+.application-link {
+  font-weight: bold;
+  color: #1d2b50;
+  cursor: pointer;
+  text-decoration: none;
+  transition: color 0.2s ease;
+  white-space: nowrap;
+}
+
+.application-link:hover {
+  color: #0056b3;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 0;
+  font-size: 20px;
+  color: #888;
+}
+
+/* 모바일 화면에서 팝업 레이아웃 조정 */
+@media (max-width: 768px) {
+  .popup-content {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .popup-content p {
+    font-size: 14px;
   }
 }
 

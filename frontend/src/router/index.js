@@ -128,10 +128,11 @@ const router = createRouter({
       component: UserConsultHistory
     },
     {
-      path: '/user/applications/:applicationId',
+      path: '/user/applications', // ✅ 목록 페이지 라우트 추가
       name: 'ApplicationList',
       component: ApplicationListView
     },
+
     //판례검색
     {
       path: '/cases/search',

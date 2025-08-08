@@ -58,7 +58,7 @@
   left: 35%;
   transform: translateY(-50%);
   color: rgb(58, 58, 58);
-  font-size: 32px;
+  font-size: 30px;
   font-weight: 350;
   line-height: 1.4;
 }

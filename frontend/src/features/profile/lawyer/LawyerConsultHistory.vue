@@ -55,7 +55,7 @@
         </div>
       </div>
 
-      <div v-if="totalPages > 1" class="pagination">
+      <div class="pagination">
         <button
           @click="goToPage(currentPage - 1)"
           :disabled="currentPage === 1"
@@ -230,7 +230,7 @@ const goToApplication = async (applicationId) => {
   }
   try {
     const res = await axios.get(`api/applications/${applicationId}`);
-    selectedApplication.value = res.data;
+    selectedApplication.value = res.data.data.application;
     showModal.value = true;
   } catch (err) {
     console.error('상담 신청서 조회 실패:', err);
