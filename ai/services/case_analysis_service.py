@@ -1,6 +1,6 @@
 from langchain.chains import LLMChain
 from langchain.llms.base import LLM
-from typing import List, Dict
+from typing import List, Dict, Optional
 import json
 
 from config.tags import SPECIALTY_TAGS
@@ -10,20 +10,23 @@ from llm.prompt_templates import get_cot_prompt
 from llm.models.embedding_model import EmbeddingModel
 from llm.models.cross_encoder_model import CrossEncoderModel
 from services.search_service import SearchService
+from services.lawyer_recommendation_service import LawyerRecommendationService
 from utils.logger import LoggerMixin
 from utils.exceptions import handle_service_exceptions, LLMError
 
 class CaseAnalysisService(LoggerMixin):
-    def __init__(self, llm: LLM, search_service: SearchService):
+    def __init__(self, llm: LLM, search_service: SearchService, lawyer_recommendation_service: Optional[LawyerRecommendationService] = None):
         """
         LLM 객체와 검색 서비스를 주입받아 초기화합니다.
 
         Args:
             llm (LLM): LangChain의 LLM 인터페이스를 구현한 객체
             search_service (SearchService): 검색 서비스 인스턴스
+            lawyer_recommendation_service (LawyerRecommendationService, optional): 변호사 추천 서비스
         """
         self.llm = llm
         self.search_service = search_service
+        self.lawyer_recommendation_service = lawyer_recommendation_service
         self.prompt_template = get_cot_prompt()
         self.parser = CotOutputParser()
         # `prompt | llm` 로 RunnableSequence를 만듭니다. (LangChain 0.1.17 이상 권장 방식)
@@ -34,11 +37,13 @@ class CaseAnalysisService(LoggerMixin):
             self,
             user_query: str,
             top_k_docs: int = 5, # RAG를 위한 top_k 인자 추가
+            recommend_lawyers: bool = False # 변호사 추천 옵션
         ) -> dict:
             """
             Args:
                 user_query: 사용자가 물어본 질문
                 top_k_docs: 검색할 관련 판례의 개수
+                recommend_lawyers: 변호사 추천 포함 여부
             """
             self.logger.info(f"Starting case analysis for query: {user_query[:100]}...")
             # 1. 관련 판례 검색 (RAG)
@@ -80,11 +85,44 @@ class CaseAnalysisService(LoggerMixin):
 
             # parse_case_analysis_output을 사용하여 결론 텍스트를 구조화합니다.
             case_analysis_result = parse_case_analysis_output(conclusion_text)
+            
+            # 디버깅: CoT 결과와 태그 확인
+            self.logger.debug(f"Raw conclusion text: {conclusion_text}")
+            self.logger.debug(f"Parsed case_analysis_result: {vars(case_analysis_result)}")
+
+            # 변호사 추천 (옵션)
+            recommended_lawyers = []
+            if recommend_lawyers and self.lawyer_recommendation_service:
+                try:
+                    # CoT 결과에서 태그 추출 (tags 필드 활용)
+                    extracted_tags = case_analysis_result.tags if hasattr(case_analysis_result, 'tags') else []
+                    self.logger.info(f"Extracted tags from CoT result: {extracted_tags}")
+                    
+                    if extracted_tags:
+                        self.logger.info(f"Using tags from CoT analysis: {extracted_tags}")
+                        recommendation_result = await self.lawyer_recommendation_service.get_lawyer_recommendations_from_tags(
+                            tags=extracted_tags,
+                            limit=3
+                        )
+                        recommended_lawyers = recommendation_result.get("recommended_lawyers", [])
+                        self.logger.info(f"Successfully got {len(recommended_lawyers)} lawyer recommendations")
+                    else:
+                        self.logger.warning("No tags found in CoT analysis result")
+                        
+                except Exception as e:
+                    self.logger.error(f"Error in lawyer recommendation: {e}")
+                    # 변호사 추천 실패해도 전체 분석 결과는 반환
+                    recommended_lawyers = []
+
+            # recommendedLawyers 필드를 CaseAnalysisResult에 설정
+            case_analysis_result.recommendedLawyers = recommended_lawyers
 
             self.logger.info("Case analysis completed successfully")
+            
             return {
                 "case_analysis": case_analysis_result,
             }
+    
 
 # 사용 예시 (기존 analyze_case 함수와 호환성을 위해)
 async def analyze_case(case_text: str) -> dict:

@@ -48,6 +48,11 @@ class ValidationError(BaseServiceException):
     pass
 
 
+class APIError(BaseServiceException):
+    """외부 API 호출 관련 오류"""
+    pass
+
+
 def handle_service_exceptions(
     default_message: str = "서비스 처리 중 오류가 발생했습니다.",
     logger_name: Optional[str] = None

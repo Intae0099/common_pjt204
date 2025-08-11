@@ -94,6 +94,7 @@ class APISettings(BaseSettings):
     port: int
     reload: bool
     cors_origins_str: str
+    backend_api_url: str
     
     def __init__(self, **data):
         if not data:
@@ -101,7 +102,8 @@ class APISettings(BaseSettings):
                 'host': os.environ.get('API_HOST', '0.0.0.0'),
                 'port': int(os.environ.get('API_PORT', '8000')),
                 'reload': os.environ.get('API_RELOAD', 'true').lower() == 'true',
-                'cors_origins_str': os.environ.get('CORS_ORIGINS', 'http://localhost:5173,https://i13b204.p.ssafy.io/')
+                'cors_origins_str': os.environ.get('CORS_ORIGINS', 'http://localhost:5173,https://i13b204.p.ssafy.io/'),
+                'backend_api_url': os.environ.get('BACKEND_API_URL', 'https://i13b204.p.ssafy.io')
             }
         super().__init__(**data)
     

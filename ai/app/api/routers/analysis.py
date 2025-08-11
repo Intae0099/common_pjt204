@@ -2,7 +2,9 @@
 from fastapi import APIRouter, Depends, status
 from app.api.dependencies import get_case_analysis_service, get_current_user
 from app.api.exceptions import BadRequestException
-from app.api.schemas.analysis import AnalysisRequest, AnalysisResponseData, AnalysisResponse
+from app.api.schemas.analysis import (
+    AnalysisRequest, AnalysisResponseData, AnalysisResponse
+)
 from app.api.schemas.error import BaseErrorResponse
 from services.case_analysis_service import CaseAnalysisService
 
@@ -30,14 +32,18 @@ async def analyze_case_endpoint(
 
     service_result = await case_analysis_service.analyze_case(
         user_query=request.case.fullText,
+        recommend_lawyers=request.recommend_lawyers
     )
+    
     case_analysis_report = service_result.get("case_analysis")
+    
     if not case_analysis_report:
         raise BadRequestException("사건 분석 결과를 생성하지 못했습니다.")
 
     data = AnalysisResponseData(
-        report=case_analysis_report,
+        report=case_analysis_report
     )
     # 공통 응답 규격으로 반환
     return {"success": True, "data": data}
+
 

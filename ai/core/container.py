@@ -12,6 +12,8 @@ from services.structuring_service import StructuringService
 from services.case_analysis_service import CaseAnalysisService
 from services.chat_service import ChatService
 from services.consultation_service import ConsultationService
+from services.external_api_client import ExternalAPIClient
+from services.lawyer_recommendation_service import LawyerRecommendationService
 from llm.clients.openai_client import get_async_openai_client
 from llm.clients.langchain_client import Gpt4oMini
 
@@ -95,7 +97,8 @@ class Container:
             CaseAnalysisService,
             lambda: CaseAnalysisService(
                 self.get(Gpt4oMini),
-                self.get(SearchService)
+                self.get(SearchService),
+                self.get(LawyerRecommendationService)
             )
         )
         
@@ -107,6 +110,19 @@ class Container:
         self.register_factory(
             ConsultationService,
             lambda: ConsultationService(get_async_openai_client())
+        )
+        
+        # 새로 추가된 서비스들
+        self.register_factory(
+            ExternalAPIClient,
+            lambda: ExternalAPIClient()
+        )
+        
+        self.register_factory(
+            LawyerRecommendationService,
+            lambda: LawyerRecommendationService(
+                self.get(ExternalAPIClient)
+            )
         )
 
 
