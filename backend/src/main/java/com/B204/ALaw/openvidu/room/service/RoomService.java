@@ -176,21 +176,23 @@ public class RoomService {
                 session.setParticipantCount(participantCount);
 
                 // 이 의뢰인의 참가정보 삭제
-                participantRepository.deleteByClientId(userId);
+                Participant participant = participantRepository.findByClientId(userId);
+                participant.setClient(null);
 
             } else if(participantCount == 0) { // 0명일 때는 세션정보(Session)와 openvidu 관련정보(Room)도 삭제해야 함
 
-                // 이 화상상담방의 openvidu 관련정보 삭제해야 해서 해당하는 Room 객체 얻어놓기
-                Room room = sessionRepository.findByAppointmentId(appointmentId).getRoom();
-
-                // 해당 세션을 삭제
-                sessionRepository.delete(session);
-
-                // 이 의뢰인의 참가정보 삭제
-                participantRepository.deleteByClientId(userId);
-
                 // 이 화상상담방의 openvidu 관련정보 삭제
+                Room room = sessionRepository.findByAppointmentId(appointmentId).getRoom();
+                room.setSession(null);
+                room.setParticipantList(null);
                 roomRepository.delete(room);
+
+//                // 해당 세션을 삭제
+//                sessionRepository.delete(session);
+//
+//                // 이 의뢰인의 참가정보 삭제
+//                participantRepository.deleteByClientId(userId);
+
 
                 // appointment 테이블에서 appointment_status 'ENDED'로 변경
                 Appointment appointment = appointmentRepository.findById(appointmentId).orElseThrow(() -> new NoSuchElementException("[RoomService - 012] 해당 ID 값을 가지는 Appointment가 없습니다."));
@@ -202,16 +204,14 @@ public class RoomService {
             if(participantCount >= 1) {
 
                 session.setParticipantCount(participantCount);
-                participantRepository.deleteByLawyerId(userId);
+                Participant participant = participantRepository.findByLawyerId(userId);
+                participant.setLawyer(null);
 
             } else if(participantCount == 0) {
 
                 Room room = sessionRepository.findByAppointmentId(appointmentId).getRoom();
-
-                sessionRepository.delete(session);
-
-                participantRepository.deleteByLawyerId(userId);
-
+                room.setSession(null);
+                room.setParticipantList(null);
                 roomRepository.delete(room);
 
                 Appointment appointment = appointmentRepository.findById(appointmentId).orElseThrow(() -> new NoSuchElementException("[RoomService - 013] 해당 ID 값을 가지는 Appointment가 없습니다."));
@@ -292,7 +292,9 @@ public class RoomService {
 
         HttpHeaders headers = createHeaders();
 
-        HttpEntity<Void> httpEntity = new HttpEntity<>(headers);
+        Map<String, String> body = Map.of("role", "MODERATOR");
+
+        HttpEntity<Map<String, String>> httpEntity = new HttpEntity<>(body, headers);
 
         ResponseEntity<OpenViduConnectionResponse> openviduConnectionResponse = restTemplate.postForEntity(url, httpEntity, OpenViduConnectionResponse.class);
 

@@ -12,4 +12,6 @@ public interface ParticipantRepository extends JpaRepository<Participant, Long> 
     Participant findByClient(Client client);
     Participant findByLawyer(Lawyer lawyer);
     Participant findByRoom(Room room);
+    Participant findByClientId(Long userId);
+    Participant findByLawyerId(Long userId);
 }
