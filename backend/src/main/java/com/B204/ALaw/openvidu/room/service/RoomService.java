@@ -184,15 +184,9 @@ public class RoomService {
                 // 이 화상상담방의 openvidu 관련정보 삭제
                 Room room = sessionRepository.findByAppointmentId(appointmentId).getRoom();
                 room.setSession(null);
-                room.setParticipantList(null);
+                room.getParticipantList().clear();
+                roomRepository.saveAndFlush(room);
                 roomRepository.delete(room);
-
-//                // 해당 세션을 삭제
-//                sessionRepository.delete(session);
-//
-//                // 이 의뢰인의 참가정보 삭제
-//                participantRepository.deleteByClientId(userId);
-
 
                 // appointment 테이블에서 appointment_status 'ENDED'로 변경
                 Appointment appointment = appointmentRepository.findById(appointmentId).orElseThrow(() -> new NoSuchElementException("[RoomService - 012] 해당 ID 값을 가지는 Appointment가 없습니다."));
@@ -211,7 +205,8 @@ public class RoomService {
 
                 Room room = sessionRepository.findByAppointmentId(appointmentId).getRoom();
                 room.setSession(null);
-                room.setParticipantList(null);
+                room.getParticipantList().clear();
+                roomRepository.saveAndFlush(room);
                 roomRepository.delete(room);
 
                 Appointment appointment = appointmentRepository.findById(appointmentId).orElseThrow(() -> new NoSuchElementException("[RoomService - 013] 해당 ID 값을 가지는 Appointment가 없습니다."));
