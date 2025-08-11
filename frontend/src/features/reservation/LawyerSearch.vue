@@ -157,7 +157,10 @@ const applyFilters = async (shouldScroll = true) =>{
     if(sortOption.value) params.append('sort',sortOption.value)
 
     const { data } = await axios.get(`/api/lawyers/list?${params.toString()}`)
-    lawyers.value=data.map(l=>({...l,id:String(l.lawyerId)}))
+    lawyers.value=data.map(l=>({
+      ...l,
+      id:String(l.lawyerId),
+    }))
 
     if (shouldScroll) {
       const resultsElement = document.getElementById('lawyer-results')

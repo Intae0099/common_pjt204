@@ -4,7 +4,7 @@
       <div class="profile-box">
         <div class="profile-left">
           <img
-              :src="lawyer?.photo || 'https://via.placeholder.com/150'"
+              :src="lawyerPhotoSrc"
               alt="변호사 프로필"
               class="profile-img"
             />
@@ -138,6 +138,16 @@ const modalApplicationData = ref({});
 
 const router = useRouter();
 const tagStore = useTagStore();
+
+const lawyerPhotoSrc = computed(() => {
+  // lawyer 객체와 photoBase64 데이터가 있는지 확인
+  if (lawyer.value?.photoBase64) {
+    // 'data:image/jpeg;base64,' 접두사를 붙여 완전한 데이터 URI를 반환
+    return `data:image/jpeg;base64,${lawyer.value.photoBase64}`;
+  }
+  // 데이터가 없으면 기본 플레이스홀더 이미지 반환
+  return 'https://via.placeholder.com/150';
+});
 
 const highlightedDates = computed(() => {
   const dates = appointments.value
