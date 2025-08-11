@@ -112,6 +112,10 @@ const handleUserInput = async (text) => {
 }
 
 const handleOpenSaveModal = () => {
+  const token = localStorage.getItem('access_token');
+  if (!token) {
+    return; // 함수 실행 중단
+  }
   showSaveModal.value = true;
 }
 
@@ -124,12 +128,12 @@ const handleConfirmSave = () => {
 }
 
 const handlePredictVerdict = async () => {
-  // const token = localStorage.getItem('access_token') // 또는 적절한 로그인 상태 체크 방식
-  // if (!token) {
-  //   alert('로그인이 필요합니다. 로그인 페이지로 이동합니다.')
-  //   router.push('/login') // 실제 로그인 경로에 맞게 수정
-  //   return
-  // }
+  const token = localStorage.getItem('access_token') // 또는 적절한 로그인 상태 체크 방식
+  if (!token) {
+    alert('로그인이 필요합니다. 로그인 페이지로 이동합니다.')
+    router.push('/login') // 실제 로그인 경로에 맞게 수정
+    return
+  }
 
   if (!aiResponse.value) {
     alert('먼저 사건 내용을 입력하고 분석을 받아야 합니다.')
