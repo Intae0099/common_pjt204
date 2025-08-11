@@ -178,16 +178,19 @@ const router = createRouter({
       path: '/videocall/preview/client',
       name: 'PreviewUser',
       component: PreviewUserView,
+      meta: { requiresAuth: true },
     },
     {
       path: '/videocall/preview/lawyer',
       name: 'PreviewLawyer',
       component: PreviewLawyerView,
+      meta: { requiresAuth: true },
     },
     {
       path: '/meeting',
       name: 'MeetingRoom',
-      component: MeetingRoom
+      component: MeetingRoom,
+      meta: { requiresAuth: true }
     },
     {
       path: '/chat/chatbot',
@@ -256,6 +259,21 @@ const router = createRouter({
 })
 
 router.beforeEach((to, from, next) => {
+  const token = localStorage.getItem('access_token'); // 일반 사용자 토큰 확인
+
+  // 1. "인증이 필요한 페이지"에 접근하려고 할 때 (meta.requiresAuth === true)
+  if (to.matched.some(record => record.meta.requiresAuth)) {
+    // 1-1. 토큰이 없는 경우 (로그인 안 된 경우)
+    if (!token) {
+      alert('로그인이 필요합니다.');
+      next({ name: 'SocialLogin' }); // 로그인 페이지로 리디렉션
+    } else {
+      // 1-2. 토큰이 있는 경우, 페이지 접근 허용
+      next();
+    }
+    return; // requiresAuth 관련 로직은 여기서 종료
+  }
+
   const authStore = useAuthStore();
   const isAdminLoggedIn = authStore.isLoggedIn && authStore.userType === 'ADMIN';
 
