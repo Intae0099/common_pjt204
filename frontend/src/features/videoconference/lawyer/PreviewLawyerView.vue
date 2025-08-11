@@ -146,7 +146,7 @@ const goToApplication = async (applicationId) => {
   }
 }
 
-// 💡 [수정] 화상상담 입장 로직을 안정적으로 개선
+
 const enterMeeting = async (appointmentId) => {
   if (!appointmentId) {
     alert('입장할 상담을 선택해주세요.');
@@ -165,8 +165,11 @@ const enterMeeting = async (appointmentId) => {
         const token = res.data.data.openviduToken;
         router.push({ name: 'MeetingRoom', query: { token, appointmentId } });
       } catch (err2) {
-        console.error('방 참가 실패:', err2);
-        alert('화상상담 입장에 실패했습니다.');
+        // 서버가 보내준 구체적인 에러 메시지를 확인합니다.
+        const serverMessage = err2.response?.data?.message || '서버로부터 상세 메시지를 받지 못했습니다.';
+        console.error('방 참가 실패! 서버 응답:', serverMessage, err2);
+
+        alert(`화상상담 입장에 실패했습니다.\n서버 메시지: ${serverMessage}`);
       }
     } else {
       // 그 외 다른 에러
@@ -178,11 +181,11 @@ const enterMeeting = async (appointmentId) => {
 
 onMounted(async () => {
   try {
-    // 💡 [수정] API 호출 시 params를 추가하여 승인된('APPROVED') 상담만 가져오도록 변경
+    // API 호출 시 params를 추가하여 승인된('CONFIRMED') 상담만 가져오도록 변경
     const { data: allAppointments } = await axios.get('/api/appointments/me', {
       params: { status: 'CONFIRMED' },
     });
-
+    /* 실제코드. 추후 주석 해제
     // 오늘 날짜의, 아직 끝나지 않은 예약만 필터링합니다.
     const now = new Date();
     const todaysAppointments = allAppointments.filter(
@@ -202,8 +205,13 @@ onMounted(async () => {
         return isToday && hasNotEnded;
       }
     );
-
     appointments.value = todaysAppointments;
+    */
+
+    // [개발용. 추후 삭제예정] 모든 확정된 상담 목록을 불러옵니다.
+    appointments.value = allAppointments;
+    //여기까지 개발용
+
   } catch (e) {
     console.error('상담 일정 불러오기 실패:', e);
   }
@@ -211,7 +219,6 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-/* 💡 [수정] 카메라 좌우 반전을 위한 CSS 추가 */
 .preview-left :deep(video) {
   transform: scaleX(-1);
 }
