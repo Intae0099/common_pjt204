@@ -93,42 +93,45 @@ public class LawyerController {
     return ResponseEntity.ok(response);
   }
 
-  @PostMapping("/login")
-  public ResponseEntity<?> login(
-      @Valid @RequestBody LawyerLoginDto dto
-  ) {
-    try {
-      // 1. 인증 시도
-      Authentication authentication = authManager.authenticate(
-          new UsernamePasswordAuthenticationToken(dto.getLoginEmail(), dto.getPassword())
-      );
-
-      Lawyer lawyer = lawyerService.findByLoginEmail(authentication.getName());
-      if (lawyer.getCertificationStatus() == CertificationStatus.PENDING) {
-        return ResponseEntity
-            .status(HttpStatus.FORBIDDEN)
-            .body(Map.of("error", "계정 승인 대기 중입니다."));
-      }
-      if (lawyer.getCertificationStatus() == CertificationStatus.REJECTED) {
-        return ResponseEntity
-            .status(HttpStatus.FORBIDDEN)
-            .body(Map.of("error", "승인 거부된 계정입니다."));
-      }
-
-      LoginResult result = lawyerService.loginLawyer(authentication);
-
-      return ResponseEntity.ok()
-          .header(HttpHeaders.SET_COOKIE, result.getRefreshCooktie())
-          .body(new LoginResponseDto(result.getAccessToken(), result.getName()));
-
-    } catch (BadCredentialsException e) {
-      return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-          .body(Map.of("error", "무엇인가 올바르지 않다."));
-    }catch (Exception e) {
-      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-          .body(Map.of("error", e.getMessage()));
-    }
-  }
+//  @PostMapping("/login")
+//  public ResponseEntity<?> login(
+//      @Valid @RequestBody LawyerLoginDto dto
+//  ) {
+//    try {
+//      // 1. 인증 시도
+//      Authentication authentication = authManager.authenticate(
+//          new UsernamePasswordAuthenticationToken(dto.getLoginEmail(), dto.getPassword())
+//      );
+//
+//      Lawyer lawyer = lawyerService.findByLoginEmail(authentication.getName());
+//
+//      System.out.println("변호사 / 현 상태 :  " + lawyer.getCertificationStatus());
+//
+//      if (lawyer.getCertificationStatus() == CertificationStatus.PENDING) {
+//        return ResponseEntity
+//            .status(HttpStatus.FORBIDDEN)
+//            .body(Map.of("error", "계정 승인 대기 중입니다."));
+//      }
+//      if (lawyer.getCertificationStatus() == CertificationStatus.REJECTED) {
+//        return ResponseEntity
+//            .status(HttpStatus.FORBIDDEN)
+//            .body(Map.of("error", "승인 거부된 계정입니다."));
+//      }
+//
+//      LoginResult result = lawyerService.loginLawyer(authentication);
+//
+//      return ResponseEntity.ok()
+//          .header(HttpHeaders.SET_COOKIE, result.getRefreshCooktie())
+//          .body(new LoginResponseDto(result.getAccessToken(), result.getName()));
+//
+//    } catch (BadCredentialsException e) {
+//      return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+//          .body(Map.of("error", "무엇인가 올바르지 않다."));
+//    }catch (Exception e) {
+//      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//          .body(Map.of("error", e.getMessage()));
+//    }
+//  }
 
   @GetMapping("/me")
   @PreAuthorize("hasRole('LAWYER')")

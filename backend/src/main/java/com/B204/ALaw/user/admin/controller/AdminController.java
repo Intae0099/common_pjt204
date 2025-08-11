@@ -83,6 +83,8 @@ public class AdminController {
           new UsernamePasswordAuthenticationToken(dto.getLoginEmail(), dto.getPassword())
       );
 
+      System.out.println("관리자 ^^  :  " + auth.getPrincipal());
+
       String email = auth.getName();
       Admin admin = adminService.findByLoginEmail(email);
       String subject = "ADMIN:" + admin.getLoginEmail();
