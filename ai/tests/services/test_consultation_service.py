@@ -32,10 +32,9 @@ class MockAsyncCompletions:
                     "발생한 손해의 구체적인 금액을 산정하셨나요?"
                 ]
             }, ensure_ascii=False)
-        elif "키워드" in last_message or "KEYWORD_TAG" in last_message:
+        elif "키워드" in last_message or "KEYWORD_TAG" in last_message or "태그" in last_message or "specialty_tags" in last_message or "법률 분야" in last_message:
             response_content = json.dumps({
-                "keywords": ["계약위반", "손해배상", "민사소송"],
-                "tags": ["민사", "계약"]
+                "tags": ["민사", "계약", "손해배상"]
             }, ensure_ascii=False)
         elif "APPLICATION_FORMAT" in last_message:
             response_content = json.dumps({
@@ -57,8 +56,14 @@ def mock_openai_client():
 
 
 @pytest.fixture
-def consultation_service(mock_openai_client):
-    return ConsultationService(mock_openai_client)
+def mock_external_api_client():
+    mock_client = MagicMock()
+    mock_client.resolve_tag_ids = AsyncMock(return_value=[1, 2, 3])
+    return mock_client
+
+@pytest.fixture
+def consultation_service(mock_openai_client, mock_external_api_client):
+    return ConsultationService(mock_openai_client, mock_external_api_client)
 
 
 @pytest.fixture
@@ -135,7 +140,9 @@ async def test_LLM_호출_성공시_응답_파싱(consultation_service, sample_r
     assert len(result["questions"]) > 0
     assert "계약서" in result["questions"][0]
     assert len(result["tags"]) > 0
-    assert "민사" in result["tags"]
+    assert isinstance(result["tags"], list)
+    # tags는 이제 ID 배열이므로 숫자인지 확인
+    assert all(isinstance(tag, int) for tag in result["tags"])
 
 
 @pytest.mark.asyncio  
