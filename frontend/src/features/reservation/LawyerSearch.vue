@@ -265,7 +265,8 @@ const goToReservation = lawyer =>{
   white-space: nowrap;
   margin-right: 10px;
 }
-.search-btn:hover { background-color: #394b85; }
+.search-btn:hover { background-color: #6c9bcf;
+}
 
 /* ── Filter Content (Table & Tags) ──────────────────────── */
 .fade-enter-active, .fade-leave-active { transition: all 0.25s ease; }
@@ -368,11 +369,11 @@ const goToReservation = lawyer =>{
   appearance: none;
   height: 30px;
   padding: 0 2.5rem 0 1rem;
-  border: 1px solid #b4c3d1;
+  border: 1px solid #888;
   border-radius: 15px;
   font-size: 12px;
-  color: #333;
-  background-image: url("data:image/svg+xml,%3Csvg fill='black' height='16' viewBox='0 0 24 24' width='16' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+  color:  #888;
+  background-image: url("data:image/svg+xml,%3Csvg fill='gray' height='16' viewBox='0 0 24 24' width='16' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 1rem center;
   background-size: 12px;
@@ -395,7 +396,7 @@ const goToReservation = lawyer =>{
 }
 .lawyer-card {
   background-color: white;
-  border: 1px solid #e0e0e0;
+  border: 1px solid #f1f1f1;
   border-radius: 12px;
   padding: 20px;
   text-align: center;
@@ -415,7 +416,7 @@ const goToReservation = lawyer =>{
 .lawyer-tags { margin-bottom: 15px; }
 .tag {
   background-color: #f1f1f1;
-  color: #333;
+  color: #333333;
   padding: 4px 8px;
   border-radius: 12px;
   font-size: 12px;
@@ -423,14 +424,15 @@ const goToReservation = lawyer =>{
   display: inline-block;
 }
 .more-btn {
-  background: none;
-  border: none;
-  color: #007bff;
+  background-color: #ffffff;
+  color: #333;
+  padding: 4px 8px;
+  border-radius: 12px;
   font-size: 12px;
   cursor: pointer;
   margin-left: 4px;
-  padding: 0;
-  text-decoration: underline;
+  border:none;
+  text-decoration: none;
 }
 .reserve-btn {
   background-color: #1d2b50;

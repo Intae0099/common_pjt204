@@ -9,7 +9,9 @@
     <div class="container d-flex justify-content-between align-items-center">
 
       <!-- 왼쪽: 로고 -->
-      <RouterLink to="/" class="fw-bold text-dark text-decoration-none">LOGO</RouterLink>
+      <RouterLink to="/" class="fw-bold text-dark text-decoration-none">
+        <img src="@/assets/logo.png" alt="로고" style="height: 80px;" />
+      </RouterLink>
 
       <!-- 햄버거 아이콘 (모바일용) -->
       <button class="btn d-lg-none" @click="isMenuOpen = !isMenuOpen">
