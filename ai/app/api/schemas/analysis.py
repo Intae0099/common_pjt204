@@ -18,7 +18,7 @@ class CaseInput(BaseModel):
 
 class AnalysisRequest(BaseModel):
     case: CaseInput = Field(..., description="분석할 사건 정보.")
-    recommend_lawyers: bool = Field(False, description="변호사 추천 포함 여부.")
+    recommend_lawyers: bool = Field(True, description="변호사 추천 포함 여부.")
 
 class AnalysisResponseData(BaseModel):
     report: CaseAnalysisResult = Field(..., description="상세 법률 분석 결과.")
