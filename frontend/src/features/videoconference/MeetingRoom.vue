@@ -34,8 +34,8 @@
         <div class="chat-content">
           <RealtimeChatView
             v-show="activeChat === 'realtime'"
-            :messages="messages"
-            @send-message="sendChatMessage"
+            :session="session"
+            :user-name="'나(의뢰인)'"
           />
           <ChatbotView v-show="activeChat === 'chatbot'" />
         </div>
@@ -94,7 +94,7 @@
 
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue';
+import { ref, onMounted, onBeforeUnmount, nextTick, provide } from 'vue';
 import { OpenVidu } from 'openvidu-browser';
 import { useRoute, useRouter } from 'vue-router';
 import axios from '@/lib/axios';

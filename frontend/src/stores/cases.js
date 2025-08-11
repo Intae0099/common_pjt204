@@ -69,8 +69,15 @@ export const useCasesStore = defineStore('cases', {
           },
         });
 
-        if (response.data.success) {
-          const { items, pageMeta } = response.data.data;
+        if (response.data.success && Array.isArray(response.data.data)) {
+          const items = response.data.data;
+
+          const pageMeta = {
+            total: response.data.total,
+            page: response.data.page,
+            size: response.data.size,
+            pages: response.data.pages,
+          };
 
           const processedItems = items.map(item => {
             if (item.summary && item.summary.length > 300) {
@@ -85,7 +92,9 @@ export const useCasesStore = defineStore('cases', {
           this.currentPage = 1; // ✨ 새로운 검색 시 항상 1페이지로 리셋
 
         } else {
-          throw new Error(response.data.error.message || '데이터를 가져오는데 실패했습니다.');
+          this._allCaseList = [];
+          this.pagination = null;
+          throw new Error(response.data.message || '데이터를 가져오는데 실패했습니다.');
         }
 
       } catch (err) {
