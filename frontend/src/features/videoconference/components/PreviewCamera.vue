@@ -5,7 +5,7 @@
       <button @click="toggleAudio" :class="{ off: !isAudioOn }">
         <component :is="isAudioOn ? Mic : MicOff" class="icon" />
       </button>
-      <button @click="toggleVideo" :class="{ off: !isVideoOn }">
+      <button @click="toggleVideo">
         <component :is="isVideoOn ? Video : VideoOff" class="icon" />
       </button>
     </div>
@@ -71,18 +71,21 @@ onMounted(() => { // async 제거
   }
 });
 
+// 오디오 켜고 끄는 함수
 const toggleAudio = () => {
   if (!publisher.value) return;
   isAudioOn.value = !isAudioOn.value;
   publisher.value.publishAudio(isAudioOn.value);
 };
 
+// 비디오 켜고 끄는 함수
 const toggleVideo = () => {
   if (!publisher.value) return;
   isVideoOn.value = !isVideoOn.value;
   publisher.value.publishVideo(isVideoOn.value);
 };
 
+// 컴포넌트가 사라지기 직전에 실행되어 리소스를 정리 (매우 중요!)
 onBeforeUnmount(() => {
   // ✅ publisher.value가 유효한 OpenVidu Publisher 객체인지 한번 더 확인
   // 'destroy' 함수가 있는지 체크하는 것이 가장 확실합니다.
@@ -97,6 +100,7 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
+/* 스타일은 기존과 동일하게 유지됩니다. */
 .preview-camera {
   width: 100%;
   height: 480px;

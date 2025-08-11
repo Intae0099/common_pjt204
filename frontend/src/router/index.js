@@ -1,5 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
+//메인페이지
+import MainPageView from '@/features/main/MainPageView.vue';
+
 //회원가입 및 로그인
 import SocialLogin from '@/features/auth/user/SocialLogin.vue'
 import SignUpFirst from '@/features/auth/lawyer/SignUpFirst.vue';
@@ -52,6 +55,11 @@ import LawyerFindPasswordView from '@/features/auth/lawyer/LawyerFindPasswordVie
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
+    {
+      path: '/',
+      name: 'Main',
+      component: MainPageView
+    },
     //회원가입 및 로그인
     {
       path: '/login',
@@ -128,10 +136,11 @@ const router = createRouter({
       component: UserConsultHistory
     },
     {
-      path: '/user/applications/:applicationId',
+      path: '/user/applications', // ✅ 목록 페이지 라우트 추가
       name: 'ApplicationList',
       component: ApplicationListView
     },
+
     //판례검색
     {
       path: '/cases/search',

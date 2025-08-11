@@ -1,17 +1,14 @@
 <template>
   <div class="preview-page">
-    <!-- 왼쪽: 카메라 미리보기 -->
     <div class="preview-left">
       <h2>화면 미리보기</h2>
       <PreviewCamera />
     </div>
 
-    <!-- 오른쪽: 오늘 예약된 상담 -->
     <div class="preview-right">
       <h3>오늘 예약된 상담</h3>
 
       <div class="appointment-wrapper">
-        <!-- 상담 있음 -->
         <div v-if="appointments.length">
           <div
             class="appointment-card"
@@ -31,7 +28,7 @@
             </div>
             <div class="client-row">
               <p class="client">
-                <span class="client-name">{{ appointment.clientName }}</span>
+                <span class="client-name">{{ appointment.counterpartName }}</span>
                 <span class="client-label"> 의뢰인</span>
               </p>
               <button class="check-btn" @click.stop="goToApplication(appointment.applicationId)">
@@ -41,14 +38,12 @@
           </div>
         </div>
 
-        <!-- 상담 없음 -->
         <div v-else class="no-appointment">
           <img src="@/assets/bot-no-consult.png" />
           <p>앗! 상담 일정이 없어요</p>
         </div>
       </div>
 
-      <!-- 입장 버튼 -->
       <div class="enter-btn-wrapper">
         <button
           class="enter-btn"
@@ -62,9 +57,9 @@
   </div>
 
   <ApplicationDetail
-  v-if="showDetailModal"
-  :data="selectedApplicationData"
-  @close="showDetailModal = false"
+    v-if="showDetailModal"
+    :data="selectedApplicationData"
+    @close="showDetailModal = false"
   />
 
 </template>
@@ -113,12 +108,13 @@ const getTimeDifference = (startTime) => {
   const diffMs = start - now
   const diffMinutes = Math.floor(diffMs / (1000 * 60))
 
-  if (diffMinutes < 0) return '이미 시작됨'
-  if (diffMinutes < 60) return `${diffMinutes}분 전`
+  // "진행중" 또는 "N분 후"로 표시되도록 수정
+  if (diffMinutes < 0) return '진행중'
+  if (diffMinutes < 60) return `${diffMinutes}분 후`
 
   const hours = Math.floor(diffMinutes / 60)
   const minutes = diffMinutes % 60
-  return `${hours}시간 ${minutes}분 전`
+  return `${hours}시간 ${minutes}분 후`
 }
 
 
@@ -134,7 +130,6 @@ const selectAppointment = (id) => {
 
 
 const goToApplication = async (applicationId) => {
-
   try {
     const { data } = await axios.get(`/api/applications/${applicationId}`)
     const app = data.data.application
@@ -153,38 +148,82 @@ const goToApplication = async (applicationId) => {
 
 
 const enterMeeting = async (appointmentId) => {
-  try {
-    await axios.post(`/api/rooms/${appointmentId}`).catch((err) => {
-      console.log('방 생성 실패 또는 이미 존재함', err.response?.data || err)
-    })
-    const res = await axios.post(`/api/rooms/${appointmentId}/participants`)
-    const token = res.data.data.openviduToken
-
-    router.push({
-      name: 'MeetingRoom',
-      query: {
-        token,
-        appointmentId
-      }
-    })
-  } catch (err) {
-    console.error('화상상담 입장 실패:', err)
-    alert('화상상담 방 입장에 실패했습니다.')
+  if (!appointmentId) {
+    alert('입장할 상담을 선택해주세요.');
+    return;
   }
-}
+  try {
+    // 방 생성을 먼저 시도
+    const res = await axios.post(`/api/rooms/${appointmentId}`);
+    const token = res.data.data.openviduToken;
+    router.push({ name: 'MeetingRoom', query: { token, appointmentId } });
+  } catch (err) {
+    // 방이 이미 존재할 경우(409 Conflict) 참가자로 입장
+    if (err.response?.status === 409) {
+      try {
+        const res = await axios.post(`/api/rooms/${appointmentId}/participants`);
+        const token = res.data.data.openviduToken;
+        router.push({ name: 'MeetingRoom', query: { token, appointmentId } });
+      } catch (err2) {
+        // 서버가 보내준 구체적인 에러 메시지를 확인합니다.
+        const serverMessage = err2.response?.data?.message || '서버로부터 상세 메시지를 받지 못했습니다.';
+        console.error('방 참가 실패! 서버 응답:', serverMessage, err2);
+
+        alert(`화상상담 입장에 실패했습니다.\n서버 메시지: ${serverMessage}`);
+      }
+    } else {
+      // 그 외 다른 에러
+      console.error('방 생성 실패:', err);
+      alert('화상상담 방 생성에 실패했습니다.');
+    }
+  }
+};
 
 onMounted(async () => {
   try {
-    const { data } = await axios.get('/api/appointments/me')
-    appointments.value = data
+    // API 호출 시 params를 추가하여 승인된('CONFIRMED') 상담만 가져오도록 변경
+    const { data: allAppointments } = await axios.get('/api/appointments/me', {
+      params: { status: 'CONFIRMED' },
+    });
+    /* 실제코드. 추후 주석 해제
+    // 오늘 날짜의, 아직 끝나지 않은 예약만 필터링합니다.
+    const now = new Date();
+    const todaysAppointments = allAppointments.filter(
+      (appointment) => {
+        const startTime = new Date(appointment.startTime);
+        const endTime = new Date(appointment.endTime);
+
+        // 조건 1: 상담 시작일이 오늘인지 확인 (연, 월, 일 비교)
+        const isToday =
+          startTime.getFullYear() === now.getFullYear() &&
+          startTime.getMonth() === now.getMonth() &&
+          startTime.getDate() === now.getDate();
+
+        // 조건 2: 상담 종료 시간이 현재 시간 이후인지 확인
+        const hasNotEnded = endTime > now;
+
+        return isToday && hasNotEnded;
+      }
+    );
+    appointments.value = todaysAppointments;
+    */
+
+    // [개발용. 추후 삭제예정] 모든 확정된 상담 목록을 불러옵니다.
+    appointments.value = allAppointments;
+    //여기까지 개발용
+
   } catch (e) {
-    console.error('상담 일정 불러오기 실패:', e)
+    console.error('상담 일정 불러오기 실패:', e);
   }
-})
+});
 </script>
 
 <style scoped>
-*{
+.preview-left :deep(video) {
+  transform: scaleX(-1);
+}
+
+* {
   font-family: 'Noto Sans KR', sans-serif;
 }
 .preview-page {
@@ -302,8 +341,8 @@ onMounted(async () => {
   margin-bottom: 1rem;
 }
 .no-appointment p {
-    font-weight: bold;
-    color: #82A0B3;
+  font-weight: bold;
+  color: #82A0B3;
 }
 
 .enter-button,
@@ -336,4 +375,3 @@ onMounted(async () => {
   margin-top: 1rem;
 }
 </style>
-

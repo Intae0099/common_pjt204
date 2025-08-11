@@ -32,8 +32,12 @@
       <!-- 오른쪽: 채팅 -->
       <div class="chat-area">
         <div class="chat-content">
-          <RealtimeChatView v-if="activeChat === 'realtime'" />
-          <ChatbotView v-if="activeChat === 'chatbot'" />
+          <RealtimeChatView
+            v-show="activeChat === 'realtime'"
+            :messages="messages"
+            @send-message="sendChatMessage"
+          />
+          <ChatbotView v-show="activeChat === 'chatbot'" />
         </div>
       </div>
     </div>
@@ -144,7 +148,7 @@ const toggleCamera = () => {
   }
 };
 
-// 마이크 토글 함수
+// 마이크를 켜고 끄는 함수
 const toggleMic = () => {
   if (mainStreamManager.value) {
     isMicOn.value = !isMicOn.value;
@@ -180,7 +184,7 @@ function endDraw() {
     isDrawing.value = false;
     ctx.closePath();
   }
-}
+};
 
 function sendSignal(payload) {
   if(!session.value) return;
@@ -273,6 +277,7 @@ onMounted(() => {
     });
 });
 
+// 화면 공유를 시작하는 함수
 const shareScreen = async () => {
   try {
     const screenPublisher = await OV.value.initPublisherAsync(undefined, {
@@ -378,7 +383,20 @@ onBeforeUnmount(() => {
 /* 비디오 박스(또는 video-inner)가 좌표계 기준점이 되도록 */
 .video-box,
 .video-inner {
-  position: relative;   /* ⬅️ 추가 */
+  position: relative;
+}
+
+.video-box :deep(video) {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* 컨테이너를 비율에 맞게 꽉 채웁니다 */
+  display: block;    /* 불필요한 여백을 제거합니다 */
+  border-radius: 10px; /* 부모 요소와 스타일에 맞게 둥글게 처리 */
+}
+
+/* 내 화면(publisher)은 좌우 반전되어 있으므로, 그 안의 라벨만 다시 정상으로 돌려놓습니다 */
+#publisher :deep(.role-label) {
+  transform: scaleX(1);
 }
 
 /* 왼쪽-하단 라벨 공통 스타일 */
@@ -391,7 +409,10 @@ onBeforeUnmount(() => {
   font-size: 14px;
   font-weight: 500;
   text-shadow: 0 0 4px rgba(0, 0, 0, 0.6);
-  pointer-events: none; /* 클릭 막기 */
+  pointer-events: none;
+}
+#publisher > .role-label {
+  transform: scaleX(-1); /* 좌우 반전을 다시 한번 적용해 원상태로 복구 */
 }
 
 .shared-screen {
