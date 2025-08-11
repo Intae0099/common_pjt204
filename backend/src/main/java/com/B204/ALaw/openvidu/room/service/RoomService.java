@@ -292,7 +292,9 @@ public class RoomService {
 
         HttpHeaders headers = createHeaders();
 
-        HttpEntity<Void> httpEntity = new HttpEntity<>(headers);
+        Map<String, String> body = Map.of("role", "MODERATOR");
+
+        HttpEntity<Map<String, String>> httpEntity = new HttpEntity<>(body, headers);
 
         ResponseEntity<OpenViduConnectionResponse> openviduConnectionResponse = restTemplate.postForEntity(url, httpEntity, OpenViduConnectionResponse.class);
 
