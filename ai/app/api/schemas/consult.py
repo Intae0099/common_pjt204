@@ -29,7 +29,7 @@ class ConsultationData(BaseModel):
     """최종 응답의 데이터 필드 모델"""
     application: ApplicationData
     questions: List[str]
-    tags: List[str]
+    tags: List[int]  # str에서 int로 변경
 
 class ConsultationResponse(BaseModel):
     """상담 신청서 생성 최종 응답 모델"""

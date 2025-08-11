@@ -109,7 +109,10 @@ class Container:
         
         self.register_factory(
             ConsultationService,
-            lambda: ConsultationService(get_async_openai_client())
+            lambda: ConsultationService(
+                get_async_openai_client(),
+                self.get(ExternalAPIClient)
+            )
         )
         
         # 새로 추가된 서비스들

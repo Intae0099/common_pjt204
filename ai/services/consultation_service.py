@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, Optional
 
 from openai import AsyncOpenAI
 
@@ -10,14 +10,19 @@ from llm.prompt_templates.consult_prompts import (
     APPLICATION_FORMAT_PROMPT
 )
 from config.tags import SPECIALTY_TAGS
+from services.external_api_client import ExternalAPIClient
+from utils.logger import LoggerMixin
+from utils.exceptions import handle_service_exceptions
 
 
-class ConsultationService:
+class ConsultationService(LoggerMixin):
     """
     상담 신청서 생성 및 관련 AI 기능을 처리하는 서비스 클래스입니다.
     """
-    def __init__(self, llm_client: AsyncOpenAI):
+    def __init__(self, llm_client: AsyncOpenAI, external_api_client: Optional[ExternalAPIClient] = None):
         self.llm_client = llm_client
+        self.external_api_client = external_api_client
+        self.logger.info("ConsultationService initialized")
 
     def _format_application(self, request: ConsultationRequest) -> Dict[str, Any]:
         """
@@ -112,19 +117,46 @@ class ConsultationService:
 
         return questions, tags
 
+    @handle_service_exceptions("태그 ID 변환 중 오류가 발생했습니다.")
+    async def _convert_tags_to_ids(self, tags: List[str]) -> List[int]:
+        """
+        태그 문자열을 외부 API를 통해 태그 ID로 변환합니다.
+        
+        Args:
+            tags: 태그 문자열 리스트
+            
+        Returns:
+            태그 ID 리스트 (실패 시 빈 리스트)
+        """
+        if not tags or not self.external_api_client:
+            self.logger.warning("No tags to convert or external API client not available")
+            return []
+        
+        try:
+            self.logger.info(f"Converting {len(tags)} tags to IDs: {tags}")
+            tag_ids = await self.external_api_client.resolve_tag_ids(tags)
+            self.logger.info(f"Successfully converted to {len(tag_ids)} tag IDs: {tag_ids}")
+            return tag_ids
+        except Exception as e:
+            self.logger.error(f"Failed to convert tags to IDs: {e}")
+            return []
+
     async def create_application_and_questions(
         self, request: ConsultationRequest
     ) -> Dict[str, Any]:
         """
-        상담 신청서(application), 핵심 질문, 태그를 생성하여 반환합니다.
+        상담 신청서(application), 핵심 질문, 태그 ID를 생성하여 반환합니다.
         """
         # application: LLM 포맷 또는 수동 매핑
         application = self._format_application(request)
-        questions, tags = await self._generate_questions_tags_from_llm(application)
+        questions, tag_strings = await self._generate_questions_tags_from_llm(application)
+
+        # 태그 문자열을 태그 ID로 변환
+        tag_ids = await self._convert_tags_to_ids(tag_strings)
 
         return {
             "application": application,
             "questions": questions,
-            "tags": tags,
+            "tags": tag_ids,  # 숫자 배열로 변경
         }
 
