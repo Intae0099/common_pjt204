@@ -29,6 +29,8 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseCookie;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.authentication.LockedException;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.Customizer;
@@ -235,15 +237,28 @@ public class SecurityConfig {
         };
 
     // 변호사 로컬 로그인 실패 핸들러
-    AuthenticationFailureHandler lawyerLoginFailureHandler = (req, res, ex) -> {
-      res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+    AuthenticationFailureHandler lawyerLoginFailureHandler =
+        (req, res, ex) -> {
+      int status = HttpServletResponse.SC_UNAUTHORIZED;
+      if(ex instanceof DisabledException || ex instanceof LockedException){
+        status = HttpServletResponse.SC_FORBIDDEN;
+      }
+
+      res.setStatus(status);
       res.setContentType("application/json");
-      res.getWriter().write("{\"error\":\"Lawyer Login Failed\"}");
+      res.setCharacterEncoding("UTF-8");
+
+      String message = switch (status) {
+        case HttpServletResponse.SC_FORBIDDEN -> "{\"error\":\"승인 대기 중이거나 거부된 계정입니다. \"}";
+        default -> "{\"error\":\"아이디 또는 비밀번호가 올바르지 않습니다.\"}";
+      };
+
+      res.getWriter().write(message);
       res.getWriter().flush();
     };
 
     JsonUsernamePasswordAuthenticationFilter jsonLoginFilter =
-        new JsonUsernamePasswordAuthenticationFilter(authManager);
+        new JsonUsernamePasswordAuthenticationFilter(authManager, lawyerService);
     jsonLoginFilter.setFilterProcessesUrl("/api/lawyers/login");
     jsonLoginFilter.setAuthenticationSuccessHandler(lawyerLoginSuccessHandler);
     jsonLoginFilter.setAuthenticationFailureHandler(lawyerLoginFailureHandler);
@@ -255,17 +270,6 @@ public class SecurityConfig {
         // 2) CORS 활성화 (기본 CorsConfigurationSource 빈을 사용하려면 withDefaults())
         .cors(Customizer.withDefaults())
 
-        // 로컬 로그인 설정 (formLogin)
-//        .formLogin(form -> form
-//            .loginPage("http://localhost:5173/")
-//            // .loginProcessingUrl("/auth/login") // POST 요청
-//            .loginProcessingUrl("/api/lawyers/login")
-//            .usernameParameter("loginEmail")
-//            .passwordParameter("password")
-//            .successHandler(lawyerLoginSuccessHandler)
-//            .failureHandler(lawyerLoginFailureHandler)
-//            .permitAll()
-//        )
         .addFilterAt(jsonLoginFilter, UsernamePasswordAuthenticationFilter.class)
 
 
