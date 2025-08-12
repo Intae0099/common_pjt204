@@ -68,7 +68,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         // 관리자 기능 Test용
         || path.startsWith("/api/admin/login")
-
         || path.startsWith("/api/tag")
 
         // Swagger/OpenAPI
