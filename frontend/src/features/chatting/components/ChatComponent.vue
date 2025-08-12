@@ -86,8 +86,8 @@ watch(
   font-family: 'Noto Sans KR', sans-serif;
 }
 .chat-container {
-  width: 400px;
-  height: 660px;
+
+  flex: 1;
   border-radius: 8px;
   display: flex;
   flex-direction: column;
@@ -97,6 +97,7 @@ watch(
   border: none;
 }
 .message-area {
+  height: 553px;
   flex-grow: 1;
   padding: 20px 10px;
   overflow-y: auto;
