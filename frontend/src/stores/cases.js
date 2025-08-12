@@ -1,7 +1,7 @@
 // src/stores/cases.js
 
 import { defineStore } from 'pinia';
-import { fastapiApiClient } from '@/api/axios'
+import { fastapiApiClient } from '@/lib/axios'
 
 
 export const useCasesStore = defineStore('cases', {
