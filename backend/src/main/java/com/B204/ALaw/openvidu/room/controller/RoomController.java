@@ -163,7 +163,7 @@ public class RoomController {
      * @return
      * @throws Exception
      */
-    @PostMapping("/{appointmentId}/screen-share")
+    @PostMapping("/{appointmentId}/screenshare")
     public ResponseEntity<ShareScreenResponse> shareScreen(Authentication authentication, @PathVariable Long appointmentId) throws Exception {
 
         // Principal 객체 얻기
