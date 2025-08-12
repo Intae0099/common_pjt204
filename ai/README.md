@@ -16,6 +16,7 @@ ALaw 플랫폼은 법률 상담의 진입장벽을 낮추기 위해 기획되었
 - **AI 법률 분석**:
     - **유사 판례/법령 검색**: 구조화된 사건을 기반으로 벡터 DB에서 관련성 높은 판례 및 법령을 검색하고, Cross-encoder로 재정렬하여 정확도를 높입니다. (`services/search_service.py`)
     - **법률 쟁점 도출 및 초기 법률 소견 제공**: 검색된 자료와 사건 경위서를 `LangChain`과 `GPT-4o`를 이용해 종합, 법률적 쟁점을 분석하고 초기 법률 소견을 생성합니다. (`services/case_analysis_service.py`)
+    - **법령 검증 및 보강 시스템**: LLM이 생성한 법령 정보를 실제 법령 데이터베이스(5,502개 법령)와 벡터 검색으로 검증하고, 조항 정보를 보존하여 정확한 법령 참조를 제공합니다. (`services/statute_validation_service.py`)
 - **상담 신청서 생성 AI**: 분석된 사건 내용과 사용자 추가 정보를 결합하여 정형화된 상담 신청서를 생성하고, 변호사를 위한 핵심 질문을 자동으로 도출합니다. (`services/consultation_service.py`)
 - **실시간 법률 챗봇**: `FastAPI`의 SSE(Server-Sent Events)를 활용하여 법률 도메인 특화 AI 챗봇과의 실시간 스트리밍 대화를 지원합니다. (`services/chat_service.py`)
 
@@ -24,7 +25,7 @@ ALaw 플랫폼은 법률 상담의 진입장벽을 낮추기 위해 기획되었
 - **Language**: Python 3.10+
 - **Framework**: FastAPI, Pydantic
 - **AI & LLM**: LangChain, OpenAI GPT-4o, Sentence-Transformers
-- **API & Database**: SQLAlchemy, PostgreSQL
+- **API & Database**: SQLAlchemy, PostgreSQL, pgvector (벡터 검색)
 - **Testing**: Pytest
 - **Deployment**: Docker, Uvicorn
 
@@ -151,6 +152,7 @@ pytest
     -   **AI 서비스 API 아키텍처 설계 및 구현**: `FastAPI`를 기반으로 AI 기능들을 모듈화하여 비동기 처리 REST API 서버 전체를 설계하고 구현했습니다. 각 기능은 `services` 디렉토리 내의 서비스 클래스로 분리하여 관리의 용이성을 확보했습니다.
     -   **RAG 파이프라인 구축 및 최적화**: `LangChain`, `Faiss`, `Sentence-Transformers`를 활용하여 유사 판례 검색을 위한 RAG 파이프라인을 구축했습니다. 사용자의 질의를 임베딩하여 벡터 DB에서 유사 문서를 찾고, Cross-Encoder 모델로 재정렬하는 2단계 검색 과정을 구현하여 검색 정확도를 높였습니다.
     -   **LLM 기반 법률 분석 기능 개발**: `OpenAI GPT-4o` 모델과 `LangChain`을 연동하여, 정제된 사건 내용과 검색된 판례를 바탕으로 법률적 쟁점을 도출하고 초기 법률 소견을 생성하는 `CaseAnalysisService`를 개발했습니다.
+    -   **법령 검증 및 보강 시스템 구축**: 5,502개 법령 데이터를 벡터화하여 PostgreSQL + pgvector 기반 데이터베이스를 구축하고, LLM이 생성한 법령 정보를 실제 법령 데이터베이스와 매칭하여 검증하는 `StatuteValidationService`를 개발했습니다. 조항 정보 보존 로직을 통해 "형법 제347조" 등 세부 조항까지 정확하게 참조할 수 있도록 구현했습니다.
     -   **실시간 챗봇 스트리밍 구현**: 사용자와의 상호작용을 높이기 위해 `FastAPI`의 Server-Sent Events (SSE)를 활용, `ChatService`에서 LLM의 답변을 토큰 단위로 스트리밍하는 기능을 구현했습니다.
     -   **완전 자동화된 CI/CD 파이프라인 구축**: GitLab CI/CD와 Windows Runner를 활용하여 코드 Push부터 프로덕션 배포까지 완전 자동화된 파이프라인을 구축했습니다. Docker 기반 컨테이너화, 스마트 헬스체크, Mattermost 알림 시스템을 통해 안정적인 배포 환경을 구현했습니다.
     -   **Docker 기반 마이크로서비스 아키텍처**: 애플리케이션과 데이터베이스를 독립적인 Docker 컨테이너로 분리하고, docker-compose를 통한 오케스트레이션으로 확장 가능한 배포 환경을 구축했습니다.
@@ -158,6 +160,7 @@ pytest
 
 -   **성과**:
     -   **법률 AI 서비스 완전 자동화**: 사건접수 → 분석 → 상담준비 전 과정을 AI로 자동화하는 백엔드 시스템 구축 완료
+    -   **법령 참조 정확도 대폭 개선**: 벡터 검색 기반 법령 검증 시스템 구축으로 LLM 환각 문제를 해결하고, 실제 존재하는 법령만 참조하도록 보장 (5,502개 법령 데이터베이스 기반)
     -   **무중단 배포 시스템 구현**: 코드 Push부터 프로덕션 반영까지 15-20분 내 완전 자동화된 CI/CD 파이프라인 구축
     -   **확장 가능한 마이크로서비스 아키텍처**: 각 AI 기능을 독립적인 서비스로 분리하여 개별 테스트 및 확장 가능한 구조 설계
     -   **실시간 모니터링 및 알림 시스템**: Mattermost 연동을 통한 실시간 배포 상태 알림 및 장애 감지 시스템 구축
