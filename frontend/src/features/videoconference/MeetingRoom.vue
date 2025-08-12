@@ -1,43 +1,34 @@
 <template>
   <div class="meeting-room">
-    <div class="video-section">
-      <!-- 화면 공유 중일 때 -->
-      <template v-if="isScreenSharing">
-        <!-- 왼쪽: 변호사 + 의뢰인 세로 정렬 -->
-        <div class="video-box vertical-video">
-          <div class="video-inner" id="lawyer-video">
-            <p class="role-label">변호사</p>
-          </div>
-          <div class="video-inner" id="publisher">
-            <p class="role-label">의뢰인</p>
-          </div>
-        </div>
+  <div class="video-section" :class="{ sharing: isScreenSharing }">
+    <!-- 왼쪽: 변호사/의뢰인 비디오 (한 세트만 유지) -->
+    <div class="video-box" id="lawyer-video">
+      <p class="role-label">상대방</p>
+    </div>
 
-        <!-- 가운데: 공유된 화면 -->
-        <div class="video-box shared-screen" id="client-video">
-          <canvas id="draw-canvas" class="drawing-canvas"></canvas>
-        </div>
-      </template>
+    <div class="video-box" id="publisher" ref="publisherRef">
+      <p class="role-label">나</p>
+    </div>
 
-      <!-- 평소(공유 X) 화면: 좌우 나란히 -->
-      <template v-else>
-        <div class="video-box" id="lawyer-video">
-          <p class="role-label">변호사</p>
-        </div>
-        <div class="video-box" id="publisher">
-          <p class="role-label">의뢰인</p>
-        </div>
-      </template>
+    <!-- 가운데: 공유화면 (평소엔 숨김만) -->
+    <div class="video-box shared-screen" id="client-video"
+         :style="{ display: isScreenSharing ? 'flex' : 'none' }">
+      <canvas id="draw-canvas" class="drawing-canvas"></canvas>
+    </div>
 
-      <!-- 오른쪽: 채팅 -->
-      <div class="chat-area">
-        <div class="chat-content">
-          <RealtimeChatView v-if="activeChat === 'realtime'" />
-          <ChatbotView v-if="activeChat === 'chatbot'" />
-        </div>
+    <!-- 오른쪽: 채팅 -->
+    <div class="chat-area">
+      <div class="chat-content">
+        <RealtimeChatView
+          v-show="activeChat === 'realtime'"
+          :session="session"
+        />
+        <ChatbotView v-show="activeChat === 'chatbot'" />
       </div>
     </div>
   </div>
+</div>
+
 
 <!-- 하단 푸터 -->
 <div class="meeting-footer">
@@ -62,11 +53,10 @@
     </div>
 
     <!-- ▼ ② “화면공유” 버튼은 메뉴 밖, 항상 노출 -->
-    <button class="footer-btn only-share" @click="shareScreen">
-      <span class="footer-label">화면공유</span>
+    <button class="footer-btn only-share" @click="isScreenSharing ? stopScreenShare() : shareScreen()">
+      <span class="footer-label">{{ isScreenSharing ? '공유중지' : '화면공유' }}</span>
       <Share class="footer-icon" />
     </button>
-
   </div>
 
   <!-- 오른쪽: 채팅·챗봇·나가기 (기존 그대로) -->
@@ -90,246 +80,452 @@
 
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
-import { OpenVidu } from 'openvidu-browser'
-import { useRoute, useRouter } from 'vue-router'
-import axios from '@/lib/axios'
-import RealtimeChatView from '@/features/chatting/RealtimeChatView.vue'
-import ChatbotView from '@/features/chatting/ChatbotView.vue'
-import { EllipsisVertical,Pencil, Eraser, MousePointer2, MessageSquareText, Share, Video, VideoOff, Mic, MicOff } from 'lucide-vue-next'
-const activeChat = ref('realtime')
+import { ref, onMounted, onBeforeUnmount, nextTick, provide } from 'vue';
+import { OpenVidu } from 'openvidu-browser';
+import { useRoute, useRouter } from 'vue-router';
+import axios from '@/lib/axios';
+import RealtimeChatView from '@/features/chatting/RealtimeChatView.vue';
+import ChatbotView from '@/features/chatting/ChatbotView.vue';
+import { EllipsisVertical, Pencil, Eraser, MousePointer2, MessageSquareText, Share, Video, VideoOff, Mic, MicOff } from 'lucide-vue-next';
+
+const activeChat = ref('realtime');
 const toggleChat = (type) => {
-  activeChat.value = activeChat.value === type ? null : type
-}
+  activeChat.value = activeChat.value === type ? null : type;
+};
+
+// 채팅 더미 (나중에 실제 스토어/소켓 연동으로 교체)
+// const messages = ref([])
+// const sendChatMessage = (msg) => { messages.value.push({ me:true, text: msg }) }
+
+
 // OpenVidu 관련 객체들 상태로 관리
-const OV = ref(null)                  // OpenVidu 객체 (엔진 역할)
-const session = ref(null)            // 세션 객체 (참여자 연결, 스트림 관리)
-const mainStreamManager = ref(null)  // 내 비디오 스트림을 담는 객체
-const subscribers = ref([])          // 다른 사람들(상대방)의 스트림 목록
-const isMenuOpen = ref(false)
-const route = useRoute()
-const router = useRouter()
+const OV = ref(null);
+const session = ref(null);  //메인(카메라/마이크)
+const mainStreamManager = ref(null);
+const subscribers = ref([]);
+
+//화면공유 전용
+const screenOV = ref(null)
+const screenSession = ref(null)        // 화면공유용 세션 (두 번째 연결)
+const screenPublisher = ref(null)      // 화면공유 Publisher
+
+const isMenuOpen = ref(false);
+const route = useRoute();
+const router = useRouter();
+
+const publisherRef = ref(null); // 내 비디오를 붙일 DOM 요소
 
 // 상태 관리
-const isCameraOn = ref(true)
-const isMicOn = ref(true)
+const isCameraOn = ref(true);
+const isMicOn = ref(true);
+const isScreenSharing = ref(false);
 
-// 화면 공유 중 여부
-const isScreenSharing = ref(false)
+const DRAW_SIG = 'drawing';
+let sendBuf = [];
+let rafId = null;
 
-/* ---------- 그리기 상태 ---------- */
-const currentTool    = ref('pointer') // 'pen' | 'eraser' | 'pointer'
-const isDrawing      = ref(false)
-let  canvas, ctx
-
-function setTool(tool){
-  currentTool.value = tool
-  if (!canvas) return;
-
-  canvas.style.pointerEvents = (tool === 'pointer') ? 'none' : 'auto';
-
-  // ② 클래스 토글
-  canvas.classList.toggle('pen-cursor'   , tool==='pen');
-  canvas.classList.toggle('eraser-cursor', tool==='eraser');
+function nxy(x, y) {                // normalize 0..1
+  return { x: x / canvas.width, y: y / canvas.height };
+}
+function dxy(p) {                    // denormalize to local canvas px
+  return { x: p.x * canvas.width, y: p.y * canvas.height };
 }
 
+function flushSegments(tool){
+  if (!session.value || sendBuf.length === 0) return;
+  const pts = sendBuf; sendBuf = []; rafId = null;
+  session.value.signal({
+    type: DRAW_SIG,
+    data: JSON.stringify({ op: 'seg', t: tool, pts })
+  });
+}
 
+/* ---------- 그리기 상태 ---------- */
+const currentTool = ref('pointer');
+const isDrawing = ref(false);
+let canvas, ctx;
 
-// URL 쿼리에서 토큰과 예약 ID 받아오기 (백엔드에서 발급해준 값)
-const token = route.query.token
-const appointmentId = route.query.appointmentId
+function setTool(tool) {
+  currentTool.value = tool;
+  if (!canvas) return;
+  canvas.style.pointerEvents = tool === 'pointer' ? 'none' : 'auto';
+  canvas.classList.toggle('pen-cursor', tool === 'pen');
+  canvas.classList.toggle('eraser-cursor', tool === 'eraser');
+}
 
+// URL 쿼리에서 토큰과 예약 ID 받아오기
+const token = route.query.token;
+const appointmentId = route.query.appointmentId;
 
 // 카메라 토글 함수
 const toggleCamera = () => {
   if (mainStreamManager.value) {
-    isCameraOn.value = !isCameraOn.value
-    mainStreamManager.value.publishVideo(isCameraOn.value)
+    isCameraOn.value = !isCameraOn.value;
+    mainStreamManager.value.publishVideo(isCameraOn.value);
   }
-}
+};
 
-// 마이크 토글 함수
+// 마이크를 켜고 끄는 함수
 const toggleMic = () => {
   if (mainStreamManager.value) {
-    isMicOn.value = !isMicOn.value
-    mainStreamManager.value.publishAudio(isMicOn.value)
+    isMicOn.value = !isMicOn.value;
+    mainStreamManager.value.publishAudio(isMicOn.value);
+  }
+};
+
+/* ---------- 로컬 그리기 (이하 생략된 부분은 기존 코드와 동일) ---------- */
+function startDraw(e) {
+  if (currentTool.value === 'pointer') return;
+  isDrawing.value = true;
+
+  ctx.beginPath();
+  ctx.moveTo(e.offsetX, e.offsetY);
+
+  // 상대에게 "시작" 알림 + 시작점
+  const p = nxy(e.offsetX, e.offsetY);
+  session.value?.signal({
+    type: DRAW_SIG,
+    data: JSON.stringify({ op: 'start', t: currentTool.value, p })
+  });
+}
+
+function draw(e) {
+  if (!isDrawing.value) return;
+
+  const tool = currentTool.value;           // ← 캡쳐
+
+  if (tool === 'pen') {
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = 'red';
+  } else if (tool === 'eraser') {
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.lineWidth = 20;
+  }
+
+  ctx.lineTo(e.offsetX, e.offsetY);
+  ctx.stroke();
+
+  sendBuf.push(nxy(e.offsetX, e.offsetY));
+  if (!rafId) {
+    const t = tool;                         // ← 캡쳐한 값으로 고정
+    rafId = requestAnimationFrame(() => flushSegments(t));
   }
 }
 
 
-/* ---------- 로컬 그리기 ---------- */
-function startDraw(e){
-  if(currentTool.value==='pointer') return
-  isDrawing.value = true
-  ctx.beginPath()
-  ctx.moveTo(e.offsetX, e.offsetY)
+function endDraw() {
+  if (!isDrawing.value) return;
+  isDrawing.value = false;
+  ctx.closePath();
+
+  // 남은 포인트 있으면 마지막으로 flush
+  flushSegments(currentTool.value);
+
+  // 상대에게 "끝" 알림
+  session.value?.signal({
+    type: DRAW_SIG,
+    data: JSON.stringify({ op: 'end' })
+  });
 }
-function draw(e){
-  if(!isDrawing.value) return
-  if(currentTool.value==='pen'){
-    ctx.globalCompositeOperation='source-over'
-    ctx.lineWidth = 2
-    ctx.strokeStyle = 'red'
-  }else if(currentTool.value==='eraser'){
-    ctx.globalCompositeOperation='destination-out'
-    ctx.lineWidth = 20
+
+function sendSignal(payload) {
+  if(!session.value) return;
+  session.value.signal({ type: 'drawing', data: JSON.stringify(payload) });
+}
+
+function handleRemoteDraw({ data }) {
+  const msg = JSON.parse(data);
+
+  if (msg.op === 'start') {
+    // 툴 미리 적용
+    ctx.globalCompositeOperation = msg.t === 'pen' ? 'source-over' : 'destination-out';
+    ctx.lineWidth = msg.t === 'pen' ? 2 : 20;
+
+    const { x, y } = dxy(msg.p);
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    return;
   }
-  ctx.lineTo(e.offsetX, e.offsetY)
-  ctx.stroke()
 
-  // 상대방에게 전파
-  sendSignal({ x:e.offsetX, y:e.offsetY, t:currentTool.value, a:isDrawing.value })
-}
-function endDraw(){
-  if(isDrawing.value){
-    isDrawing.value=false
-    ctx.closePath()
+  if (msg.op === 'seg') {
+    ctx.globalCompositeOperation = msg.t === 'pen' ? 'source-over' : 'destination-out';
+    ctx.lineWidth = msg.t === 'pen' ? 2 : 20;
+    for (const pt of msg.pts) {
+      const { x, y } = dxy(pt);
+      ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+    return;
+  }
+
+  if (msg.op === 'end') {
+    ctx.closePath();
   }
 }
 
-/* ----------  OpenVidu signal ---------- */
-function sendSignal(payload){
-  if(!session.value) return
-  session.value.signal({ type:'drawing', data:JSON.stringify(payload) })
+
+
+async function initCanvas() {
+  await nextTick();
+  canvas = document.getElementById('draw-canvas');
+  if(!canvas) return;
+  ctx = canvas.getContext('2d');
+  canvas.width = canvas.offsetWidth;
+  canvas.height = canvas.offsetHeight;
+
+  console.log('PE before tool =', getComputedStyle(canvas).pointerEvents);
+  canvas.addEventListener('mousedown', startDraw);
+  canvas.addEventListener('mousemove', draw);
+  canvas.addEventListener('mouseup', endDraw);
+  canvas.addEventListener('mouseleave', endDraw);
 }
 
-// 수신 → 상대방 캔버스에 동일하게 그림
-function handleRemoteDraw({data}){
-  const {x,y,t,a} = JSON.parse(data)
-  if(t==='pointer') return
-  ctx.globalCompositeOperation = t==='pen' ? 'source-over' : 'destination-out'
-  ctx.lineWidth = t==='pen' ? 2 : 20
-  if(a){ ctx.lineTo(x,y); ctx.stroke() }
-  else{ ctx.beginPath(); ctx.moveTo(x,y) }
-}
+// ✅ [핵심 수정] 안정적인 콜백 기반으로 전체 로직 변경
+onMounted(() => {
+  OV.value = new OpenVidu();
+  OV.value.enableProdMode();
+  session.value = OV.value.initSession();
 
-/* ---------- 캔버스 초기화 ---------- */
-async function initCanvas(){
-  await nextTick()                     // DOM 완성 대기
-  canvas = document.getElementById('draw-canvas')
-  if(!canvas) return
-  ctx = canvas.getContext('2d')
-  canvas.width  = canvas.offsetWidth
-  canvas.height = canvas.offsetHeight
-
-  canvas.addEventListener('mousedown', startDraw)
-  canvas.addEventListener('mousemove', draw)
-  canvas.addEventListener('mouseup'  , endDraw)
-  canvas.addEventListener('mouseleave', endDraw)
-}
-
-
-// 세션 참가 함수 (컴포넌트 마운트 시 자동 실행)
-onMounted(async () => {
-
-  // 1. OpenVidu 객체 생성
-  OV.value = new OpenVidu()
-
-  // 2. 세션 초기화 (로컬에서 관리할 세션 객체 생성)
-  session.value = OV.value.initSession()
-
-  // 3. 상대방이 입장해 스트림을 게시하면 구독하기
+  // 1. 상대방 스트림이 생겼을 때의 이벤트 핸들러
+  // 바꿔치기
   session.value.on('streamCreated', (event) => {
-    const subscriber = session.value.subscribe(event.stream, undefined)
-    const target = document.getElementById('lawyer-video')
-    subscriber.addVideoElement(target)
-    subscribers.value.push(subscriber)
-  })
+    // 화면공유 스트림인지 판별
+    const isScreen =
+      event.stream?.typeOfVideo === 'SCREEN' ||
+      event.stream?.getMediaStream()?.getVideoTracks()?.[0]?.label
+        ?.toLowerCase()
+        .includes('screen');
 
-  // 4. 상대방이 나가거나 스트림 중단하면 제거하기
+    const targetId = isScreen ? 'client-video' : 'lawyer-video';
+
+    const subscriber = session.value.subscribe(event.stream, targetId);
+    subscribers.value.push(subscriber);
+
+    if (isScreen) {
+      isScreenSharing.value = true;     // 보는 사람 쪽도 레이아웃 전환
+      nextTick(() => initCanvas());     // 캔버스 초기화
+    }
+  });
+
+
   session.value.on('streamDestroyed', (event) => {
     subscribers.value = subscribers.value.filter(
       (sub) => sub.stream.streamId !== event.stream.streamId
-    )
-  })
+    );
 
-  // 5. 발급받은 토큰으로 세션 연결
-  await session.value.connect(token, {
-    clientData: '사용자 이름 등', // 이름, 역할 등 원하는 데이터 문자열로 전달 가능
-  })
+    const isScreen = event.stream?.typeOfVideo === 'SCREEN';
+    if (isScreen) {
+      isScreenSharing.value = false;
+      const el = document.getElementById('client-video');
+      if (el) el.innerHTML = '<canvas id="draw-canvas" class="drawing-canvas"></canvas>';
+    }
+  });
 
-  // 6. 내 비디오/오디오 스트림 초기화
-  const publisher = await OV.value.initPublisher(undefined, {
-    audioSource: undefined,    // 기본 오디오 장치 사용
-    videoSource: undefined,    // 기본 카메라 사용
-    publishAudio: true,        // 오디오 켜기
-    publishVideo: true,        // 비디오 켜기
-    resolution: '640x480',     // 해상도 설정
-    frameRate: 30,             // 프레임 수
-    mirror: true               // 미러링 여부 (보통 셀카 느낌)
-  })
+  // 3. 드로잉 시그널 이벤트 핸들러
+  session.value.on('signal:drawing', handleRemoteDraw);
 
-  // 7. 내 비디오 태그에 스트림 연결
-  publisher.addVideoElement(document.getElementById('publisher'))
+  // 4. 세션에 연결
+  session.value.connect(token, { clientData: '사용자' })
+    .then(() => {
+      console.log("세션 연결 성공!");
 
-  // 8. 세션에 내 스트림 게시 (다른 사람에게도 보이도록)
-  await session.value.publish(publisher)
+      // 5. 내 카메라/마이크(Publisher) 초기화
+      const publisher = OV.value.initPublisher(
+        publisherRef.value, // 비디오를 붙일 DOM 요소를 직접 전달
+        {
+          audioSource: undefined,
+          videoSource: undefined,
+          publishAudio: true,
+          publishVideo: true,
+          resolution: '640x480',
+          frameRate: 30,
+          mirror: true,
+        },
+        (error) => {
+          if (error) {
+            console.error('Publisher 초기화 실패:', error);
+            alert("카메라/마이크를 초기화하는 데 실패했습니다.");
+          } else {
+            console.log('Publisher 초기화 성공!');
 
-  // 9. 내 스트림 객체 저장
-  mainStreamManager.value = publisher
-
-  session.value.on('signal:drawing', handleRemoteDraw)
-})
-
-const shareScreen = async () => {
-  try {
-    const screenPublisher = await OV.value.initPublisher(undefined, {
-      videoSource: 'screen',
-      audioSource: undefined,
-      publishVideo: true,
-      publishAudio: false,
-      mirror: false
+            // 6. Publisher 초기화 성공 시, 세션에 내 스트림을 게시
+            session.value.publish(publisher)
+              .then(() => {
+                console.log("스트림 게시 성공!");
+                mainStreamManager.value = publisher; // 상태에 저장
+              })
+              .catch(error => {
+                console.error('스트림 게시 실패:', error);
+              });
+          }
+        }
+      );
     })
+    .catch(error => {
+      console.error('세션 연결 실패:', error);
+      alert("화상회의 서버에 연결할 수 없습니다.");
+    });
+    // 파일 상단 어디든(예: onMounted 끝부분)
+    console.log('axios baseURL =', axios.defaults.baseURL)
+    console.log('axios Authorization =', axios.defaults.headers.common?.Authorization)
 
-    const screenVideo = document.createElement('video')
-    screenVideo.autoplay = true
-    screenVideo.playsInline = true
-    screenVideo.style.width = '100%'
-    screenVideo.style.height = '100%'
-    screenVideo.style.objectFit = 'cover'
-    document.getElementById('client-video').appendChild(screenVideo)
-    screenPublisher.addVideoElement(screenVideo)
+});
 
-    await session.value.publish(screenPublisher)
-    await initCanvas();
-    isScreenSharing.value = true
 
-    console.log('화면 공유 시작됨')
-  } catch (err) {
-    console.error('화면 공유 실패:', err)
-    alert('화면 공유를 허용하지 않으면 시작할 수 없습니다.')
+const stopScreenShare = ({ silent = false } = {}) => {
+  if (!screenPublisher.value) return;
+
+  try {
+    // 1. 화면 공유 스트림의 트랙을 직접 중지 (핵심)
+    const screenStream = screenPublisher.value.stream?.getMediaStream();
+    if (screenStream) {
+      screenStream.getTracks().forEach(track => {
+        track.stop();
+        console.log(`[MeetingRoom] stopScreenShare: Screen sharing track (${track.kind}) stopped.`);
+      });
+    }
+
+    // 2. OpenVidu 객체 파괴 및 정리
+    if (screenSession.value) {
+      screenSession.value.disconnect();
+    }
+  } catch(e) {
+    console.error("Error during screen share stop:", e);
+  } finally {
+    // 3. 상태 변수 초기화
+    screenPublisher.value = null;
+    screenSession.value = null;
+    screenOV.value = null;
+    isScreenSharing.value = false;
+
+    if (!silent) console.log('화면공유 종료');
   }
 }
+
+
+
+// 화면 공유를 시작하는 함수
+const shareScreen = async () => {
+  console.log('token from query=', token)
+  console.log('appointmentId from query=', appointmentId)
+
+  try {
+    // 1) 백엔드에서 화면공유 토큰 받기
+    console.log('screenshare call:', `/api/rooms/${appointmentId}/screenshare`)
+    const { data } = await axios.post(`/api/rooms/${appointmentId}/screenshare`)
+    if (!data?.success) throw new Error(data?.message || '화면공유 토큰 발급 실패')
+    const screenToken = data.data.openviduToken
+
+    // 2) 화면공유용 OpenVidu/Session 별도 생성
+    screenOV.value = new OpenVidu()
+    screenOV.value.enableProdMode()
+    screenSession.value = screenOV.value.initSession()
+
+    // (선택) 이벤트: 재연결/종료 로그 등 필요시 추가
+    screenSession.value.on('sessionDisconnected', (e) => {
+      console.log('화면공유 세션 종료', e)
+      stopScreenShare({ silent: true })
+    })
+
+    // 3) 화면공유 세션 연결
+    await screenSession.value.connect(screenToken, { clientData: 'screenshare' })
+
+    // 4) 화면공유 Publisher 생성 (오직 비디오만, 오디오X 권장)
+    screenPublisher.value = await screenOV.value.initPublisherAsync(undefined, {
+      videoSource: 'screen',
+      publishAudio: false,
+      publishVideo: true,
+      mirror: false,
+    })
+
+    // 5) 해당 세션에 화면공유 스트림 게시
+    await screenSession.value.publish(screenPublisher.value)
+
+    // 7) 브라우저 화면공유 종료 이벤트(사용자가 ‘공유 중지’ 누르면)
+    const track = screenPublisher.value.stream.getMediaStream().getVideoTracks()[0]
+    if (track) {
+      track.addEventListener('ended', () => {
+        stopScreenShare()
+      })
+    }
+
+    await initCanvas()
+    isScreenSharing.value = true
+    console.log('화면공유 시작')
+
+  } catch (err) {
+    console.error('화면공유 실패:', err)
+    console.error('status=', err.response?.status)
+    console.error('data=', JSON.stringify(err.response?.data, null, 2))
+    alert(err.response?.data?.message || '화면공유를 시작할 수 없습니다.')
+  }
+}
+
 
 
 // 퇴장 함수
-const leaveSession = async () => {
+const leaveSession = () => {
+  console.log('[MeetingRoom] leaveSession: 퇴장 절차를 시작합니다.');
+
+  // 1. 화면 공유가 활성 상태이면 먼저 정리
+  if (isScreenSharing.value && screenPublisher.value) {
+    stopScreenShare({ silent: true }); // 조용히 종료
+  }
+
+  // 2. 메인 카메라/마이크 스트림의 모든 트랙을 직접 중지 (가장 중요)
+  const mainStream = mainStreamManager.value?.stream?.getMediaStream();
+  if (mainStream) {
+    mainStream.getTracks().forEach(track => {
+      track.stop();
+      console.log(`[MeetingRoom] leaveSession: Main Stream Track (${track.kind}) stopped.`);
+    });
+  }
+
+  // 3. 메인 세션 연결을 해제
   if (session.value) {
-    session.value.disconnect()
-    session.value = null
+    session.value.disconnect();
   }
-  if (OV.value) OV.value = null
-  mainStreamManager.value = null
-  subscribers.value = []
-  try {
-    await axios.delete(`/api/rooms/${appointmentId}/participants/me`)
-  } catch (e) {
-    console.warn('퇴장 요청 실패:', e)
-  }
-  router.push('/')
-}
+
+  // 4. 모든 상태 변수를 확실하게 초기화
+  session.value = null;
+  mainStreamManager.value = null;
+  subscribers.value = [];
+  OV.value = null;
+
+  screenPublisher.value = null;
+  screenSession.value = null;
+  screenOV.value = null;
+
+  // 5. 백엔드에 퇴장 알림
+  axios.delete(`/api/rooms/${appointmentId}/participants/me`).catch(e => {
+    console.warn('퇴장 요청 실패:', e);
+  });
+
+  // 6. 메인 페이지로 이동
+  router.push('/');
+};
 
 
 // 컴포넌트 언마운트 시 세션 정리
 onBeforeUnmount(() => {
-  leaveSession()
-})
+  // 컴포넌트가 사라질 때 아직 세션이 살아있다면, 퇴장 절차를 실행
+  if (session.value) {
+    leaveSession();
+  }
+});
 </script>
 
 <style scoped>
 *{
   font-family: 'Noto Sans KR', sans-serif;
-  background-color: #131516;
+}
+html, body, .meeting-room { background: #131516; }
+.meeting-room,
+.meeting-room * ,
+.meeting-room *::before,
+.meeting-room *::after {
+  box-sizing: content-box;   /* 이 화면 안에서만 content-box로 복원 */
 }
 .meeting-room {
   display: flex;
@@ -338,39 +534,53 @@ onBeforeUnmount(() => {
   position: relative;
 }
 .video-section {
-  display: flex;
-  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr 380px;   /* 기본: 좌우 카메라 + 채팅 */
+  grid-template-rows: 1fr;
+  grid-template-areas: "lawyer publisher chat";
+  gap: 0.5rem;
   height: 90vh;
+}
+
+#lawyer-video   { grid-area: lawyer; }
+#publisher      { grid-area: publisher; }
+.shared-screen  { grid-area: shared; }  /* 기본 모드에선 숨김 상태라 영역만 예약 */
+.chat-area      { grid-area: chat; }
+
+/* 화면공유 모드: 왼쪽 열(위/아래=2행), 가운데는 공유화면(2행 병합), 오른쪽은 채팅(2행 병합) */
+.video-section.sharing {
+  grid-template-columns: 1fr 2fr 380px;
+  grid-template-rows: 1fr 1fr;
+  grid-template-areas:
+    "lawyer  shared chat"
+    "publisher shared chat";
 }
 
 /* 변호사 / 의뢰인 화면 */
 .video-box {
-  flex: 1;
   min-width: 0;
   background-color: black;
-  margin: 0.5rem 0.5rem 0 0.5rem ;
   border-radius: 10px;
-  position: relative;
-}
-
-.vertical-video {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-}
-
-.video-inner {
-  flex: 1;
-  background-color: black;
-  margin: 0.25rem;
-  border-radius: 8px;
   position: relative;
 }
 
 /* 비디오 박스(또는 video-inner)가 좌표계 기준점이 되도록 */
 .video-box,
 .video-inner {
-  position: relative;   /* ⬅️ 추가 */
+  position: relative;
+}
+
+.video-box :deep(video) {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* 컨테이너를 비율에 맞게 꽉 채웁니다 */
+  display: block;    /* 불필요한 여백을 제거합니다 */
+  border-radius: 10px; /* 부모 요소와 스타일에 맞게 둥글게 처리 */
+}
+
+/* 내 화면(publisher)은 좌우 반전되어 있으므로, 그 안의 라벨만 다시 정상으로 돌려놓습니다 */
+#publisher :deep(.role-label) {
+  transform: scaleX(1);
 }
 
 /* 왼쪽-하단 라벨 공통 스타일 */
@@ -383,7 +593,10 @@ onBeforeUnmount(() => {
   font-size: 14px;
   font-weight: 500;
   text-shadow: 0 0 4px rgba(0, 0, 0, 0.6);
-  pointer-events: none; /* 클릭 막기 */
+  pointer-events: none;
+}
+#publisher > .role-label {
+  transform: scaleX(-1); /* 좌우 반전을 다시 한번 적용해 원상태로 복구 */
 }
 
 .shared-screen {
@@ -400,27 +613,33 @@ onBeforeUnmount(() => {
   object-fit: cover;
 }
 /* 2. 비디오 & 캔버스 → 박스 꽉 채우기 */
-.shared-screen video,
+
 .shared-screen canvas{
   position:absolute;
   inset:0;
   width:100%;
   height:100%;
   object-fit:contain;
-  pointer-events:none;
+  pointer-events: auto;
+  z-index: 10;
+  background: transparent;
 }
 .shared-screen video{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  object-fit:contain;
   z-index: 1;
-}
-.shared-screen canvas{
-  z-index: 10;
 }
 .drawing-canvas{
   position:absolute; inset:0;
   width:100%; height:100%;
   z-index:5;
-  pointer-events:none;
+  pointer-events: auto;
+  background: transparent;
 }
+
 /* 펜·지우개 커서 깜빡임 안 보이게 */
 .drawing-canvas.pen-cursor{ cursor:crosshair; }
 .drawing-canvas.eraser-cursor{ cursor:url('data:image/svg+xml;base64,PHN2Zy…') 6 6, crosshair; }
@@ -477,7 +696,7 @@ onBeforeUnmount(() => {
 
 /* 채팅 영역과 동일한 너비를 갖도록 */
 .footer-right {
-  width: 380px; /* 채팅 영역 너비와 일치 */
+  width: 370px; /* 채팅 영역 너비와 일치 */
   display: flex;
   justify-content: space-between;
   align-items: center;

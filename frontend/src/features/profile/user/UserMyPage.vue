@@ -31,6 +31,24 @@
             <div>
               <p class="lawyer-name">{{ lawyerMap[String(appt.lawyerId)] || '알 수 없음' }} 변호사</p>
               <p class="appt-time">{{ formatDateTime(appt.startTime) }}</p>
+              <span
+                @click="openDetailModal(appt.applicationId)"
+                class="view-application-link"
+              >
+                상담신청서 보기
+              </span>
+            </div>
+            <div class="status-group">
+              <p :class="statusClass(appt.appointmentStatus)" class="appointment-status">
+                {{ statusText(appt.appointmentStatus) }}
+              </p>
+              <button
+                v-if="isVideocallEnabled(appt.startTime) && appt.appointmentStatus === 'CONFIRMED'"
+                @click="goToVideocall(appt.appointmentId)"
+                class="videocall-btn"
+              >
+                화상 상담 입장
+              </button>
             </div>
           </div>
         </li>
@@ -44,9 +62,9 @@
         상담신청서 보관함
         <span class="arrow">›</span>
       </h4>
-      <ul v-if="applications.length > 0" class="application-list">
+      <ul v-if="recentApplications.length > 0" class="application-list">
         <li
-          v-for="form in applications"
+          v-for="form in recentApplications"
           :key="form.applicationId"
           class="appointment-item"
           @click="openDetailModal(form.applicationId)"
@@ -65,7 +83,7 @@
 
     <!-- ✅ 기타 메뉴 -->
     <section class="menu-section">
-      <div class="menu-item" @click="$router.push('/consult-history')">
+      <div class="menu-item" @click="$router.push('/user/consult-history')">
         상담내역 보기
         <span class="arrow">›</span>
       </div>
@@ -103,7 +121,11 @@ const selectedApplication = ref(null)
 
 const filteredAppointments = computed(() => {
   const now = new Date()
-  return appointments.value.filter(appt => new Date(appt.startTime) > now)
+  return appointments.value.filter(appt => {
+    const apptTime = new Date(appt.startTime);
+    // ✅ 시작 시간이 현재 시간보다 늦은 모든 상담 (오늘 이후)
+    return apptTime > now;
+  });
 })
 
 const formatDateTime = (dateStr) => {
@@ -115,6 +137,90 @@ const formatDateTime = (dateStr) => {
     hour: '2-digit',
     minute: '2-digit'
   })
+}
+
+// ✅ 상담 상태 텍스트를 반환하는 함수 추가
+const statusText = (status) => {
+  switch (status) {
+    case 'PENDING': return '대기중';
+    case 'CONFIRMED': return '상담확정';
+    case 'REJECTED': return '거절됨';
+    case 'CANCELLED': return '취소됨';
+    case 'ENDED': return '상담종료';
+    default: return '알 수 없음';
+  }
+}
+
+// ✅ 상담 상태별 스타일 클래스를 반환하는 함수 추가
+const statusClass = (status) => {
+  return `status-${status.toLowerCase()}`;
+};
+
+// ✅ 화상 상담 버튼 활성화 조건을 확인하는 함수 추가
+const isVideocallEnabled = (startTime) => {
+  const now = new Date();
+  const appointmentTime = new Date(startTime);
+  const timeDifferenceInMinutes = (appointmentTime - now) / (1000 * 60);
+
+  // 상담 시작 30분 전부터 시작 시간까지 활성화
+  return timeDifferenceInMinutes <= 30 && timeDifferenceInMinutes >= 0;
+};
+
+// ✅ 화상 상담 페이지로 이동하는 함수 추가
+const goToVideocall = (appointmentId) => {
+  router.push(`/videocall/${appointmentId}`);
+};
+
+
+
+const openDetailModal = async (applicationId) => {
+  try {
+    const res = await axios.get(`/api/applications/${applicationId}`)
+    if (res.data.success) {
+      // API 응답 데이터 구조에 맞게 selectedApplication에 할당
+      selectedApplication.value = res.data.data.application
+      isDetailModalOpen.value = true // 데이터 로딩 성공 시 모달 열기
+      console.log(res)
+    } else {
+      throw new Error(res.data.message)
+    }
+  } catch (error) {
+    console.error('상세 정보 로딩 실패:', error)
+    alert(error.message || '상세 정보를 불러오는 데 실패했습니다.')
+  }
+}
+
+// ✅ 최근 상담신청서 2개를 반환하는 계산 속성
+const recentApplications = computed(() => {
+  if (!applications.value) return [];
+  // 최신순으로 정렬 (가장 최근에 생성된 순)
+  const sorted = [...applications.value].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  // 상위 2개만 잘라내기
+  return sorted.slice(0, 2);
+})
+
+const goToAllApplications = () => {
+  // ✅ ID 파라미터 없이 목록 페이지 라우트('ApplicationList')로 이동합니다.
+  router.push({ name: 'ApplicationList' });
+}
+
+const handleWithdraw = async () => {
+  if (!confirm('정말로 회원탈퇴하시겠습니까? 탈퇴 후 복구할 수 없습니다.')) return
+
+  try {
+    await axios.delete('/api/clients/me')  // ✅ 탈퇴 API 호출
+    alert('회원탈퇴가 완료되었습니다.')
+
+    // JWT 토큰 및 사용자 타입 제거
+    localStorage.removeItem('accessToken')
+    localStorage.removeItem('userType')
+
+    // 홈으로 이동
+    window.location.href = '/'
+  } catch (error) {
+    console.error('회원탈퇴 실패:', error)
+    alert('탈퇴 중 오류가 발생했습니다. 다시 시도해주세요.')
+  }
 }
 
 onMounted(async () => {
@@ -145,55 +251,6 @@ onMounted(async () => {
     applications.value = []
   }
 })
-
-const openDetailModal = async (applicationId) => {
-  try {
-    const res = await axios.get(`/api/applications/${applicationId}`)
-    if (res.data.success) {
-      // API 응답 데이터 구조에 맞게 selectedApplication에 할당
-      selectedApplication.value = res.data.data.application
-      isDetailModalOpen.value = true // 데이터 로딩 성공 시 모달 열기
-      console.log(res)
-    } else {
-      throw new Error(res.data.message)
-    }
-  } catch (error) {
-    console.error('상세 정보 로딩 실패:', error)
-    alert(error.message || '상세 정보를 불러오는 데 실패했습니다.')
-  }
-}
-
-const goToAllApplications = () => {
-  // 상담신청서 목록이 비어있지 않은 경우에만 페이지 이동
-  if (applications.value && applications.value.length > 0) {
-    // 목록의 가장 첫 번째 항목의 ID를 가져옵니다.
-    const firstApplicationId = applications.value[0].applicationId
-    // 해당 ID를 파라미터로 하여 상세 뷰 페이지로 이동합니다.
-    router.push(`/user/applications/${firstApplicationId}`)
-  } else {
-    // 신청서가 없을 경우 사용자에게 알림을 줄 수 있습니다 (선택 사항).
-    alert('보관된 상담신청서가 없습니다.')
-  }
-}
-
-const handleWithdraw = async () => {
-  if (!confirm('정말로 회원탈퇴하시겠습니까? 탈퇴 후 복구할 수 없습니다.')) return
-
-  try {
-    await axios.delete('/api/clients/me')  // ✅ 탈퇴 API 호출
-    alert('회원탈퇴가 완료되었습니다.')
-
-    // JWT 토큰 및 사용자 타입 제거
-    localStorage.removeItem('accessToken')
-    localStorage.removeItem('userType')
-
-    // 홈으로 이동
-    window.location.href = '/'
-  } catch (error) {
-    console.error('회원탈퇴 실패:', error)
-    alert('탈퇴 중 오류가 발생했습니다. 다시 시도해주세요.')
-  }
-}
 
 </script>
 
@@ -288,6 +345,9 @@ h4 {
   margin: 0;
 }
 .appointment-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   border: 1px solid #e0e0e0;
   background: #f9f9f9;
   border-radius: 10px;
@@ -296,8 +356,10 @@ h4 {
 }
 .appt-info {
   display: flex;
+  flex-grow: 1; /* ✅ 추가 */
   justify-content: space-between;
   align-items: center;
+  width: 100%;
 }
 .lawyer-name,
 .form-title {
@@ -313,6 +375,40 @@ h4 {
   margin-top: 20px;
   color: #888;
   text-align: center;
+}
+.view-application-link {
+  font-size: 0.85rem;
+  color: #888;
+  cursor: pointer;
+  margin-top: 4px;
+}
+.view-application-link:hover {
+  text-decoration: underline;
+}
+
+.status-group {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px; /* 상태와 버튼 사이 간격 */
+}
+
+/* ✅ 상담 상태 스타일 추가 */
+.appointment-status {
+  font-weight: bold;
+  font-size: 0.95rem;
+}
+.status-pending {
+  color: #f5a623;
+}
+.status-confirmed {
+  color: #3478ff;
+}
+.status-rejected, .status-cancelled {
+  color: #f44336;
+}
+.status-ended {
+  color: #888;
 }
 
 /* 메뉴 */

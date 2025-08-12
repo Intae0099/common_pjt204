@@ -47,6 +47,14 @@ export const useCasesStore = defineStore('cases', {
    * Actions: 상태 변경 로직
    */
   actions: {
+    async initializeSearch() {
+      // 아직 검색이 수행되지 않았고, 결과 목록도 비어있을 때만 실행
+      if (!this.searchPerformed && this._allCaseList.length === 0) {
+        this.query = '교통사고'; // 기본 검색어 설정
+        await this.searchCases();   // 기존 검색 액션 호출
+        this.query = '';
+      }
+    },
     async searchCases() {
       // ... (기존 검색어 체크 로직은 동일)
       if (this.query.length < 2) {
@@ -69,8 +77,15 @@ export const useCasesStore = defineStore('cases', {
           },
         });
 
-        if (response.data.success) {
-          const { items, pageMeta } = response.data.data;
+        if (response.data.success && Array.isArray(response.data.data)) {
+          const items = response.data.data;
+
+          const pageMeta = {
+            total: response.data.total,
+            page: response.data.page,
+            size: response.data.size,
+            pages: response.data.pages,
+          };
 
           const processedItems = items.map(item => {
             if (item.summary && item.summary.length > 300) {
@@ -85,7 +100,9 @@ export const useCasesStore = defineStore('cases', {
           this.currentPage = 1; // ✨ 새로운 검색 시 항상 1페이지로 리셋
 
         } else {
-          throw new Error(response.data.error.message || '데이터를 가져오는데 실패했습니다.');
+          this._allCaseList = [];
+          this.pagination = null;
+          throw new Error(response.data.message || '데이터를 가져오는데 실패했습니다.');
         }
 
       } catch (err) {

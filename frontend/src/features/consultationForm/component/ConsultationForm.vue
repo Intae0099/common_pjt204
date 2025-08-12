@@ -127,6 +127,7 @@ const handleSelect = (data) => {
   form.value.content = data.content
   form.value.summary = data.summary
   emit('application-selected', data.applicationId)
+  showModal.value = false
 }
 
 </script>

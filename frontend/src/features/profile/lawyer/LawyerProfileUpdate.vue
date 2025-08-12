@@ -10,14 +10,25 @@
     <!-- 프로필 사진 및 업로드 -->
     <div class="profile-photo-wrapper">
       <img
+        v-if="photo"
         :src="`data:image/jpeg;base64,${photo}`"
         alt="프로필 이미지"
         class="profile-img"
       />
-      <label class="upload-label">
-        사진 변경
-        <input type="file" accept="image/*" @change="onFileChange" />
-      </label>
+      <img
+        v-else
+        src="https://via.placeholder.com/120"
+        alt="기본 프로필 이미지"
+        class="profile-img"
+      />
+      <div class="upload-section">
+        <label class="upload-label">
+          사진 변경 (1MB 미만)
+          <input type="file" accept="image/*" @change="onFileChange" />
+        </label>
+        <!-- [수정 2] 파일 크기 에러 메시지를 표시할 부분 -->
+        <p v-if="imageError" class="error-message">{{ imageError }}</p>
+      </div>
     </div>
 
     <!-- 이름 입력 -->
@@ -73,6 +84,7 @@ const name = ref('')
 const introduction = ref('')
 const selectedTagIds = ref(new Set())
 const photo = ref('')
+const imageError = ref('')
 
 // 🧠 프론트에 고정된 tagMap
 const tagMap = TAG_MAP
@@ -91,14 +103,24 @@ const toggleTag = (tagId) => {
 
 const onFileChange = (e) => {
   const file = e.target.files[0]
-  if (file) {
-    const reader = new FileReader()
-    reader.onload = () => {
-      const base64 = reader.result.split(',')[1]
-      photo.value = base64
-    }
-    reader.readAsDataURL(file)
+  imageError.value = ''
+
+  if (!file) return;
+
+  const MAX_SIZE = 1 * 1024 * 1024;
+  if (file.size > MAX_SIZE) {
+    imageError.value = '이미지 파일은 1MB를 초과할 수 없습니다.';
+    e.target.value = null; // input 값 초기화 (같은 파일 재선택 가능하게)
+    return; // 파일이 크면 여기서 함수를 중단
   }
+
+  const reader = new FileReader()
+  reader.onload = () => {
+    const base64 = reader.result.split(',')[1]
+    photo.value = base64
+  }
+  reader.readAsDataURL(file)
+
 }
 
 const saveChanges = async () => {
@@ -106,11 +128,9 @@ const saveChanges = async () => {
     name: name.value,
     introduction: introduction.value,
     tags: Array.from(selectedTagIds.value),
-
+    photoBase64: photo.value,
   }
-  if (photo.value) {
-  payload.photo = photo.value
-}
+
 
   try {
     await axios.patch('/api/lawyers/me/edit', payload)
@@ -128,7 +148,7 @@ onMounted(async () => {
     name.value = res.data.name
     introduction.value = res.data.introduction
     selectedTagIds.value = new Set(res.data.tags) // ID만 받음
-    photo.value = res.data.photo
+    photo.value = res.data.photoBase64
   } catch (err) {
     console.error('변호사 정보 로딩 실패:', err)
   }
@@ -137,6 +157,18 @@ onMounted(async () => {
 
 
 <style scoped>
+.upload-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px; /* 버튼과 에러 메시지 사이 간격 */
+}
+
+.error-message {
+  color: #d9534f; /* 에러를 나타내는 빨간색 */
+  font-size: 12px;
+  font-weight: 500;
+}
+
 .header-row {
   display: flex;
   align-items: center;

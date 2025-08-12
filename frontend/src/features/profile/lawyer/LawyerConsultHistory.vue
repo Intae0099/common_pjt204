@@ -31,7 +31,7 @@
         </div>
       </div>
 
-      <div v-if="paginatedAppointments.length === 0" class="empty">
+      <div v-if="appointments.length === 0" class="empty">
         상담한 내역이 없습니다.
       </div>
 
@@ -43,8 +43,8 @@
               <div class="datetime">
                 {{ formatDateTime(appt.startTime) }}
               </div>
-              <div class="lawyer">
-                <span class="lawyer-name">{{ lawyerMap[String(appt.lawyerId)] || '알 수 없음' }}</span> 변호사
+              <div class="client">
+                <span class="client-name">{{ appt.counterpartName }}</span> 의뢰인
               </div>
               <div :class="statusClass(appt.appointmentStatus)">
                 {{ filterText(appt.appointmentStatus) }}
@@ -94,26 +94,27 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from '@/lib/axios'
+// ✅ 모달 및 아이콘 컴포넌트 임포트
 import ApplicationDetail from '@/features/profile/user/ApplicationDetail.vue'
 import { ChevronLeftIcon, ChevronDownIcon, ChevronUpIcon } from '@heroicons/vue/24/solid'
 
-// ✅ 페이지네이션 관련 상태 변수 추가
-const allAppointments = ref([])
 const appointments = ref([])
-const lawyerMap = ref({})
 const router = useRouter()
 const showModal = ref(false)
 const selectedApplication = ref(null)
 const sortOrder = ref('desc')
-const selectedStatus = ref('all')
+const selectedStatus = ref('all') // ✅ 필터링 상태값
 const isSortOpen = ref(false)
 const isFilterOpen = ref(false)
-const currentPage = ref(1);
-const itemsPerPage = ref(10);
+const allAppointments = ref([]);
 
-// ✅ 총 페이지 수 계산
+// ✅ 페이지네이션 관련 상태 변수
+const currentPage = ref(1);
+const itemsPerPage = ref(10); // 페이지당 10개 항목
+
+// ✅ 전체 페이지 수 계산
 const totalPages = computed(() => {
-  return Math.ceil(appointments.value.length / itemsPerPage.value);
+  return Math.ceil(allAppointments.value.length / itemsPerPage.value);
 });
 
 // ✅ 현재 페이지에 보여줄 데이터를 계산
@@ -165,6 +166,18 @@ const statusClass = (status) => {
 };
 
 
+
+// ✅ 모든 데이터를 불러온 후 필터링/정렬을 수행하는 함수
+const fetchAppointments = async () => {
+  try {
+    const res = await axios.get('/api/appointments/me');
+    allAppointments.value = res.data;
+    filterAndSortAppointments();
+  } catch (e) {
+    console.error('상담내역 불러오기 실패:', e);
+  }
+}
+
 // ✅ 필터링과 정렬을 수행하는 함수
 const filterAndSortAppointments = () => {
   let filtered = allAppointments.value;
@@ -179,9 +192,11 @@ const filterAndSortAppointments = () => {
   });
 
   appointments.value = filtered;
-  currentPage.value = 1;
+  currentPage.value = 1; // 필터링/정렬 시 첫 페이지로 이동
 }
 
+
+// ✅ 페이지 이동 함수
 const goToPage = (page) => {
   if (page >= 1 && page <= totalPages.value) {
     currentPage.value = page;
@@ -193,7 +208,8 @@ const goToPage = (page) => {
 }
 
 const goBack = () => {
-  router.push('/user/mypage');
+  // ✅ 변호사 마이페이지로 이동
+  router.push('/lawyer/mypage');
 }
 
 const formatDateTime = (dateStr) => {
@@ -222,28 +238,13 @@ const goToApplication = async (applicationId) => {
   }
 };
 
-onMounted(async () => {
-  try {
-    const [appointmentRes, lawyerRes] = await Promise.all([
-        axios.get('/api/appointments/me'),
-        axios.get('/api/lawyers/list')
-    ]);
-    allAppointments.value = appointmentRes.data;
-    filterAndSortAppointments();
-
-    const map = {};
-    lawyerRes.data.forEach(lawyer => {
-        map[String(lawyer.lawyerId)] = lawyer.name;
-    });
-    lawyerMap.value = map;
-  } catch (e) {
-    console.error('상담내역 불러오기 실패:', e);
-  }
+onMounted(() => {
+  fetchAppointments();
 });
 </script>
 
 <style scoped>
-/* ✅ LawyerConsultHistory.vue의 스타일과 동일하게 적용 */
+/* UserConsultHistory.vue와 동일한 스타일 적용 */
 *{
   font-family: 'Noto Sans KR', sans-serif;
   white-space: nowrap;
@@ -277,11 +278,11 @@ onMounted(async () => {
   font-size: 0.8rem;
   color: #B9D0DF;
 }
-.lawyer {
+.client {
   font-size: 1.2rem;
   color: #072D45;
 }
-.lawyer-name{
+.client-name{
   font-weight: bold;
 }
 .empty {
@@ -344,6 +345,7 @@ onMounted(async () => {
   opacity: 0;
   cursor: pointer;
 }
+/* 상태별 스타일 */
 .status-confirmed {
   color: #3478ff;
   font-weight: bold;
@@ -364,15 +366,7 @@ onMounted(async () => {
   color: #888;
   font-weight: bold;
 }
-.month-header {
-  font-size: 1.2rem;
-  font-weight: bold;
-  color: #072D45;
-  margin-top: 2rem;
-  margin-bottom: 1rem;
-  border-bottom: 1px solid #eee;
-  padding-bottom: 0.5rem;
-}
+
 /* ✅ 페이지네이션 스타일 */
 .pagination {
   display: flex;
@@ -401,5 +395,15 @@ onMounted(async () => {
   background-color: #072D45;
   color: white;
   border-color: #072D45;
+}
+/* ✅ 월별 헤더 스타일 */
+.month-header {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #072D45;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 0.5rem;
 }
 </style>

@@ -9,7 +9,9 @@
     <div class="container d-flex justify-content-between align-items-center">
 
       <!-- 왼쪽: 로고 -->
-      <RouterLink to="/" class="fw-bold text-dark text-decoration-none">LOGO</RouterLink>
+      <RouterLink to="/" class="fw-bold text-dark text-decoration-none">
+        <img src="@/assets/logo.png" alt="로고" style="height: 80px;" />
+      </RouterLink>
 
       <!-- 햄버거 아이콘 (모바일용) -->
       <button class="btn d-lg-none" @click="isMenuOpen = !isMenuOpen">
@@ -31,7 +33,7 @@
           <RouterLink to="/consult-form" class="nav-link" :class="{ active: isActive('/consult-form') }" @click.prevent="goToConsultForm">AI상담신청서</RouterLink>
         </li>
         <li class="nav-item">
-          <RouterLink to="/videocall/preview/client" class="nav-link">화상상담</RouterLink>
+          <RouterLink :to="videoCallPath" class="nav-link">화상상담</RouterLink>
         </li>
       </ul>
 
@@ -43,14 +45,14 @@
             마이페이지
           </RouterLink>
           <a href="#" class="text-dark fw-medium text-decoration-none" @click.prevent="logout">
-            Logout
+            로그아웃
           </a>
         </template>
 
         <!-- 로그아웃 상태일 때 -->
         <template v-else>
           <RouterLink to="/login" class="text-dark fw-medium text-decoration-none">
-            Login
+            로그인
           </RouterLink>
         </template>
       </div>
@@ -75,7 +77,7 @@
           <li class="nav-item"><RouterLink to="/cases/search" class="nav-link">판례 검색</RouterLink></li>
           <li class="nav-item"><RouterLink to="/lawyers" class="nav-link">변호사 조회</RouterLink></li>
           <li class="nav-item"><RouterLink to="/consult-form" class="nav-link" @click.prevent="handleMobileConsultFormClick">AI상담신청서</RouterLink></li>
-          <li class="nav-item"><RouterLink to="/videocall/preview/client" class="nav-link">화상상담</RouterLink></li>
+          <li class="nav-item"><RouterLink :to="videoCallPath" class="nav-link">화상상담</RouterLink></li>
         </ul>
 
         <!-- 하단 마이페이지 / Login, Logout -->
@@ -89,7 +91,7 @@
             </li>
             <li class="nav-item">
               <a href="#" class="nav-link text-dark fw-medium text-decoration-none" @click.prevent="logout">
-                Logout
+                로그아웃
               </a>
             </li>
           </template>
@@ -98,7 +100,7 @@
           <template v-else>
             <li class="nav-item">
               <RouterLink to="/login" class="nav-link text-dark fw-medium text-decoration-none">
-                Login
+                로그인
               </RouterLink>
             </li>
           </template>
@@ -123,6 +125,10 @@ const isLoggedIn = computed(() => !!authStore.accessToken)
 
 const mypagePath = computed(() =>
   authStore.userType === 'LAWYER' ? '/lawyer/mypage' : '/user/mypage'
+)
+
+const videoCallPath = computed(() =>
+  authStore.userType === 'LAWYER' ? '/videocall/preview/lawyer' : '/videocall/preview/client'
 )
 
 const logout = () => {

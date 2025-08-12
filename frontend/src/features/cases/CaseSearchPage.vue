@@ -36,6 +36,7 @@
           v-for="item in paginatedCaseList"
           :key="item.caseId"
           :data="item"
+          :highlight="query"
         />
       </div>
 
@@ -83,7 +84,9 @@ import { useCasesStore } from '@/stores/cases';
 import { storeToRefs } from 'pinia';
 import { onMounted } from 'vue'
 
-onMounted(()=>{ window.scrollTo(0, 0);})
+onMounted(()=>{
+  window.scrollTo(0, 0);
+})
 
 // 1. 스토어 인스턴스 생성
 const casesStore = useCasesStore();
@@ -124,13 +127,13 @@ const performSearch = () => {
   display: flex;
   align-items: center;
   width: 600px;
-  border: 1px solid #b4c3d1;
-  border-radius: 10px;
+  border: 1px solid #f1f1f1;
+  border-radius: 15px;
   padding: 0.75rem 1rem;
   transition: border 0.3s ease;
 }
 .search-bar:hover {
-  border: 1px solid #007bff;
+  border: 1px solid #6c9bcf
 }
 .search-bar input {
   flex: 1;
@@ -145,7 +148,7 @@ const performSearch = () => {
   background: none;
   cursor: pointer;
   font-size: 18px;
-  color: #007bff;
+  color: #888;
   transition: transform 0.2s ease;
 }
 .search-bar button:hover {
@@ -155,26 +158,42 @@ const performSearch = () => {
   appearance: none;
   height: 30px;
   padding: 0 2.5rem 0 1rem;
-  border: 1px solid #b4c3d1;
+  border: 1px solid #cfcfcf;
   border-radius: 15px;
   font-size: 12px;
-  color: #333;
-  background-image: url("data:image/svg+xml,%3Csvg fill='black' height='16' viewBox='0 0 24 24' width='16' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+  color:  #888;
+  background-image: url("data:image/svg+xml,%3Csvg fill='gray' height='16' viewBox='0 0 24 24' width='16' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 1rem center;
   background-size: 12px;
 }
+
 .status-message {
   text-align: center;
   margin-top: 2rem;
-  color: #666;
+  color: #888;
 }
 .error {
   color: red;
 }
-.case-list {
-  /* 필요하다면 여기에 case-list 스타일 추가 */
+
+/* 결과 카드 리스트 레이아웃 */
+.case-list{
+  max-width: 980px;            /* 배너/검색과 균형 */
+  margin: 24px auto 0;
+  display: grid;
+  gap: 12px;                   /* 카드 간격 */
+  grid-template-columns: 1fr;  /* 기본 1열 */
 }
+
+/* 넓은 화면에서는 2열로 (검색바 폭 600px과도 균형) */
+@media (min-width: 1200px){
+  .case-list{
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+}
+
 
 /* ✨ 페이지네이션 UI 스타일 추가 */
 .pagination-container {

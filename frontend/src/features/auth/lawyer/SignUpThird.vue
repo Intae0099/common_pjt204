@@ -20,8 +20,12 @@
       <form @submit.prevent="handleSubmit" class="form-area">
         <!-- 프로필 사진 -->
         <div class="form-group">
-          <label>프로필 사진 (필수)</label>
+          <label>프로필 사진 (필수, 1MB 미만)</label> <!-- 안내 문구 수정 -->
           <input type="file" accept="image/*" @change="handleImageUpload" />
+
+          <!-- [수정 1] 파일 크기 에러 메시지를 표시할 부분 -->
+          <p v-if="imageError" class="error-message">{{ imageError }}</p>
+
           <div v-if="form.photoPreview">
             <img :src="form.photoPreview" alt="사진 미리보기" class="profile-preview" />
           </div>
@@ -87,7 +91,9 @@ export default {
         photoPreview: ''
       },
       tagMap: TAG_MAP,
-      showModal: false
+      showModal: false,
+      // [수정 2] 이미지 에러 메시지를 위한 상태 추가
+      imageError: ''
     };
   },
   computed: {
@@ -104,9 +110,25 @@ export default {
         this.form.tags.push(tagId);
       }
     },
+
+    // [수정 3] 파일 크기 검증 로직 추가된 handleImageUpload 메소드
     handleImageUpload(event) {
       const file = event.target.files[0];
+      this.imageError = ''; // 새 파일 선택 시 기존 에러 메시지 초기화
+
       if (!file) return;
+
+      // 1MB 파일 크기 제한 설정 (1 * 1024 * 1024 bytes)
+      const MAX_SIZE = 1048576;
+      if (file.size > MAX_SIZE) {
+        this.imageError = '이미지 파일은 1MB를 초과할 수 없습니다.';
+        // input 값과 미리보기 초기화
+        event.target.value = null;
+        this.form.photo = '';
+        this.form.photoPreview = '';
+        return; // 파일이 크면 여기서 함수를 중단
+      }
+
       const reader = new FileReader();
       reader.onload = (e) => {
         const base64String = e.target.result.split(',')[1];
@@ -115,18 +137,22 @@ export default {
       };
       reader.readAsDataURL(file);
     },
+
     async handleSubmit() {
-      this.authStore.updateSignup({
+      const previousSignupData = this.authStore.signupData;
+
+      const payload = {
+        ...previousSignupData,
         introduction: this.form.introduction,
         tags: this.form.tags,
-        photo: this.form.photo
-      });
-      const payload = { ...this.authStore.signupData };
+        photoBase64: this.form.photo
+      };
+
       try {
         await axios.post('/api/lawyers/signup', payload);
         this.showModal = true;
       } catch (error) {
-        console.error('회원가입 실패:', error);
+        console.error('회원가입 실패:', error.response?.data || error.message);
         alert('회원가입에 실패했습니다. 다시 시도해주세요.');
       }
     },
@@ -140,7 +166,7 @@ export default {
 </script>
 
 <style scoped>
-/* 기존 스타일 유지 */
+/* 기존 스타일은 그대로 유지 */
 .signup-wrapper {
   display: flex;
   flex-direction: column;
@@ -263,5 +289,12 @@ button:disabled {
   background-color: #ccc;
   cursor: not-allowed;
   opacity: 0.7;
+}
+
+/* [수정 4] 에러 메시지 스타일 추가 */
+.error-message {
+  color: #d9534f; /* 에러를 나타내는 빨간색 */
+  font-size: 12px;
+  margin-top: 5px;
 }
 </style>

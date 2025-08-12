@@ -6,6 +6,8 @@ import router from './router'
 
 import '@/assets/Common.scss'
 
+import { useCasesStore } from '@/stores/cases'
+
 // import.meta.env.DEV (개발 환경인지)와 함께
 // VITE_API_MOCKING 변수가 'enabled'인지 추가로 확인합니다.
 if (import.meta.env.DEV && import.meta.env.VITE_API_MOCKING === 'enabled') {
@@ -19,7 +21,12 @@ if (import.meta.env.DEV && import.meta.env.VITE_API_MOCKING === 'enabled') {
 
 const app = createApp(App)
 
-app.use(createPinia())
+const pinia = createPinia()
+
+app.use(pinia)
 app.use(router)
+
+const casesStore = useCasesStore(pinia)
+casesStore.initializeSearch()
 
 app.mount('#app')
