@@ -19,6 +19,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import java.util.Set;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -78,6 +79,7 @@ public class SecurityConfig {
     this.clientService = clientService;
     this.refreshTokenService = refreshTokenService;
   }
+
 
   @Component
   public static class OAuth2JwtSuccessHandler implements AuthenticationSuccessHandler {
@@ -144,12 +146,52 @@ public class SecurityConfig {
       res.setHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
 
       // BE 개발 편의를 위해 8080으로 변경 (-> front 서버 결합 시 5173으로 변경 필요)
+      String frontBase = resolveFrontRedirectBase(req);
+
       String redirectUrl = UriComponentsBuilder
-          .fromUriString("http://localhost:5173/oauth2/callback/kakao")
+          .fromUriString(frontBase)
+          .path("/oauth2/callback/").path(regId)   // .../oauth2/callback/kakao
           .queryParam("accessToken", accessToken)
           .build().toUriString();
 
       res.sendRedirect(redirectUrl);
+    }
+
+    private String resolveFrontRedirectBase(HttpServletRequest req) {
+      // 1) 프록시 헤더 우선 (운영)
+      String fProto  = header(req, "X-Forwarded-Proto");
+      String fHost   = header(req, "X-Forwarded-Host");
+      String fPrefix = header(req, "X-Forwarded-Prefix"); // 예: "/api"
+
+      if (fHost != null && fHost.contains(",")) fHost = fHost.split(",")[0].trim();
+
+      // ✅ 화이트리스트
+      Set<String> allowHosts = Set.of(
+          "i13b204.p.ssafy.io", "localhost:8080", "localhost"
+      );
+
+      if (fHost != null && allowHosts.contains(fHost)) {
+        String proto = (fProto != null) ? fProto : "https";
+        String prefix = (fPrefix != null) ? fPrefix : "/api"; // 운영은 /api 유지
+        return proto + "://" + fHost + (prefix.startsWith("/") ? prefix : ("/" + prefix));
+      }
+
+      // 2) 로컬/그 외 폴백
+      String serverName = req.getServerName();
+      if ("localhost".equalsIgnoreCase(serverName)) {
+        return "http://localhost:5173";
+      }
+      if ("i13b204.p.ssafy.io".equalsIgnoreCase(serverName)) {
+        return "https://i13b204.p.ssafy.io/api";
+      }
+
+      // 마지막 안전 폴백
+      return "http://localhost:5173";
+    }
+
+    private String header(HttpServletRequest req, String name) {
+      String v = req.getHeader(name);
+      return (v == null || v.isBlank()) ? null : v;
     }
   }
 
