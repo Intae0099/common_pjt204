@@ -31,6 +31,8 @@ public class LawyerSearchDto {  // client가 lawyer 전체 조회, 검색 시 �
   /** 전문 분야 태그 ID 목록 */
   private List<Long> tags;
 
+  //  사진
+  private byte[] photo;
   /**
    * Entity → DTO 변환
    */
@@ -43,7 +45,8 @@ public class LawyerSearchDto {  // client가 lawyer 전체 조회, 검색 시 �
         lawyer.getConsultationCount(),
         lawyer.getTags().stream()
             .map(lt -> lt.getTag().getId())
-            .collect(Collectors.toList())
+            .collect(Collectors.toList()),
+        lawyer.getPhoto()
     );
   }
 }
