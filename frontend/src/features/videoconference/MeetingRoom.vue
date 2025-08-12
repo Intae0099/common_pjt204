@@ -1,6 +1,13 @@
 <template>
   <div class="meeting-room">
-  <div class="video-section" :class="{ sharing: isScreenSharing }">
+  <div
+    class="video-section"
+    :class="{
+      sharing: isScreenSharing,
+      'chat-open': isChatOpen,
+      'chat-closed': !isChatOpen
+    }"
+  >
     <!-- 왼쪽: 변호사/의뢰인 비디오 (한 세트만 유지) -->
     <div class="video-box" id="lawyer-video">
       <p class="role-label">상대방</p>
@@ -17,7 +24,7 @@
     </div>
 
     <!-- 오른쪽: 채팅 -->
-    <div class="chat-area">
+    <div class="chat-area" v-show="isChatOpen">
       <div class="chat-content">
         <RealtimeChatView
           v-show="activeChat === 'realtime'"
@@ -45,7 +52,7 @@
       <!-- 펜 / 지우개 / 포인터 -->
       <button class="footer-btn" @click="setTool('pen')"     :disabled="!isScreenSharing" :class="{ active: currentTool==='pen' }"><Pencil class="footer-icon" /></button>
       <button class="footer-btn" @click="setTool('eraser')"  :disabled="!isScreenSharing" :class="{ active: currentTool==='eraser' }"><Eraser class="footer-icon" /></button>
-      <button class="footer-btn" @click="setTool('pointer')" :disabled="!isScreenSharing" :class="{ active: currentTool==='pointer' }"><MousePointer2 class="footer-icon" /></button>
+      <button class="footer-btn" @click="setTool('pointer')" :class="{ active: currentTool==='pointer' }"><MousePointer2 class="footer-icon" /></button>
 
       <!-- 카메라 / 마이크 -->
       <button class="footer-btn" @click="toggleCamera"><component :is="isCameraOn ? Video : VideoOff" class="footer-icon" /></button>
@@ -80,7 +87,7 @@
 
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount, nextTick, provide } from 'vue';
+import { ref, onMounted, onBeforeUnmount, nextTick, computed } from 'vue';
 import { OpenVidu } from 'openvidu-browser';
 import { useRoute, useRouter } from 'vue-router';
 import axios from '@/lib/axios';
@@ -89,6 +96,7 @@ import ChatbotView from '@/features/chatting/ChatbotView.vue';
 import { EllipsisVertical, Pencil, Eraser, MousePointer2, MessageSquareText, Share, Video, VideoOff, Mic, MicOff } from 'lucide-vue-next';
 
 const activeChat = ref('realtime');
+const isChatOpen = computed(() => !!activeChat.value)
 const toggleChat = (type) => {
   activeChat.value = activeChat.value === type ? null : type;
 };
@@ -124,26 +132,65 @@ const DRAW_SIG = 'drawing';
 let sendBuf = [];
 let rafId = null;
 
-function nxy(x, y) {                // normalize 0..1
-  return { x: x / canvas.width, y: y / canvas.height };
-}
-function dxy(p) {                    // denormalize to local canvas px
-  return { x: p.x * canvas.width, y: p.y * canvas.height };
-}
 
-function flushSegments(tool){
+function flushSegments(tool, color, width){
   if (!session.value || sendBuf.length === 0) return;
   const pts = sendBuf; sendBuf = []; rafId = null;
   session.value.signal({
     type: DRAW_SIG,
-    data: JSON.stringify({ op: 'seg', t: tool, pts })
+    data: JSON.stringify({ op: 'seg', t: tool, c: color, w: width, pts })
   });
 }
+//펜 컬러/굵기
+const penColor = ref('#4da3ff');
+const penWidth = ref(2);
+const eraserWidth = ref(20);
+
+// 공통 선 스타일(끝 삐죽 방지)
+function applyCommonStrokeStyle(context) {
+  context.lineCap = 'round';
+  context.lineJoin = 'round';
+}
+
 
 /* ---------- 그리기 상태 ---------- */
 const currentTool = ref('pointer');
 const isDrawing = ref(false);
 let canvas, ctx;
+let rect, dpr = 1;
+
+// rect/DPR 기반으로 캔버스를 세팅
+function resizeCanvas() {
+  if (!canvas) return;
+  rect = canvas.getBoundingClientRect();
+  dpr = window.devicePixelRatio || 1;
+
+  // 내부 비트맵 크기를 DPR 반영해서 설정
+  canvas.width  = Math.round(rect.width  * dpr);
+  canvas.height = Math.round(rect.height * dpr);
+
+  // 논리 좌표(화면상의 CSS 픽셀)로 그리기 위해 변환
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0); // reset + scale
+  applyCommonStrokeStyle(ctx);
+}
+
+// 마우스 좌표: 항상 CSS 좌표로
+function getPos(e) {
+  // clientX/Y - rect.left/top = CSS 픽셀 상의 좌표
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+  return { x, y };
+}
+
+// 정규화(보낼 때): rect 기준
+function nxy_css(x, y) {
+  return { x: x / rect.width, y: y / rect.height };
+}
+
+// 역정규화(받을 때): rect 기준
+function dxy_css(p) {
+  return { x: p.x * rect.width, y: p.y * rect.height };
+}
 
 function setTool(tool) {
   currentTool.value = tool;
@@ -178,38 +225,60 @@ function startDraw(e) {
   if (currentTool.value === 'pointer') return;
   isDrawing.value = true;
 
-  ctx.beginPath();
-  ctx.moveTo(e.offsetX, e.offsetY);
+  applyCommonStrokeStyle(ctx);
 
-  // 상대에게 "시작" 알림 + 시작점
-  const p = nxy(e.offsetX, e.offsetY);
+  const tool = currentTool.value;
+  if (tool === 'pen') {
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.lineWidth = penWidth.value;
+    ctx.strokeStyle = penColor.value;
+  } else {
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.lineWidth = eraserWidth.value;
+  }
+
+  const { x, y } = getPos(e);
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+
+  const p = nxy_css(x, y);
   session.value?.signal({
     type: DRAW_SIG,
-    data: JSON.stringify({ op: 'start', t: currentTool.value, p })
+    data: JSON.stringify({
+      op: 'start',
+      t: tool,
+      p,
+      c: penColor.value,
+      w: tool === 'pen' ? penWidth.value : eraserWidth.value
+    })
   });
 }
 
 function draw(e) {
   if (!isDrawing.value) return;
 
-  const tool = currentTool.value;           // ← 캡쳐
-
+  const tool = currentTool.value;
   if (tool === 'pen') {
     ctx.globalCompositeOperation = 'source-over';
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = 'red';
-  } else if (tool === 'eraser') {
+    ctx.lineWidth = penWidth.value;
+    ctx.strokeStyle = penColor.value;
+  } else {
     ctx.globalCompositeOperation = 'destination-out';
-    ctx.lineWidth = 20;
+    ctx.lineWidth = eraserWidth.value;
   }
 
-  ctx.lineTo(e.offsetX, e.offsetY);
+  const { x, y } = getPos(e);
+  ctx.lineTo(x, y);
   ctx.stroke();
 
-  sendBuf.push(nxy(e.offsetX, e.offsetY));
+  const np = nxy_css(x, y);
+  sendBuf.push(np);
+
   if (!rafId) {
-    const t = tool;                         // ← 캡쳐한 값으로 고정
-    rafId = requestAnimationFrame(() => flushSegments(t));
+    const t = tool;
+    const color = penColor.value;
+    const width = tool === 'pen' ? penWidth.value : eraserWidth.value;
+    rafId = requestAnimationFrame(() => flushSegments(t, color, width));
   }
 }
 
@@ -219,40 +288,47 @@ function endDraw() {
   isDrawing.value = false;
   ctx.closePath();
 
-  // 남은 포인트 있으면 마지막으로 flush
-  flushSegments(currentTool.value);
+  // 남은 포인트 flush
+  const tool = currentTool.value;
+  const color = penColor.value;
+  const width = tool === 'pen' ? penWidth.value : eraserWidth.value;
+  flushSegments(tool, color, width);
 
-  // 상대에게 "끝" 알림
   session.value?.signal({
     type: DRAW_SIG,
     data: JSON.stringify({ op: 'end' })
   });
 }
 
-function sendSignal(payload) {
-  if(!session.value) return;
-  session.value.signal({ type: 'drawing', data: JSON.stringify(payload) });
-}
 
+// === 상대방 그리기: 받은 색/굵기 그대로 적용
 function handleRemoteDraw({ data }) {
   const msg = JSON.parse(data);
 
-  if (msg.op === 'start') {
-    // 툴 미리 적용
-    ctx.globalCompositeOperation = msg.t === 'pen' ? 'source-over' : 'destination-out';
-    ctx.lineWidth = msg.t === 'pen' ? 2 : 20;
+  const isPen = msg.t === 'pen';
+  const color = msg.c ?? '#000000';
+  const width = msg.w ?? (isPen ? 2 : 20);
 
-    const { x, y } = dxy(msg.p);
+  applyCommonStrokeStyle(ctx);
+
+  if (msg.op === 'start') {
+    ctx.globalCompositeOperation = isPen ? 'source-over' : 'destination-out';
+    ctx.lineWidth = width;
+    if (isPen) ctx.strokeStyle = color;
+
+    const { x, y } = dxy_css(msg.p);
     ctx.beginPath();
     ctx.moveTo(x, y);
     return;
   }
 
   if (msg.op === 'seg') {
-    ctx.globalCompositeOperation = msg.t === 'pen' ? 'source-over' : 'destination-out';
-    ctx.lineWidth = msg.t === 'pen' ? 2 : 20;
+    ctx.globalCompositeOperation = isPen ? 'source-over' : 'destination-out';
+    ctx.lineWidth = width;
+    if (isPen) ctx.strokeStyle = color;
+
     for (const pt of msg.pts) {
-      const { x, y } = dxy(pt);
+      const { x, y } = dxy_css(pt);
       ctx.lineTo(x, y);
     }
     ctx.stroke();
@@ -266,15 +342,21 @@ function handleRemoteDraw({ data }) {
 
 
 
+
 async function initCanvas() {
   await nextTick();
   canvas = document.getElementById('draw-canvas');
   if(!canvas) return;
   ctx = canvas.getContext('2d');
-  canvas.width = canvas.offsetWidth;
-  canvas.height = canvas.offsetHeight;
 
-  console.log('PE before tool =', getComputedStyle(canvas).pointerEvents);
+  resizeCanvas();
+
+  // 반응형 대응: 크기 변하면 다시 세팅
+  const ro = new ResizeObserver(() => resizeCanvas());
+  ro.observe(canvas);
+
+  window.addEventListener('resize', resizeCanvas);
+
   canvas.addEventListener('mousedown', startDraw);
   canvas.addEventListener('mousemove', draw);
   canvas.addEventListener('mouseup', endDraw);
@@ -317,6 +399,7 @@ onMounted(() => {
     const isScreen = event.stream?.typeOfVideo === 'SCREEN';
     if (isScreen) {
       isScreenSharing.value = false;
+      setTool('pointer')
       const el = document.getElementById('client-video');
       if (el) el.innerHTML = '<canvas id="draw-canvas" class="drawing-canvas"></canvas>';
     }
@@ -393,13 +476,12 @@ const stopScreenShare = ({ silent = false } = {}) => {
   } catch(e) {
     console.error("Error during screen share stop:", e);
   } finally {
-    // 3. 상태 변수 초기화
-    screenPublisher.value = null;
-    screenSession.value = null;
-    screenOV.value = null;
-    isScreenSharing.value = false;
-
-    if (!silent) console.log('화면공유 종료');
+    screenPublisher.value = null
+    screenSession.value = null
+    screenOV.value = null
+    isScreenSharing.value = false
+    setTool('pointer')
+    if (!silent) console.log('화면공유 종료')
   }
 }
 
@@ -529,7 +611,7 @@ html, body, .meeting-room { background: #131516; }
 }
 .meeting-room {
   display: flex;
-  height: 660px;
+  /* height: 660px; */
   flex-direction: column;
   position: relative;
 }
@@ -540,6 +622,7 @@ html, body, .meeting-room { background: #131516; }
   grid-template-areas: "lawyer publisher chat";
   gap: 0.5rem;
   height: 90vh;
+  min-height: 0;
 }
 
 #lawyer-video   { grid-area: lawyer; }
@@ -556,9 +639,40 @@ html, body, .meeting-room { background: #131516; }
     "publisher shared chat";
 }
 
+/* 평소(공유 X) + 채팅 열림 */
+.video-section.chat-open:not(.sharing) {
+  grid-template-columns: 1fr 1fr 380px;
+  grid-template-areas: "lawyer publisher chat";
+}
+
+/* 평소(공유 X) + 채팅 닫힘 → 두 칼럼만 */
+.video-section.chat-closed:not(.sharing) {
+  grid-template-columns: 1fr 1fr;
+  grid-template-areas: "lawyer publisher";
+}
+
+/* 화면공유 + 채팅 열림*/
+.video-section.sharing.chat-open {
+  grid-template-columns: 1fr 2fr 380px;
+  grid-template-rows: 1fr 1fr;
+  grid-template-areas:
+    "lawyer  shared chat"
+    "publisher shared chat";
+}
+
+/* 화면공유 + 채팅 닫힘 → 오른쪽 열 제거 */
+.video-section.sharing.chat-closed {
+  grid-template-columns: 1fr 2fr;
+  grid-template-rows: 1fr 1fr;
+  grid-template-areas:
+    "lawyer  shared"
+    "publisher shared";
+}
+
 /* 변호사 / 의뢰인 화면 */
 .video-box {
   min-width: 0;
+  min-height: 0;
   background-color: black;
   border-radius: 10px;
   position: relative;
@@ -603,7 +717,6 @@ html, body, .meeting-room { background: #131516; }
   flex: 2;
   min-width: 0;
   background-color: black;
-  margin: 0.5rem;
   border-radius: 8px;
   position: relative;
   overflow: hidden;
@@ -648,6 +761,27 @@ html, body, .meeting-room { background: #131516; }
 /* 1) 기본값: 큰 화면에서는 점 아이콘 숨김, 원래 버튼 보이기 */
 .footer-btn.ellipsis-btn{ display: none; }
 .tool-group{ display: flex; gap: 1rem; }
+/* 비활성(회색) 처리 */
+.footer-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  filter: grayscale(1);
+}
+
+/* 아이콘도 같이 흐리게 */
+.footer-btn:disabled .footer-icon {
+  opacity: 0.7;
+}
+/* 선택 상태(파란 강조) */
+.footer-btn.active {
+  outline: 1px solid #4da3ff;
+  background: rgba(77,163,255,0.1);
+  border-radius: 8px;
+}
+
+.footer-btn.active .footer-icon {
+  color: #4da3ff;
+}
 
 /* 2) 작은 화면일 때 (폭 960px 이하) */
 @media (max-width: 960px) {
@@ -748,12 +882,14 @@ html, body, .meeting-room { background: #131516; }
   width: auto;
   display: flex;
   flex-direction: column;
+  min-height: 0;
   background-color: #131516;
 }
 
 /* 채팅 콘텐츠 (스크롤 가능) */
 .chat-content {
-  flex: 1;
+  flex: 1 1 auto;
+  min-height: auto;
   overflow-y: auto;
 }
 
