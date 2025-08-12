@@ -15,7 +15,7 @@ export const useCasesStore = defineStore('cases', {
     // --- 페이지네이션을 위한 상태 추가 ---
     _allCaseList: [], // API로부터 받은 전체 목록 (20개)을 저장할 내부 상태
     currentPage: 1,   // 클라이언트 측 현재 페이지 번호
-    itemsPerPage: 5,  // 한 페이지에 보여줄 아이템 개수
+    itemsPerPage: 6,  // 한 페이지에 보여줄 아이템 개수
     // -------------------------------------
     pagination: null, // API의 페이징 정보 (hasNext 등)
     isLoading: false,

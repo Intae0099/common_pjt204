@@ -11,6 +11,7 @@ import BaseNavbar from '@/components/BaseNavbar.vue'
 
 <style scoped>
 .container {
+  font-family: 'Noto Sans KR', sans-serif;
   max-width: 1400px;
   margin: 0 auto;
   padding: 0 40px;

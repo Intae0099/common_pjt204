@@ -10,8 +10,7 @@
             />
           <div class="profile-info">
             <h3>
-              {{ lawyer?.name || 'Username' }} 변호사
-              <span class="verified">✔</span>
+              {{ lawyer?.name || 'Username' }} 변호사 <img :src="checkbadge" alt="인증 배지" class="check-badge-icon" />
             </h3>
             <p class="intro">{{ lawyer?.introduction || '소개글이 없습니다.' }}</p>
             <div class="tags">
@@ -127,6 +126,7 @@ import Datepicker from '@vuepic/vue-datepicker';
 import '@vuepic/vue-datepicker/dist/main.css';
 import { useTagStore } from '@/stores/tags';
 import ApplicationDetail from '@/features/profile/user/ApplicationDetail.vue';
+import checkbadge from '@/assets/check-badge.png'
 
 const lawyer = ref(null);
 const appointments = ref([]);
@@ -397,13 +397,12 @@ onMounted(async () => {
   object-fit: cover;
   margin-right: 20px;
 }
-.verified {
-  color: #1d2b50;
-  margin-left: 8px;
-}
-.unverified {
-  color: #ccc;
-  margin-left: 8px;
+.check-badge-icon {
+  width: 25px; /* 아이콘 크기 조절 */
+  height: 25px;
+  margin-top: 7px;
+  margin-left: 4px; /* 이름과 아이콘 사이 간격 */
+  /* 필요에 따라 추가적인 스타일을 지정할 수 있습니다. */
 }
 .intro {
   font-size: 0.85rem;

@@ -53,6 +53,7 @@
 }
 
 .banner-text {
+  font-family: 'Noto Sans KR', sans-serif;
   position: absolute;
   top: 55%;
   left: 35%;

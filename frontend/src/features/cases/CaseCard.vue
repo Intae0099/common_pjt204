@@ -10,8 +10,8 @@
       <header class="case-header">
         <!-- eslint-disable-next-line vue/no-v-html -->
         <h3 class="case-title" v-html="highlightedTitle"></h3>
-        <time class="case-date" :datetime="data.judgmentDate">
-          {{ formatDate(data.judgmentDate) }}
+        <time class="case-date" :datetime="data.decisionDate">
+          {{ formatDate(data.decisionDate) }}
         </time>
       </header>
 
@@ -86,25 +86,27 @@ const highlightedExcerpt = computed(() => highlightText(rawExcerpt.value || '', 
 
 /* 카드 */
 .case-card{
+  font-family: 'Noto Sans KR', sans-serif;
+  color: #333333;
   position: relative;
   display: grid;
   gap: .75rem;
   padding: 20px 22px 16px 22px;
-  border: 1px solid #eee;
-  border-radius: 16px;
+  border: 1px solid #cfcfcf;
+  border-radius: 15px;
   background: #fff;
   transition: box-shadow .2s ease, border-color .2s ease, transform .2s ease;
 }
 .case-card:hover{
   box-shadow: 0 6px 16px rgba(0,0,0,.06);
-  border-color: #dfe8f3;
+  border-color: #6c9bcf;
   transform: translateY(-1px);
 }
 
 /* 좌측 포인트 라인 */
 .accent{
   position: absolute;
-  left: 0; top: 12px; bottom: 12px;
+  left: 0; top: 6px; bottom: 6px;
   width: 4px;
   border-radius: 4px 0 0 4px;
   background: linear-gradient(180deg, #6c9bcf 0%, #a7c5eb 100%);
@@ -128,11 +130,11 @@ const highlightedExcerpt = computed(() => highlightText(rawExcerpt.value || '', 
 .case-date{
   flex-shrink: 0;
   font-size: 12px;
-  color: #5f6b7a;
+  color: #888;
   background: #f4f7fb;
   border: 1px solid #e7eef7;
   padding: 4px 8px;
-  border-radius: 10px;
+  border-radius: 8px;
 }
 
 /* 본문 3줄 클램프 */
