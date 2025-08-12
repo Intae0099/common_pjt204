@@ -73,9 +73,13 @@
 
         <div class="lawyer-card-list" id="lawyer-results">
           <div class="lawyer-card" v-for="lawyer in lawyers" :key="lawyer.id">
-            <img v-if="lawyer.photo" :src="`data:image/jpeg;base64,${lawyer.photo}`" alt="프로필" />
+            <img v-if="lawyer.photo" :src="`data:image/jpeg;base64,${lawyer.photo}`" alt="프로필" class="lawyer-profile-img"/>
             <div class="lawyer-bottom">
-              <p class="lawyer-name">{{ lawyer.name }} 변호사</p>
+              <p class="lawyer-name">{{ lawyer.name }} 변호사
+                <span class="badge-wrapper">
+                  <img :src="checkbadge" alt="인증 배지" class="check-badge-icon" /> <span class="tooltip">에이로에서 인증받은 변호사에요!</span>
+                </span>
+              </p>
               <div class="lawyer-tags">
                 <span class="tag" v-for="tag in lawyer.tags.slice(0,2)" :key="tag">#{{ getTagName(tag) }}</span>
                 <button v-if="lawyer.tags.length>2" @click="toggleShowTags(lawyer.id)" class="more-btn">
@@ -102,7 +106,7 @@ import { TAG_MAP } from '@/constants/lawyerTags'
 import { MagnifyingGlassIcon, ChevronDownIcon, XMarkIcon, ChevronRightIcon } from '@heroicons/vue/24/solid'
 import LawyerSearchLayout from '@/components/layout/LawyerSearchLayout.vue';
 import LayoutDefault from '@/components/layout/LayoutDefault.vue'
-
+import checkbadge from '@/assets/check-badge.png'
 /* ----- 상태 ----- */
 const router = useRouter()
 const showFilters = ref(false)
@@ -210,7 +214,7 @@ const goToReservation = lawyer => {
 
 /* ── Filter & Search Section ─────────────────────────── */
 .filter-wrapper {
-  border: 1px solid #f1f1f1;
+  border: 1px solid #cfcfcf;
   border-radius: 8px;
   font-size: 15px;
   margin-top: -100px;
@@ -463,21 +467,36 @@ const goToReservation = lawyer => {
 }
 .lawyer-card {
   background-color: white;
-  border: 1px solid #f1f1f1;
-  border-radius: 12px;
+  border: 1px solid #cfcfcf;
   padding: 20px;
   text-align: center;
-  box-shadow: 0 2px 6px rgba(129, 129, 129, 0.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08),
+              0 1px 3px rgba(0, 0, 0, 0.04);
+  border-radius: 8px; /* 모서리 둥글게 */
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
   display: flex;
   flex-direction: column;
   height: 100%;
   min-height: 260px;
 }
-.lawyer-card img {
-  width: 200px; /* 원하는 너비로 변경 (예: 80px) */
-  height: 250px; /* 원하는 높이로 변경 (예: 80px) */
+.lawyer-card:hover {
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12),
+              0 4px 8px rgba(0, 0, 0, 0.06);
+  transform: translateY(-4px); /* 살짝 떠오르는 효과 */
+}
+
+.lawyer-profile-img {
+  width: 200px;
+  height: 250px;
   object-fit: cover;
   margin: 0 auto 7px;
+
+  /* 경계 흐림 효과 */
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+
+  /* 색감 부드럽게 (살짝 밝게 + 채도 낮춤) */
+  filter: brightness(1.05) saturate(0.9);
+  transition: filter 0.2s ease, box-shadow 0.2s ease;
 }
 .lawyer-bottom {
   margin-top: auto;
@@ -491,6 +510,54 @@ const goToReservation = lawyer => {
   margin-top: 8px;
   margin-bottom: 8px;
 }
+.check-badge-icon {
+  width: 18px; /* 아이콘 크기 조절 */
+  height: 18px;
+  margin-left: 4px; /* 이름과 아이콘 사이 간격 */
+  /* 필요에 따라 추가적인 스타일을 지정할 수 있습니다. */
+}
+.badge-wrapper{
+  position: relative;        /* ✅ tooltip의 기준 */
+  display: inline-block;
+}
+
+/* 기존 .tooltip 유지 + 보정 */
+.tooltip{
+  font-family: 'Noto Sans KR', sans-serif;
+  visibility: hidden;
+  opacity: 0;
+  position: absolute;
+  bottom: 130%;              /* 배지 위쪽으로 */
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #f4f7fb;
+  color: #888;
+  border: 1px solid #6c9bcf;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  white-space: nowrap;
+  transition: opacity .2s ease;
+  z-index: 10;               /* 겹침 방지 */
+  pointer-events: none;      /* 마우스 올려도 깜빡임 방지 */
+}
+
+.tooltip::after{
+  content:'';
+  position:absolute;
+  top:100%;
+  left:50%; margin-left:-5px;
+  border-width:5px;
+  border-style:solid ;
+  border-color:#6c9bcf transparent transparent transparent;
+}
+
+/* ✅ hover 타깃을 래퍼로 변경 */
+.badge-wrapper:hover .tooltip{
+  visibility: visible;
+  opacity: 1;
+}
+
 .lawyer-tags {
   margin-bottom: 10px;
 }
@@ -505,7 +572,7 @@ const goToReservation = lawyer => {
 }
 .more-btn {
   background-color: #ffffff;
-  color: #d0d0d0;
+  color: #888;
   padding: 4px 8px;
   border-radius: 12px;
   font-size: 12px;

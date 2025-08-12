@@ -24,7 +24,7 @@
 <style scoped>
 .banner {
   position: relative;
-  width: 100vw;
+  width: 99vw;
   height: 250px;
   margin-left: calc(-50vw + 50%);
   overflow: hidden;
@@ -41,6 +41,7 @@
 }
 
 .banner-text {
+  font-family: 'Noto Sans KR', sans-serif;
   position: absolute;
   top: 55%;
   left: 35%;

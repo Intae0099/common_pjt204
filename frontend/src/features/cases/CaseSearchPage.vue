@@ -127,7 +127,7 @@ const performSearch = () => {
   display: flex;
   align-items: center;
   width: 600px;
-  border: 1px solid #f1f1f1;
+  border: 1px solid #cfcfcf;
   border-radius: 15px;
   padding: 0.75rem 1rem;
   transition: border 0.3s ease;
@@ -183,7 +183,7 @@ const performSearch = () => {
   margin: 24px auto 0;
   display: grid;
   gap: 12px;                   /* 카드 간격 */
-  grid-template-columns: 1fr;  /* 기본 1열 */
+  grid-template-columns: 3fr;  /* 기본 1열 */
 }
 
 /* 넓은 화면에서는 2열로 (검색바 폭 600px과도 균형) */
@@ -197,6 +197,7 @@ const performSearch = () => {
 
 /* ✨ 페이지네이션 UI 스타일 추가 */
 .pagination-container {
+  font-family: 'Noto Sans KR', sans-serif;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -204,11 +205,11 @@ const performSearch = () => {
   gap: 0.5rem;
 }
 .page-btn {
-  border: 1px solid #ddd;
+  border: none;
   background-color: #fff;
-  color: #337ab7;
+  color: #6c9bcf;
   padding: 8px 12px;
-  border-radius: 4px;
+  border-radius: 8px;
   cursor: pointer;
   transition: background-color 0.2s;
 }
@@ -216,13 +217,13 @@ const performSearch = () => {
   background-color: #eee;
 }
 .page-btn.active {
-  background-color: #337ab7;
+  background-color: #6c9bcf;
   color: white;
-  border-color: #337ab7;
+  border-color: #6c9bcf;
   cursor: default;
 }
 .page-btn:disabled {
-  color: #ccc;
+  color: #cfcfcf;
   cursor: not-allowed;
 }
 </style>

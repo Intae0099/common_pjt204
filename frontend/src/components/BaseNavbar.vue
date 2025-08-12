@@ -10,7 +10,7 @@
 
       <!-- 왼쪽: 로고 -->
       <RouterLink to="/" class="fw-bold text-dark text-decoration-none">
-        <img src="@/assets/logo.png" alt="로고" style="height: 80px;" />
+        <img :src="logoSrc" alt="로고" style="height: 25px;" />
       </RouterLink>
 
       <!-- 햄버거 아이콘 (모바일용) -->
@@ -41,17 +41,17 @@
       <div class="d-none d-lg-block">
         <!-- 로그인 상태일 때 -->
         <template v-if="isLoggedIn">
-          <RouterLink :to="mypagePath" class="me-3 text-dark fw-medium text-decoration-none">
+          <RouterLink :to="mypagePath" class="me-3 fw-medium text-decoration-none nav-link">
             마이페이지
           </RouterLink>
-          <a href="#" class="text-dark fw-medium text-decoration-none" @click.prevent="logout">
+          <a href="#" class="fw-medium text-decoration-none nav-link" @click.prevent="logout">
             로그아웃
           </a>
         </template>
 
         <!-- 로그아웃 상태일 때 -->
         <template v-else>
-          <RouterLink to="/login" class="text-dark fw-medium text-decoration-none">
+          <RouterLink to="/login" class="fw-medium text-decoration-none nav-link">
             로그인
           </RouterLink>
         </template>
@@ -116,6 +116,8 @@ import { Bars2Icon, XMarkIcon  } from '@heroicons/vue/24/solid'
 import { useAuthStore } from '@/stores/auth'
 import { useRouter, useRoute } from 'vue-router'
 import { onMounted, onUnmounted, ref, computed } from 'vue'
+import defaultLogo from '@/assets/logo.png'
+import whiteLogo from '@/assets/logo-white.png'
 
 const isMenuOpen = ref(false)
 const authStore = useAuthStore()
@@ -131,14 +133,27 @@ const videoCallPath = computed(() =>
   authStore.userType === 'LAWYER' ? '/videocall/preview/lawyer' : '/videocall/preview/client'
 )
 
+
+
+const logoSrc = computed(() => {
+  const whitePages = ['/cases/search', '/consult-form']
+  const isWhitePage = whitePages.includes(route.path)  || route.path.startsWith('/cases/detail');
+
+  if (isWhitePage && !isScrolled.value) {
+    return whiteLogo
+  } else {
+    return defaultLogo
+  }
+})
+
 const logout = () => {
   authStore.clearAuth()
   router.push('/login')
 }
 
 const navbarTextColorClass = computed(() => {
-  const whitePages = ['/cases/search', '/consult-form']
-  const isWhitePage = whitePages.includes(route.path)
+  const whitePages = ['/cases/search', '/cases/detail/:id', '/consult-form',]
+  const isWhitePage = whitePages.includes(route.path)  || route.path.startsWith('/cases/detail');
   if (isWhitePage && !isScrolled.value) {
     return 'navbar--white-text'
   } else {

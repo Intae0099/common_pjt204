@@ -33,7 +33,6 @@
   right: 50%;
   margin-left: -50vw;
   margin-right: -50vw;
-  max-width: 100vw;
   overflow: hidden;
 }
 
@@ -53,6 +52,7 @@
 }
 
 .banner-text {
+  font-family: 'Noto Sans KR', sans-serif;
   position: absolute;
   top: 55%;
   left: 35%;
@@ -68,6 +68,7 @@
 }
 
 .content-wrapper {
+  font-family: 'Noto Sans KR', sans-serif;
   margin: 0 auto;
   padding: 40px 0px;
   background: white;
