@@ -21,7 +21,8 @@
       <div class="chat-content">
         <RealtimeChatView
           v-show="activeChat === 'realtime'"
-          :session="session"
+          :messages="messages"
+          @send-message="sendChatMessage"
         />
         <ChatbotView v-show="activeChat === 'chatbot'" />
       </div>
@@ -94,8 +95,8 @@ const toggleChat = (type) => {
 };
 
 // 채팅 더미 (나중에 실제 스토어/소켓 연동으로 교체)
-// const messages = ref([])
-// const sendChatMessage = (msg) => { messages.value.push({ me:true, text: msg }) }
+const messages = ref([])
+const sendChatMessage = (msg) => { messages.value.push({ me:true, text: msg }) }
 
 
 // OpenVidu 관련 객체들 상태로 관리
@@ -374,32 +375,21 @@ onMounted(() => {
 
 
 const stopScreenShare = ({ silent = false } = {}) => {
-  if (!screenPublisher.value) return;
-
   try {
-    // 1. 화면 공유 스트림의 트랙을 직접 중지 (핵심)
-    const screenStream = screenPublisher.value.stream?.getMediaStream();
-    if (screenStream) {
-      screenStream.getTracks().forEach(track => {
-        track.stop();
-        console.log(`[MeetingRoom] stopScreenShare: Screen sharing track (${track.kind}) stopped.`);
-      });
+    if (screenPublisher.value) {
+      try { screenPublisher.value.stream.getMediaStream().getTracks().forEach(t => t.stop()) } catch {}
+      screenPublisher.value.destroy?.()
     }
-
-    // 2. OpenVidu 객체 파괴 및 정리
-    if (screenSession.value) {
-      screenSession.value.disconnect();
-    }
-  } catch(e) {
-    console.error("Error during screen share stop:", e);
+    if (screenSession.value) screenSession.value.disconnect()
+    // 공유 미리보기 비우기
+    const el = document.getElementById('client-video')
+    if (el) el.innerHTML = ''
   } finally {
-    // 3. 상태 변수 초기화
-    screenPublisher.value = null;
-    screenSession.value = null;
-    screenOV.value = null;
-    isScreenSharing.value = false;
-
-    if (!silent) console.log('화면공유 종료');
+    screenPublisher.value = null
+    screenSession.value = null
+    screenOV.value = null
+    isScreenSharing.value = false
+    if (!silent) console.log('화면공유 종료')
   }
 }
 
@@ -466,53 +456,34 @@ const shareScreen = async () => {
 
 // 퇴장 함수
 const leaveSession = () => {
-  console.log('[MeetingRoom] leaveSession: 퇴장 절차를 시작합니다.');
-
-  // 1. 화면 공유가 활성 상태이면 먼저 정리
-  if (isScreenSharing.value && screenPublisher.value) {
-    stopScreenShare({ silent: true }); // 조용히 종료
+  // 1. Publisher 리소스 해제
+  if (mainStreamManager.value && typeof mainStreamManager.value.destroy === 'function') {
+    mainStreamManager.value.destroy();
   }
 
-  // 2. 메인 카메라/마이크 스트림의 모든 트랙을 직접 중지 (가장 중요)
-  const mainStream = mainStreamManager.value?.stream?.getMediaStream();
-  if (mainStream) {
-    mainStream.getTracks().forEach(track => {
-      track.stop();
-      console.log(`[MeetingRoom] leaveSession: Main Stream Track (${track.kind}) stopped.`);
-    });
-  }
-
-  // 3. 메인 세션 연결을 해제
+  // 2. Session 연결 해제
   if (session.value) {
     session.value.disconnect();
   }
 
-  // 4. 모든 상태 변수를 확실하게 초기화
+  // 3. 모든 상태 초기화
   session.value = null;
   mainStreamManager.value = null;
   subscribers.value = [];
   OV.value = null;
 
-  screenPublisher.value = null;
-  screenSession.value = null;
-  screenOV.value = null;
-
-  // 5. 백엔드에 퇴장 알림
+  // 4. 백엔드에 퇴장 알림 (실패해도 페이지 이동은 되어야 함)
   axios.delete(`/api/rooms/${appointmentId}/participants/me`).catch(e => {
     console.warn('퇴장 요청 실패:', e);
   });
 
-  // 6. 메인 페이지로 이동
+  // 5. 메인 페이지로 이동
   router.push('/');
 };
 
-
 // 컴포넌트 언마운트 시 세션 정리
 onBeforeUnmount(() => {
-  // 컴포넌트가 사라질 때 아직 세션이 살아있다면, 퇴장 절차를 실행
-  if (session.value) {
-    leaveSession();
-  }
+  leaveSession();
 });
 </script>
 
