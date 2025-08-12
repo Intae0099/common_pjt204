@@ -16,7 +16,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount } from 'vue';
+import { ref, onMounted, onBeforeUnmount, defineExpose } from 'vue';
 import { OpenVidu } from 'openvidu-browser';
 import { Mic, MicOff, Video, VideoOff } from 'lucide-vue-next';
 
@@ -32,6 +32,7 @@ const isInitialized = ref(false); // 초기화 성공 여부
 const errorMessage = ref(''); // 에러 메시지 표시용
 
 onMounted(() => { // async 제거
+
   try {
     OV.value = new OpenVidu();
     OV.value.enableProdMode();
@@ -43,7 +44,7 @@ onMounted(() => { // async 제거
         audioSource: undefined,
         publishAudio: isAudioOn.value,
         publishVideo: isVideoOn.value,
-        mirror: true,
+        mirror: false,
       },
       (error) => { // ✅ 세 번째 인자로 콜백 함수 사용
         if (error) {
@@ -85,10 +86,17 @@ const toggleVideo = () => {
   publisher.value.publishVideo(isVideoOn.value);
 };
 
-// 컴포넌트가 사라지기 직전에 실행되어 리소스를 정리 (매우 중요!)
-onBeforeUnmount(() => {
-  // ✅ publisher.value가 유효한 OpenVidu Publisher 객체인지 한번 더 확인
-  // 'destroy' 함수가 있는지 체크하는 것이 가장 확실합니다.
+const cleanup = () => {
+  if (publisher.value && publisher.value.stream) {
+    const mediaStream = publisher.value.stream.getMediaStream();
+    if (mediaStream) {
+      mediaStream.getTracks().forEach(track => {
+        track.stop();
+        console.log(`[PreviewCamera] cleanup: MediaStreamTrack (${track.kind})이 중지되었습니다.`);
+      });
+    }
+  }
+
   if (publisher.value && typeof publisher.value.destroy === 'function') {
     publisher.value.destroy();
     console.log('PreviewCamera의 OpenVidu 리소스가 성공적으로 해제되었습니다.');
@@ -96,6 +104,15 @@ onBeforeUnmount(() => {
 
   publisher.value = null;
   OV.value = null;
+};
+
+// 컴포넌트가 사라지기 직전에 실행되어 리소스를 정리 (매우 중요!)
+onBeforeUnmount(() => {
+  cleanup();
+});
+
+defineExpose({
+  cleanup
 });
 </script>
 

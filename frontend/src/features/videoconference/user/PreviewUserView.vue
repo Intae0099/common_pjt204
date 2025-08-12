@@ -2,7 +2,7 @@
   <div class="preview-page">
     <div class="preview-left">
       <h2>화면 미리보기</h2>
-      <PreviewCamera />
+      <PreviewCamera ref="cameraComponentRef"/>
       <div class="before-consult-msg">
         <p class="title">
           <Smile class="smile-icon" />
@@ -127,20 +127,69 @@
 
 <script setup>
 import PreviewCamera from '../components/PreviewCamera.vue';
-import { ref, onMounted, computed } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, onMounted, computed, onUnmounted } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 import axios from '@/lib/axios';
 import ApplicationDetail from '@/features/profile/user/ApplicationDetail.vue';
 import { Smile, MoveRight, ChevronDown, ChevronUp } from 'lucide-vue-next';
 import { TAG_MAP as tagList } from '@/constants/lawyerTags';
 
+const cameraComponentRef = ref(null);
+
 const appointments = ref([]);
 const defaultImage = '/default-profile.png';
 const router = useRouter();
+const route = useRoute();
 const showDetailModal = ref(false);
 const selectedApplicationData = ref(null);
 const selectedAppointmentId = ref(null);
 const expandedCards = ref(new Set());
+
+
+
+// let isNavigatingToMeeting = false;
+
+const enterMeeting = async (appointmentId) => {
+  if (!appointmentId) {
+    alert('입장할 상담을 선택해주세요.');
+    return;
+  }
+
+  // isNavigatingToMeeting = true;
+
+  // if (cameraComponentRef.value) {
+  //   cameraComponentRef.value.cleanup();
+  //   console.log('[enterMeeting] PreviewCamera 리소스를 해제하여 MeetingRoom으로 전달 준비 완료.');
+  // }
+
+  try {
+    const res = await axios.post(`/api/rooms/${appointmentId}`);
+    const token = res.data.data.openviduToken;
+    router.push({ name: 'MeetingRoom', query: { token, appointmentId } });
+  } catch (err) {
+    if (err.response?.status === 409) {
+      try {
+        const res = await axios.post(`/api/rooms/${appointmentId}/participants`);
+        const token = res.data.data.openviduToken;
+        router.push({ name: 'MeetingRoom', query: { token, appointmentId } });
+      } catch (err2) {
+        console.error('방 참가 실패:', err2);
+        alert('화상상담 입장에 실패했습니다.');
+      }
+    } else {
+      console.error('방 생성 실패:', err);
+      alert('화상상담 방 생성에 실패했습니다.');
+    }
+    // isNavigatingToMeeting = false;
+  }
+};
+
+onUnmounted(() => {
+    console.log("[onUnmounted] PreviewUserView가 파괴됩니다. 카메라 리소스를 최종적으로 확인하고 정리합니다.");
+    if (cameraComponentRef.value) {
+        cameraComponentRef.value.cleanup();
+    }
+});
 
 const tagMap = tagList.reduce((map, tag) => {
   map[tag.id] = tag.name;
@@ -216,6 +265,7 @@ const canEnterMeeting = (startTime, endTime) => {
 };
 
 onMounted(async () => {
+  console.log('[PreviewUserView] Mounted: 컴포넌트가 생성되었습니다.');
   try {
     // API 호출 시 params를 추가하여 승인된 상담만 가져오도록
     const { data: appointmentData } = await axios.get('/api/appointments/me', {
@@ -225,10 +275,11 @@ onMounted(async () => {
       appointmentData.map(async (appointment) => {
         try {
           const { data: lawyer } = await axios.get(`/api/lawyers/${appointment.lawyerId}`);
+          const imageUrl = lawyer.photo ? `data:image/jpeg;base64,${lawyer.photo}` : null;
           return {
             ...appointment,
             lawyerName: lawyer.name,
-            profileImage: lawyer.photo,
+            profileImage: imageUrl,
             tags: lawyer.tags,
           };
         } catch (e) {
@@ -300,31 +351,6 @@ const goToApplication = async (applicationId) => {
   }
 };
 
-const enterMeeting = async (appointmentId) => {
-  if (!appointmentId) {
-    alert('입장할 상담을 선택해주세요.');
-    return;
-  }
-  try {
-    const res = await axios.post(`/api/rooms/${appointmentId}`);
-    const token = res.data.data.openviduToken;
-    router.push({ name: 'MeetingRoom', query: { token, appointmentId } });
-  } catch (err) {
-    if (err.response?.status === 409) {
-      try {
-        const res = await axios.post(`/api/rooms/${appointmentId}/participants`);
-        const token = res.data.data.openviduToken;
-        router.push({ name: 'MeetingRoom', query: { token, appointmentId } });
-      } catch (err2) {
-        console.error('방 참가 실패:', err2);
-        alert('화상상담 입장에 실패했습니다.');
-      }
-    } else {
-      console.error('방 생성 실패:', err);
-      alert('화상상담 방 생성에 실패했습니다.');
-    }
-  }
-};
 </script>
 
 <style scoped>
