@@ -80,7 +80,6 @@ public class SecurityConfig {
     this.refreshTokenService = refreshTokenService;
   }
 
-
   @Component
   public static class OAuth2JwtSuccessHandler implements AuthenticationSuccessHandler {
 
@@ -154,6 +153,8 @@ public class SecurityConfig {
           .queryParam("accessToken", accessToken)
           .build().toUriString();
 
+      System.out.println("frontBase={" +  frontBase + "} redirectUrl={"  +  redirectUrl + "}");
+
       res.sendRedirect(redirectUrl);
     }
 
@@ -161,7 +162,7 @@ public class SecurityConfig {
       // 1) 프록시 헤더 우선 (운영)
       String fProto  = header(req, "X-Forwarded-Proto");
       String fHost   = header(req, "X-Forwarded-Host");
-      String fPrefix = header(req, "X-Forwarded-Prefix"); // 예: "/api"
+      String fPrefix = header(req, "X-Forwarded-Prefix");
 
       if (fHost != null && fHost.contains(",")) fHost = fHost.split(",")[0].trim();
 
@@ -182,7 +183,7 @@ public class SecurityConfig {
         return "http://localhost:5173";
       }
       if ("i13b204.p.ssafy.io".equalsIgnoreCase(serverName)) {
-        return "https://i13b204.p.ssafy.io/api";
+        return "https://i13b204.p.ssafy.io";
       }
 
       // 마지막 안전 폴백
@@ -227,7 +228,6 @@ public class SecurityConfig {
   }
 
   @Bean
-  @Order(2)
   public SecurityFilterChain lawyerFilterChain(
       HttpSecurity http,
       @Qualifier("lawyerAuthenticationManager") AuthenticationManager authManager,
@@ -276,23 +276,23 @@ public class SecurityConfig {
     // 변호사 로컬 로그인 실패 핸들러
     AuthenticationFailureHandler lawyerLoginFailureHandler =
         (req, res, ex) -> {
-      int status = HttpServletResponse.SC_UNAUTHORIZED;
-      if(ex instanceof DisabledException || ex instanceof LockedException){
-        status = HttpServletResponse.SC_FORBIDDEN;
-      }
+          int status = HttpServletResponse.SC_UNAUTHORIZED;
+          if(ex instanceof DisabledException || ex instanceof LockedException){
+            status = HttpServletResponse.SC_FORBIDDEN;
+          }
 
-      res.setStatus(status);
-      res.setContentType("application/json");
-      res.setCharacterEncoding("UTF-8");
+          res.setStatus(status);
+          res.setContentType("application/json");
+          res.setCharacterEncoding("UTF-8");
 
-      String message = switch (status) {
-        case HttpServletResponse.SC_FORBIDDEN -> "{\"error\":\"승인 대기 중이거나 거부된 계정입니다. \"}";
-        default -> "{\"error\":\"아이디 또는 비밀번호가 올바르지 않습니다.\"}";
-      };
+          String message = switch (status) {
+            case HttpServletResponse.SC_FORBIDDEN -> "{\"error\":\"승인 대기 중이거나 거부된 계정입니다. \"}";
+            default -> "{\"error\":\"아이디 또는 비밀번호가 올바르지 않습니다.\"}";
+          };
 
-      res.getWriter().write(message);
-      res.getWriter().flush();
-    };
+          res.getWriter().write(message);
+          res.getWriter().flush();
+        };
 
     JsonUsernamePasswordAuthenticationFilter jsonLoginFilter =
         new JsonUsernamePasswordAuthenticationFilter(authManager, lawyerService);
@@ -334,6 +334,7 @@ public class SecurityConfig {
 
             .requestMatchers(
                 "/login/oauth2/**",
+                "/oauth2/**",
                 "/oauth2/authorization/**",
                 "/oauth2/callback/**"
             ).permitAll()
