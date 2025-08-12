@@ -1,47 +1,35 @@
 <template>
   <div class="meeting-room">
-    <div class="video-section">
-      <!-- 화면 공유 중일 때 -->
-      <div class="screen-sharing-layout" v-show="isScreenSharing" style="display: flex; width: 100%;">
-        <!-- 왼쪽: 변호사 + 의뢰인 세로 정렬 -->
-        <div class="video-box vertical-video">
-          <div class="video-inner" id="lawyer-video-ss"> <!-- ID 중복 방지를 위해 변경 -->
-            <p class="role-label">변호사</p>
-          </div>
-          <div class="video-inner" id="publisher-ss" ref="publisherRef"> <!-- ref는 여기에만 유지 -->
-            <p class="role-label">의뢰인</p>
-          </div>
-        </div>
+  <div class="video-section" :class="{ sharing: isScreenSharing }">
+    <!-- 왼쪽: 변호사/의뢰인 비디오 (한 세트만 유지) -->
+    <div class="video-box" id="lawyer-video">
+      <p class="role-label">변호사</p>
+    </div>
 
-        <!-- 가운데: 공유된 화면 -->
-        <div class="video-box shared-screen" id="client-video">
-          <canvas id="draw-canvas" class="drawing-canvas"></canvas>
-        </div>
-      </div>
+    <div class="video-box" id="publisher" ref="publisherRef">
+      <p class="role-label">의뢰인</p>
+    </div>
 
-      <!-- 평소(공유 X) 화면 레이아웃 -->
-      <div class="default-layout" v-show="!isScreenSharing" style="display: flex; width: 100%;">
-        <div class="video-box" id="lawyer-video">
-          <p class="role-label">변호사</p>
-        </div>
-        <div class="video-box" id="publisher" ref="publisherRef">
-          <p class="role-label">의뢰인</p>
-        </div>
-      </div>
+    <!-- 가운데: 공유화면 (평소엔 숨김만) -->
+    <div class="video-box shared-screen" id="client-video"
+         :style="{ display: isScreenSharing ? 'flex' : 'none' }">
+      <canvas id="draw-canvas" class="drawing-canvas"></canvas>
+    </div>
 
-      <!-- 오른쪽: 채팅 -->
-      <div class="chat-area">
-        <div class="chat-content">
-          <RealtimeChatView
-            v-show="activeChat === 'realtime'"
-            :messages="messages"
-            @send-message="sendChatMessage"
-          />
-          <ChatbotView v-show="activeChat === 'chatbot'" />
-        </div>
+    <!-- 오른쪽: 채팅 -->
+    <div class="chat-area">
+      <div class="chat-content">
+        <RealtimeChatView
+          v-show="activeChat === 'realtime'"
+          :messages="messages"
+          @send-message="sendChatMessage"
+        />
+        <ChatbotView v-show="activeChat === 'chatbot'" />
       </div>
     </div>
   </div>
+</div>
+
 
 <!-- 하단 푸터 -->
 <div class="meeting-footer">
@@ -66,11 +54,10 @@
     </div>
 
     <!-- ▼ ② “화면공유” 버튼은 메뉴 밖, 항상 노출 -->
-    <button class="footer-btn only-share" @click="shareScreen">
-      <span class="footer-label">화면공유</span>
+    <button class="footer-btn only-share" @click="isScreenSharing ? stopScreenShare() : shareScreen()">
+      <span class="footer-label">{{ isScreenSharing ? '공유중지' : '화면공유' }}</span>
       <Share class="footer-icon" />
     </button>
-
   </div>
 
   <!-- 오른쪽: 채팅·챗봇·나가기 (기존 그대로) -->
@@ -107,11 +94,22 @@ const toggleChat = (type) => {
   activeChat.value = activeChat.value === type ? null : type;
 };
 
+// 채팅 더미 (나중에 실제 스토어/소켓 연동으로 교체)
+const messages = ref([])
+const sendChatMessage = (msg) => { messages.value.push({ me:true, text: msg }) }
+
+
 // OpenVidu 관련 객체들 상태로 관리
 const OV = ref(null);
-const session = ref(null);
+const session = ref(null);  //메인(카메라/마이크)
 const mainStreamManager = ref(null);
 const subscribers = ref([]);
+
+//화면공유 전용
+const screenOV = ref(null)
+const screenSession = ref(null)        // 화면공유용 세션 (두 번째 연결)
+const screenPublisher = ref(null)      // 화면공유 Publisher
+
 const isMenuOpen = ref(false);
 const route = useRoute();
 const router = useRouter();
@@ -275,35 +273,95 @@ onMounted(() => {
       console.error('세션 연결 실패:', error);
       alert("화상회의 서버에 연결할 수 없습니다.");
     });
+    // 파일 상단 어디든(예: onMounted 끝부분)
+    console.log('axios baseURL =', axios.defaults.baseURL)
+    console.log('axios Authorization =', axios.defaults.headers.common?.Authorization)
+
 });
+
+
+const stopScreenShare = ({ silent = false } = {}) => {
+  try {
+    if (screenPublisher.value) {
+      try { screenPublisher.value.stream.getMediaStream().getTracks().forEach(t => t.stop()) } catch {}
+      screenPublisher.value.destroy?.()
+    }
+    if (screenSession.value) screenSession.value.disconnect()
+    // 공유 미리보기 비우기
+    const el = document.getElementById('client-video')
+    if (el) el.innerHTML = ''
+  } finally {
+    screenPublisher.value = null
+    screenSession.value = null
+    screenOV.value = null
+    isScreenSharing.value = false
+    if (!silent) console.log('화면공유 종료')
+  }
+}
+
+
 
 // 화면 공유를 시작하는 함수
 const shareScreen = async () => {
+  console.log('token from query=', token)
+  console.log('appointmentId from query=', appointmentId)
+
   try {
-    const screenPublisher = await OV.value.initPublisherAsync(undefined, {
+    // 1) 백엔드에서 화면공유 토큰 받기
+    console.log('screen-share call:', `/api/rooms/${appointmentId}/screen-share`)
+    const { data } = await axios.post(`/api/rooms/${appointmentId}/screen-share`)
+    if (!data?.success) throw new Error(data?.message || '화면공유 토큰 발급 실패')
+    const screenToken = data.data.openviduToken
+
+    // 2) 화면공유용 OpenVidu/Session 별도 생성
+    screenOV.value = new OpenVidu()
+    screenOV.value.enableProdMode()
+    screenSession.value = screenOV.value.initSession()
+
+    // (선택) 이벤트: 재연결/종료 로그 등 필요시 추가
+    screenSession.value.on('sessionDisconnected', (e) => {
+      console.log('화면공유 세션 종료', e)
+      stopScreenShare({ silent: true })
+    })
+
+    // 3) 화면공유 세션 연결
+    await screenSession.value.connect(screenToken, { clientData: 'screenshare' })
+
+    // 4) 화면공유 Publisher 생성 (오직 비디오만, 오디오X 권장)
+    screenPublisher.value = await screenOV.value.initPublisherAsync(undefined, {
       videoSource: 'screen',
-    });
+      publishAudio: false,
+      publishVideo: true,
+      mirror: false,
+    })
 
-    // 화면 공유 스트림을 게시
-    await session.value.publish(screenPublisher);
+    // 5) 해당 세션에 화면공유 스트림 게시
+    await screenSession.value.publish(screenPublisher.value)
 
-    // 화면 공유 비디오 요소를 client-video div에 붙임
-    const screenVideoContainer = document.getElementById('client-video');
-    screenPublisher.addVideoElement(screenVideoContainer);
+    // 6) 내 로컬 UI에 붙이기(공유 미리보기)
+    const screenVideoContainer = document.getElementById('client-video')
+    screenPublisher.value.addVideoElement(screenVideoContainer)
 
-    await initCanvas();
-    isScreenSharing.value = true;
-    console.log('화면 공유 시작됨');
+    // 7) 브라우저 화면공유 종료 이벤트(사용자가 ‘공유 중지’ 누르면)
+    const track = screenPublisher.value.stream.getMediaStream().getVideoTracks()[0]
+    if (track) {
+      track.addEventListener('ended', () => {
+        stopScreenShare()
+      })
+    }
+
+    await initCanvas()
+    isScreenSharing.value = true
+    console.log('화면공유 시작')
 
   } catch (err) {
-    console.error('화면 공유 실패:', err);
-    if (err.name === 'SCREEN_SHARING_NOT_SUPPORTED') {
-      alert('현재 브라우저에서는 화면 공유를 지원하지 않습니다.');
-    } else if (err.name === 'SCREEN_CAPTURE_DENIED') {
-      alert('화면 공유를 허용해야 시작할 수 있습니다.');
-    }
+    console.error('화면공유 실패:', err)
+    console.error('status=', err.response?.status)
+    console.error('data=', JSON.stringify(err.response?.data, null, 2))
+    alert(err.response?.data?.message || '화면공유를 시작할 수 없습니다.')
   }
-};
+}
+
 
 
 // 퇴장 함수
@@ -351,32 +409,34 @@ onBeforeUnmount(() => {
   position: relative;
 }
 .video-section {
-  display: flex;
-  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr 380px;   /* 기본: 좌우 카메라 + 채팅 */
+  grid-template-rows: 1fr;
+  grid-template-areas: "lawyer publisher chat";
+  gap: 0.5rem;
   height: 90vh;
+}
+
+#lawyer-video   { grid-area: lawyer; }
+#publisher      { grid-area: publisher; }
+.shared-screen  { grid-area: shared; }  /* 기본 모드에선 숨김 상태라 영역만 예약 */
+.chat-area      { grid-area: chat; }
+
+/* 화면공유 모드: 왼쪽 열(위/아래=2행), 가운데는 공유화면(2행 병합), 오른쪽은 채팅(2행 병합) */
+.video-section.sharing {
+  grid-template-columns: 1fr 2fr 380px;
+  grid-template-rows: 1fr 1fr;
+  grid-template-areas:
+    "lawyer  shared chat"
+    "publisher shared chat";
 }
 
 /* 변호사 / 의뢰인 화면 */
 .video-box {
-  flex: 1;
   min-width: 0;
   background-color: black;
   margin: 0.5rem 0.5rem 0 0.5rem ;
   border-radius: 10px;
-  position: relative;
-}
-
-.vertical-video {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-}
-
-.video-inner {
-  flex: 1;
-  background-color: black;
-  margin: 0.25rem;
-  border-radius: 8px;
   position: relative;
 }
 
