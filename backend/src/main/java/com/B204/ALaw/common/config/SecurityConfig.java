@@ -144,8 +144,10 @@ public class SecurityConfig {
           .build();
       res.setHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
 
-      // BE 개발 편의를 위해 8080으로 변경 (-> front 서버 결합 시 5173으로 변경 필요)
-      String frontBase = resolveFrontRedirectBase(req);
+      /*
+      redirectUrl를 도메인 프론트로 설정
+       */
+/*      String frontBase = resolveFrontRedirectBase(req);
 
       String redirectUrl = UriComponentsBuilder
           .fromUriString(frontBase + "/oauth2/callback/kakao")
@@ -153,6 +155,17 @@ public class SecurityConfig {
           .build().toUriString();
 
       System.out.println("frontBase={" +  frontBase + "} redirectUrl={"  +  redirectUrl + "}");
+*/
+
+
+      /*
+       redirectUrl을 로컬 프론트로 설정
+       */
+      String redirectUrl = UriComponentsBuilder
+          .fromUriString("http://localhost:5173/oauth2/callback/kakao")
+          .queryParam("accessToken", accessToken)
+          .build().toUriString();
+
 
       res.sendRedirect(redirectUrl);
     }
