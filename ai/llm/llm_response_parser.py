@@ -39,6 +39,7 @@ def parse_case_analysis_output(raw: str) -> CaseAnalysisResult:
             expected_sentence  = report.get("sentencePrediction", ""),
             confidence         = report.get("confidence", 0.0),
             references         = report.get("references", {}),
+            statutes           = payload.get("statutes", []),  # 추가된 statutes 필드
             tags               = payload.get("tags", []),
             recommendedLawyers = payload.get("recommendedLawyers", [])
         )
@@ -98,6 +99,7 @@ def parse_case_analysis_output(raw: str) -> CaseAnalysisResult:
         expected_sentence  = expected_sentence,
         confidence         = confidence,
         references         = {},
+        statutes           = [],  # 텍스트 형태에서는 기본값으로 빈 리스트
         tags               = [],
         recommendedLawyers = []
     )

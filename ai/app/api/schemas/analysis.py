@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field
 from typing import List, Dict, Any, Optional
 from app.api.schemas.error import BaseSuccessResponse
+from app.api.schemas.statute import StatuteReference
 
 class CaseAnalysisResult(BaseModel):
     issues: List[str] = Field(default_factory=list, description="식별된 주요 법적 쟁점.")
@@ -8,6 +9,7 @@ class CaseAnalysisResult(BaseModel):
     expected_sentence: str = Field(..., description="예상되는 판결 또는 결과.")
     confidence: float = Field(0.0, ge=0.0, le=1.0, description="분석의 신뢰도 점수.")
     references: Dict[str, Any] = Field(default_factory=dict, description="분석에 사용된 참조 자료.")
+    statutes: List[StatuteReference] = Field(default_factory=list, description="관련 법령 목록.")
     tags: List[str] = Field(default_factory=list, description="관련 법률 태그.")
     recommendedLawyers: List[Dict[str, Any]] = Field(default_factory=list, description="추천 변호사 목록.")
 
