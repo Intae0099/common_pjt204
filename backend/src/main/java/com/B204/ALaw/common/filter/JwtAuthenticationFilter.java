@@ -19,7 +19,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -30,7 +29,6 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-@Slf4j
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
   private final JwtUtil jwtUtil;
@@ -55,33 +53,29 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     return
         // 변호사 회원가입 / 로그인
         path.startsWith("/api/lawyers/signup")
-            || path.startsWith("/api/lawyers/emails/check")
-            || path.startsWith("/api/lawyers/login")
-            || path.startsWith("/api/lawyers/list")
-            || path.startsWith("/auth/login")
+        || path.startsWith("/api/lawyers/emails/check")
+        || path.startsWith("/api/lawyers/login")
+        || path.startsWith("/api/lawyers/list")
+        || path.startsWith("/auth/login")
 
             // 의뢰인 회원가입 / 로그인
-            || path.startsWith("/login/oauth2/")
-            || path.startsWith("/oauth2/")                // 예: /oauth2/authorization/kakao
-            || path.startsWith("/api/login/oauth2/")      // 인그레스가 접두어를 안 걷어내는 경우
-            || path.startsWith("/api/oauth2/")
+        || path.startsWith("/login/oauth2/")
+        || path.startsWith("/oauth2/authorization/")
+        || path.startsWith("/oauth2/callback/")
 
+        // refreshToken 발급
+        || path.startsWith("/api/auth/")
 
-            // refreshToken 발급
-            || path.startsWith("/api/auth/")
+        // 관리자 기능 Test용
+        || path.startsWith("/api/admin/login")
+        || path.startsWith("/api/tag")
 
-            // 관리자 기능 Test용
-            || path.startsWith("/api/admin/login")
-            || path.startsWith("/api/tag")
-
-            // Swagger/OpenAPI
-            || path.startsWith("/v3/api-docs")
-            || path.startsWith("/swagger-ui")
-            || path.startsWith("/swagger-ui.html")
-            || path.startsWith("/webjars")
-
-            || path.equals("/error")
-            || HttpMethod.OPTIONS.matches(request.getMethod());
+        // Swagger/OpenAPI
+        || path.startsWith("/v3/api-docs")
+        || path.startsWith("/swagger-ui")
+        || path.startsWith("/swagger-ui.html")
+        || path.startsWith("/webjars")
+        || HttpMethod.OPTIONS.matches(request.getMethod());
   }
 
   @Override
@@ -89,8 +83,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
       HttpServletRequest req,
       HttpServletResponse res,
       FilterChain chain) throws ServletException, IOException {
-
-    log.info("[JWT] path={} skip={}", req.getRequestURI(), shouldNotFilter(req));
 
     String header = req.getHeader("Authorization");
     if (header == null || !header.startsWith("Bearer ")) {
