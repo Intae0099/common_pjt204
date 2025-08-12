@@ -28,7 +28,8 @@
       <div class="chat-content">
         <RealtimeChatView
           v-show="activeChat === 'realtime'"
-          :session="session"
+          :messages="messages"
+          @send-message="sendChatMessage"
         />
         <ChatbotView v-show="activeChat === 'chatbot'" />
       </div>
@@ -111,8 +112,8 @@ const toggleChat = (type) => {
 };
 
 // 채팅 더미 (나중에 실제 스토어/소켓 연동으로 교체)
-// const messages = ref([])
-// const sendChatMessage = (msg) => { messages.value.push({ me:true, text: msg }) }
+const messages = ref([])
+const sendChatMessage = (msg) => { messages.value.push({ me:true, text: msg }) }
 
 
 // OpenVidu 관련 객체들 상태로 관리
@@ -587,46 +588,29 @@ const leaveSession = () => {
     stopScreenShare({ silent: true }); // 조용히 종료
   }
 
-  // 2. 메인 카메라/마이크 스트림의 모든 트랙을 직접 중지 (가장 중요)
-  const mainStream = mainStreamManager.value?.stream?.getMediaStream();
-  if (mainStream) {
-    mainStream.getTracks().forEach(track => {
-      track.stop();
-      console.log(`[MeetingRoom] leaveSession: Main Stream Track (${track.kind}) stopped.`);
-    });
-  }
-
-  // 3. 메인 세션 연결을 해제
+  // 2. Session 연결 해제
   if (session.value) {
     session.value.disconnect();
   }
 
-  // 4. 모든 상태 변수를 확실하게 초기화
+  // 3. 모든 상태 초기화
   session.value = null;
   mainStreamManager.value = null;
   subscribers.value = [];
   OV.value = null;
 
-  screenPublisher.value = null;
-  screenSession.value = null;
-  screenOV.value = null;
-
-  // 5. 백엔드에 퇴장 알림
+  // 4. 백엔드에 퇴장 알림 (실패해도 페이지 이동은 되어야 함)
   axios.delete(`/api/rooms/${appointmentId}/participants/me`).catch(e => {
     console.warn('퇴장 요청 실패:', e);
   });
 
-  // 6. 메인 페이지로 이동
+  // 5. 메인 페이지로 이동
   router.push('/');
 };
 
-
 // 컴포넌트 언마운트 시 세션 정리
 onBeforeUnmount(() => {
-  // 컴포넌트가 사라질 때 아직 세션이 살아있다면, 퇴장 절차를 실행
-  if (session.value) {
-    leaveSession();
-  }
+  leaveSession();
 });
 </script>
 
