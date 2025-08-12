@@ -308,8 +308,8 @@ const shareScreen = async () => {
 
   try {
     // 1) 백엔드에서 화면공유 토큰 받기
-    console.log('screen-share call:', `/api/rooms/${appointmentId}/screen-share`)
-    const { data } = await axios.post(`/api/rooms/${appointmentId}/screen-share`)
+    console.log('screenshare call:', `/api/rooms/${appointmentId}/screenshare`)
+    const { data } = await axios.post(`/api/rooms/${appointmentId}/screenshare`)
     if (!data?.success) throw new Error(data?.message || '화면공유 토큰 발급 실패')
     const screenToken = data.data.openviduToken
 
