@@ -21,8 +21,24 @@
 <script setup>
 
 const login = async () => {
+  // 1. 로그인 후 돌아올 프론트엔드 주소를 동적으로 생성합니다.
+  //    (예: http://localhost:5173/oauth2/callback/kakao 또는 https://i13b204.p.ssafy.io/oauth2/callback/kakao)
+  const frontendOrigin = window.location.origin;
+  const redirectPath = "/oauth2/callback/kakao";
+  const redirectUri = `${frontendOrigin}${redirectPath}`;
 
-  window.location.href = 'https://i13b204.p.ssafy.io/oauth2/authorization/kakao'
+  // 2. 백엔드 API 주소를 정의합니다. (환경 변수로 관리하는 것이 가장 좋습니다)
+  //    로컬 개발 시: 'http://localhost:8080'
+  //    배포 환경 시: 'https://i13b204.p.ssafy.io'
+  //    아래는 간단한 예시입니다.
+  const backendUrl = 'https://i13b204.p.ssafy.io'; // 또는 'http://localhost:8080'
+
+  // 3. 백엔드로 보낼 최종 로그인 URL을 구성합니다.
+  //    redirect_uri 파라미터를 추가하는 것이 핵심입니다.
+  const loginUrl = `${backendUrl}/oauth2/authorization/kakao?redirect_uri=${encodeURIComponent(redirectUri)}`;
+
+  // 4. 생성된 URL로 이동합니다.
+  window.location.href = loginUrl;
 }
 </script>
 
