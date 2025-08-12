@@ -145,14 +145,52 @@ public class SecurityConfig {
       res.setHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
 
       // BE 개발 편의를 위해 8080으로 변경 (-> front 서버 결합 시 5173으로 변경 필요)
+      String frontBase = resolveFrontRedirectBase(req);
 
       String redirectUrl = UriComponentsBuilder
-          .fromUriString("http://localhost:5173/oauth2/callback/kakao")
+          .fromUriString(frontBase + "/oauth2/callback/kakao")
           .queryParam("accessToken", accessToken)
           .build().toUriString();
-      // System.out.println("frontBase={" +  frontBase + "} redirectUrl={"  +  redirectUrl + "}");
+
+      System.out.println("frontBase={" +  frontBase + "} redirectUrl={"  +  redirectUrl + "}");
 
       res.sendRedirect(redirectUrl);
+    }
+
+    private String resolveFrontRedirectBase(HttpServletRequest req) {
+      // 1) 프록시 헤더 우선 (운영)
+      String fProto  = header(req, "X-Forwarded-Proto");
+      String fHost   = header(req, "X-Forwarded-Host");
+      String fPrefix = header(req, "X-Forwarded-Prefix");
+
+      if (fHost != null && fHost.contains(",")) fHost = fHost.split(",")[0].trim();
+
+      // ✅ 화이트리스트
+      Set<String> allowHosts = Set.of(
+          "i13b204.p.ssafy.io", "localhost:8080", "localhost"
+      );
+
+      if (fHost != null && allowHosts.contains(fHost)) {
+        String proto = (fProto != null) ? fProto : "https";
+        return proto + "://" + fHost;
+      }
+
+      // 2) 로컬/그 외 폴백
+      String serverName = req.getServerName();
+      if ("localhost".equalsIgnoreCase(serverName)) {
+        return "http://localhost:5173";
+      }
+      if ("i13b204.p.ssafy.io".equalsIgnoreCase(serverName)) {
+        return "https://i13b204.p.ssafy.io";
+      }
+
+      // 마지막 안전 폴백
+      return "http://localhost:5173";
+    }
+
+    private String header(HttpServletRequest req, String name) {
+      String v = req.getHeader(name);
+      return (v == null || v.isBlank()) ? null : v;
     }
 
   }
@@ -197,11 +235,16 @@ public class SecurityConfig {
   ) throws Exception {
 
     // 의뢰인 OAuth2 로그인 실패 핸들러
-    AuthenticationFailureHandler oauth2FailureHandler = (
-        req,
-        res,
-        ex) ->
-        res.sendError(HttpServletResponse.SC_UNAUTHORIZED, "OAuth2 Login Failed");
+    AuthenticationFailureHandler oauth2FailureHandler = ( req, res, ex) ->{
+      String msg = ex.getMessage();
+      if (msg != null && msg.contains("rate limit")) {
+        res.setStatus(429);
+        res.setContentType("application/json;charset=UTF-8");
+        res.getWriter().write("{\"error\":\"kakao_rate_limit\",\"message\":\"잠시 후 다시 시도해주세요.\"}");
+        return;
+      }
+      res.sendError(HttpServletResponse.SC_UNAUTHORIZED, "OAuth2 Login Failed");
+    };
 
     // 변호사 로컬 로그인 성공 핸들러 → JWT 발급
     AuthenticationSuccessHandler lawyerLoginSuccessHandler =
