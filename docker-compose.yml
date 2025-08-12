@@ -1,0 +1,38 @@
+# version: '3.8' # Docker Compose 파일 형식 버전
+
+services:
+  # 백엔드 서비스 정의
+  backend-app:
+    container_name: backend-app
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    networks:
+      - my-app-network
+    # 🚨 여기가 수정/추가된 부분입니다!
+    environment:
+      # 위에서 발생한 에러를 해결하기 위해 allowPublicKeyRetrieval=true 옵션을 추가합니다.
+      # DB 호스트는 localhost가 아닌 host.docker.internal을 사용합니다.
+      - SPRING_DATASOURCE_URL=jdbc:mysql://host.docker.internal:3306/lawvatardb?serverTimezone=UTC&useSSL=false&allowPublicKeyRetrieval=true
+      - SPRING_DATASOURCE_USERNAME=root # 👈 실제 로컬 DB 아이디로 변경
+      - SPRING_DATASOURCE_PASSWORD=root # 👈 실제 로컬 DB 비밀번호로 변경
+
+  # 프론트엔드 서비스 정의
+  frontend-app:
+    container_name: frontend-app
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "80:80" # 웹 브라우저 접속용
+    depends_on:
+      - backend-app # 백엔드 서비스가 먼저 시작되도록 의존성 설정
+    networks:
+      - my-app-network
+
+# 서비스들이 사용할 네트워크 정의
+networks:
+  my-app-network:
+    driver: bridge
