@@ -3,7 +3,7 @@
   <div
     class="video-section"
     :class="{
-      sharing: isScreenSharing,
+      sharing: isAnyScreenSharing,
       'chat-open': isChatOpen,
       'chat-closed': !isChatOpen
     }"
@@ -19,7 +19,7 @@
 
     <!-- 가운데: 공유화면 (평소엔 숨김만) -->
     <div class="video-box shared-screen" id="client-video"
-         :style="{ display: isScreenSharing ? 'flex' : 'none' }">
+         :style="{ display: isAnyScreenSharing ? 'flex' : 'none' }">
       <canvas id="draw-canvas" class="drawing-canvas"></canvas>
     </div>
 
@@ -49,10 +49,15 @@
 
     <!-- ▼ ① 툴그룹: “화면공유”를 빼고 나머지만 넣기 -->
     <div class="tool-group" :class="{ show: isMenuOpen }">
+      <!-- 전체 지우기 (선택 상태 없음 / 공유 중에만 활성) -->
+      <button class="footer-btn" @click="clearCanvas" :disabled="!isAnyScreenSharing" title="전체 지우기">
+        <RefreshCcw class="footer-icon" />
+      </button>
       <!-- 펜 / 지우개 / 포인터 -->
-      <button class="footer-btn" @click="setTool('pen')"     :disabled="!isScreenSharing" :class="{ active: currentTool==='pen' }"><Pencil class="footer-icon" /></button>
-      <button class="footer-btn" @click="setTool('eraser')"  :disabled="!isScreenSharing" :class="{ active: currentTool==='eraser' }"><Eraser class="footer-icon" /></button>
+      <button class="footer-btn" @click="setTool('pen')"     :disabled="!isAnyScreenSharing" :class="{ active: currentTool==='pen' }"><Pencil class="footer-icon" /></button>
+      <button class="footer-btn" @click="setTool('eraser')"  :disabled="!isAnyScreenSharing" :class="{ active: currentTool==='eraser' }"><Eraser class="footer-icon" /></button>
       <button class="footer-btn" @click="setTool('pointer')" :class="{ active: currentTool==='pointer' }"><MousePointer2 class="footer-icon" /></button>
+
 
       <!-- 카메라 / 마이크 -->
       <button class="footer-btn" @click="toggleCamera"><component :is="isCameraOn ? Video : VideoOff" class="footer-icon" /></button>
@@ -60,8 +65,12 @@
     </div>
 
     <!-- ▼ ② “화면공유” 버튼은 메뉴 밖, 항상 노출 -->
-    <button class="footer-btn only-share" @click="isScreenSharing ? stopScreenShare() : shareScreen()">
-      <span class="footer-label">{{ isScreenSharing ? '공유중지' : '화면공유' }}</span>
+    <button
+      class="footer-btn only-share"
+      :disabled="isAnyScreenSharing && !isMyScreenSharing"
+      @click="isMyScreenSharing ? stopScreenShare() : shareScreen()"
+    >
+      <span class="footer-label">{{ isMyScreenSharing ? '공유중지' : '화면공유' }}</span>
       <Share class="footer-icon" />
     </button>
   </div>
@@ -93,7 +102,7 @@ import { useRoute, useRouter } from 'vue-router';
 import axios from '@/lib/axios';
 import RealtimeChatView from '@/features/chatting/RealtimeChatView.vue';
 import ChatbotView from '@/features/chatting/ChatbotView.vue';
-import { EllipsisVertical, Pencil, Eraser, MousePointer2, MessageSquareText, Share, Video, VideoOff, Mic, MicOff } from 'lucide-vue-next';
+import { EllipsisVertical, Pencil, Eraser, MousePointer2, MessageSquareText, Share, Video, VideoOff, Mic, MicOff, RefreshCcw } from 'lucide-vue-next';
 
 const activeChat = ref('realtime');
 const isChatOpen = computed(() => !!activeChat.value)
@@ -126,7 +135,8 @@ const publisherRef = ref(null); // 내 비디오를 붙일 DOM 요소
 // 상태 관리
 const isCameraOn = ref(true);
 const isMicOn = ref(true);
-const isScreenSharing = ref(false);
+const isAnyScreenSharing = ref(false);   // 누군가 공유 중
+const isMyScreenSharing  = ref(false);   // 내가 공유 중
 
 const DRAW_SIG = 'drawing';
 let sendBuf = [];
@@ -305,6 +315,10 @@ function endDraw() {
 function handleRemoteDraw({ data }) {
   const msg = JSON.parse(data);
 
+  if (msg.op === 'clear') {
+    clearCanvasLocal();
+    return;
+  }
   const isPen = msg.t === 'pen';
   const color = msg.c ?? '#000000';
   const width = msg.w ?? (isPen ? 2 : 20);
@@ -341,6 +355,27 @@ function handleRemoteDraw({ data }) {
 }
 
 
+// 로컬 캔버스만 지우는 내부 함수
+function clearCanvasLocal() {
+  if (!ctx || !canvas) return;
+  // 그리는 중이면 끊어주기
+  isDrawing.value = false;
+  // 변환 영향 없이 전체 지우기
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.restore();
+}
+
+// 버튼 클릭 -> 로컬 지우고 브로드캐스트
+const clearCanvas = () => {
+  if (!isAnyScreenSharing.value) return;
+  clearCanvasLocal();
+  session.value?.signal({
+    type: DRAW_SIG,
+    data: JSON.stringify({ op: 'clear' })
+  });
+};
 
 
 async function initCanvas() {
@@ -380,12 +415,11 @@ onMounted(() => {
         .includes('screen');
 
     const targetId = isScreen ? 'client-video' : 'lawyer-video';
-
     const subscriber = session.value.subscribe(event.stream, targetId);
     subscribers.value.push(subscriber);
 
     if (isScreen) {
-      isScreenSharing.value = true;     // 보는 사람 쪽도 레이아웃 전환
+      isAnyScreenSharing.value = true;     // 보는 사람 쪽도 레이아웃 전환
       nextTick(() => initCanvas());     // 캔버스 초기화
     }
   });
@@ -398,7 +432,7 @@ onMounted(() => {
 
     const isScreen = event.stream?.typeOfVideo === 'SCREEN';
     if (isScreen) {
-      isScreenSharing.value = false;
+      isAnyScreenSharing.value = false;
       setTool('pointer')
       const el = document.getElementById('client-video');
       if (el) el.innerHTML = '<canvas id="draw-canvas" class="drawing-canvas"></canvas>';
@@ -458,39 +492,36 @@ onMounted(() => {
 
 const stopScreenShare = ({ silent = false } = {}) => {
   if (!screenPublisher.value) return;
-
   try {
-    // 1. 화면 공유 스트림의 트랙을 직접 중지 (핵심)
     const screenStream = screenPublisher.value.stream?.getMediaStream();
     if (screenStream) {
-      screenStream.getTracks().forEach(track => {
-        track.stop();
-        console.log(`[MeetingRoom] stopScreenShare: Screen sharing track (${track.kind}) stopped.`);
-      });
+      screenStream.getTracks().forEach(track => track.stop());
     }
-
-    // 2. OpenVidu 객체 파괴 및 정리
-    if (screenSession.value) {
-      screenSession.value.disconnect();
-    }
+    if (screenSession.value) screenSession.value.disconnect();
   } catch(e) {
     console.error("Error during screen share stop:", e);
   } finally {
-    screenPublisher.value = null
-    screenSession.value = null
-    screenOV.value = null
-    isScreenSharing.value = false
-    setTool('pointer')
-    if (!silent) console.log('화면공유 종료')
+    screenPublisher.value = null;
+    screenSession.value = null;
+    screenOV.value = null;
+
+    isMyScreenSharing.value  = false;
+    isAnyScreenSharing.value = false;
+    setTool('pointer');
+    if (!silent) console.log('화면공유 종료');
   }
-}
+};
+
 
 
 
 // 화면 공유를 시작하는 함수
 const shareScreen = async () => {
-  console.log('token from query=', token)
-  console.log('appointmentId from query=', appointmentId)
+
+  if (isAnyScreenSharing.value && !isMyScreenSharing.value) {
+    alert('이미 다른 참가자가 화면을 공유 중입니다.');
+    return;
+  }
 
   try {
     // 1) 백엔드에서 화면공유 토큰 받기
@@ -533,7 +564,8 @@ const shareScreen = async () => {
     }
 
     await initCanvas()
-    isScreenSharing.value = true
+    isAnyScreenSharing.value = true;   // 방 전체 ON
+    isMyScreenSharing.value  = true;   // 내 공유 ON
     console.log('화면공유 시작')
 
   } catch (err) {
@@ -551,7 +583,7 @@ const leaveSession = () => {
   console.log('[MeetingRoom] leaveSession: 퇴장 절차를 시작합니다.');
 
   // 1. 화면 공유가 활성 상태이면 먼저 정리
-  if (isScreenSharing.value && screenPublisher.value) {
+  if (isMyScreenSharing.value && screenPublisher.value) {
     stopScreenShare({ silent: true }); // 조용히 종료
   }
 
@@ -603,12 +635,7 @@ onBeforeUnmount(() => {
   font-family: 'Noto Sans KR', sans-serif;
 }
 html, body, .meeting-room { background: #131516; }
-.meeting-room,
-.meeting-room * ,
-.meeting-room *::before,
-.meeting-room *::after {
-  box-sizing: content-box;   /* 이 화면 안에서만 content-box로 복원 */
-}
+
 .meeting-room {
   display: flex;
   /* height: 660px; */
@@ -621,8 +648,13 @@ html, body, .meeting-room { background: #131516; }
   grid-template-rows: 1fr;
   grid-template-areas: "lawyer publisher chat";
   gap: 0.5rem;
-  height: 90vh;
+  height: calc(100vh - 9.5vh);
+  overflow: hidden;
   min-height: 0;
+}
+.video-section > * {
+  min-height: 0;
+  min-width: 0;
 }
 
 #lawyer-video   { grid-area: lawyer; }
@@ -883,14 +915,27 @@ html, body, .meeting-room { background: #131516; }
   display: flex;
   flex-direction: column;
   min-height: 0;
+  overflow: hidden;
   background-color: #131516;
 }
 
 /* 채팅 콘텐츠 (스크롤 가능) */
 .chat-content {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: stretch;
+}
+
+.chat-content > * {
+  display: flex;
   flex: 1 1 auto;
-  min-height: auto;
-  overflow-y: auto;
+  min-height: 0;
+}
+
+.chat-content > * > * {
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 .leave-btn {

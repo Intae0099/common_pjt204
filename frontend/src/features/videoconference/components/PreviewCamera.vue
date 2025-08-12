@@ -164,9 +164,6 @@ button {
 button:hover {
   background-color: rgba(0, 0, 0, 0.8);
 }
-button.off {
-  background-color: #db4437;
-}
 
 .icon {
   width: 24px;
