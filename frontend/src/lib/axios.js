@@ -40,7 +40,8 @@ springApiClient.interceptors.request.use(config => {
 // --- ✨새로 추가할 FastAPI용 인스턴스✨ ---
 const fastapiApiClient = axios.create({
   // baseURL: 'http://localhost:8000', // FastAPI 서버 주소
-  baseURL: 'http://122.38.210.80:8997/api'
+  // baseURL: 'http://122.38.210.80:8997/api'
+  baseURL: '/api-fast' // 배포용 코드
   // FastAPI는 JWT 토큰으로 인증하므로 withCredentials는 보통 false (기본값)
 })
 
