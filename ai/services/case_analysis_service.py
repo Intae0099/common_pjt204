@@ -2,6 +2,7 @@ from langchain.chains import LLMChain
 from langchain.llms.base import LLM
 from typing import List, Dict, Optional
 import json
+import re
 
 from config.tags import SPECIALTY_TAGS
 from config.settings import get_llm_settings
@@ -69,10 +70,14 @@ class CaseAnalysisService(LoggerMixin):
 
             # SPECIALTY_TAGS를 쉼표로 구분된 문자열로 변환
             tag_list_str = ", ".join(SPECIALTY_TAGS)
+            
+            # 관련 법령 정보 추출 (RAG 문서에서 statutes 메타데이터 수집)
+            related_statutes = self._extract_related_statutes(retrieved_docs)
 
             invoked = self.chain.invoke({
                 "user_query": user_query,
                 "case_docs": docs_json,
+                "related_statutes": related_statutes,
                 "tag_list": tag_list_str,
             })
             # RunnableSequence.invoke()는 마지막 LLM의 출력(보통 string 또는 {"text":…} 형태)을 그대로 돌려줍니다.
@@ -89,6 +94,9 @@ class CaseAnalysisService(LoggerMixin):
             # 디버깅: CoT 결과와 태그 확인
             self.logger.debug(f"Raw conclusion text: {conclusion_text}")
             self.logger.debug(f"Parsed case_analysis_result: {vars(case_analysis_result)}")
+
+            # 법령 검증 및 보강 (새로운 기능)
+            self._validate_and_enhance_statutes(case_analysis_result)
 
             # 변호사 추천 (옵션)
             recommended_lawyers = []
@@ -122,6 +130,226 @@ class CaseAnalysisService(LoggerMixin):
             return {
                 "case_analysis": case_analysis_result,
             }
+    
+    def _extract_related_statutes(self, retrieved_docs: List[Dict]) -> str:
+        """RAG에서 검색된 문서들에서 관련 법령 정보를 추출하여 문자열로 반환"""
+        statutes_set = set()
+        
+        for doc in retrieved_docs:
+            # legal_cases 테이블의 statutes 필드에서 추출 (필드가 있는 경우)
+            if 'statutes' in doc and doc['statutes']:
+                # 쉼표, 세미콜론으로 분리된 법령들을 파싱
+                statute_items = re.split(r'[,;]\s*', doc['statutes'].strip())
+                for item in statute_items:
+                    item = item.strip()
+                    if item:
+                        statutes_set.add(item)
+        
+        # 중복 제거된 법령 목록을 문자열로 변환
+        if statutes_set:
+            related_statutes = "관련 법령: " + ", ".join(sorted(statutes_set))
+            self.logger.debug(f"추출된 관련 법령: {related_statutes}")
+            
+            # 토큰 제한 (1000자로 제한)
+            if len(related_statutes) > 1000:
+                # 법령 목록을 줄여서 토큰 제한 준수
+                statute_list = list(sorted(statutes_set))
+                truncated_list = []
+                current_length = len("관련 법령: ")
+                
+                for statute in statute_list:
+                    if current_length + len(statute) + 2 <= 1000:  # ", " 고려
+                        truncated_list.append(statute)
+                        current_length += len(statute) + 2
+                    else:
+                        break
+                
+                related_statutes = "관련 법령: " + ", ".join(truncated_list)
+                self.logger.warning(f"법령 목록이 토큰 제한으로 인해 {len(truncated_list)}개로 축소됨")
+            
+            return related_statutes
+        else:
+            return "관련 법령: 없음"
+    
+    def _validate_and_enhance_statutes(self, case_analysis_result):
+        """법령 검증 및 보강 파이프라인"""
+        try:
+            # 법령 검증 서비스 임포트 (순환 임포트 방지)
+            from services.statute_validation_service import StatuteValidationService
+            from app.api.schemas.statute import StatuteReference
+            
+            # 현재 결과에 statutes 필드가 있는지 확인
+            if not hasattr(case_analysis_result, 'statutes'):
+                # statutes 필드가 없으면 빈 리스트로 초기화
+                case_analysis_result.statutes = []
+                self.logger.warning("Case analysis result에 statutes 필드가 없어 초기화했습니다.")
+                return
+            
+            self.logger.info(f"법령 검증 파이프라인 시작 - 기존 statutes: {case_analysis_result.statutes}")
+            
+            # 기존 statutes 필드 처리
+            if hasattr(case_analysis_result, 'statutes'):
+                original_statutes = case_analysis_result.statutes
+                
+                # statutes가 리스트 형태라면 각 항목을 문자열로 변환하여 검증
+                if isinstance(original_statutes, list) and len(original_statutes) > 0:
+                    self.logger.info(f"LLM이 생성한 법령 리스트 검증: {len(original_statutes)}개")
+                    
+                    # 리스트의 각 항목을 문자열로 변환
+                    statute_strings = []
+                    for i, item in enumerate(original_statutes):
+                        self.logger.info(f"법령 항목 {i}: {item} (타입: {type(item)})")
+                        if isinstance(item, dict) and 'code' in item:
+                            # {"code": "형법", "article": "347조"} 형태
+                            code = item['code']
+                            article = item.get('article', '')
+                            if article:
+                                statute_str = f"{code} {article}"
+                            else:
+                                statute_str = code
+                            statute_strings.append(statute_str)
+                        elif hasattr(item, 'code'):
+                            # StatuteReference 객체 형태
+                            code = item.code
+                            if hasattr(item, 'articles') and item.articles:
+                                # articles가 리스트인 경우 첫 번째 항목 사용
+                                article = item.articles[0] if item.articles else ''
+                                if article:
+                                    statute_str = f"{code} {article}"
+                                else:
+                                    statute_str = code
+                            else:
+                                statute_str = code
+                            statute_strings.append(statute_str)
+                        elif isinstance(item, str):
+                            statute_strings.append(item)
+                    
+                    if statute_strings:
+                        # 중복 제거
+                        unique_statute_strings = list(dict.fromkeys(statute_strings))  # 순서 유지하면서 중복 제거
+                        combined_statutes = ", ".join(unique_statute_strings)
+                        self.logger.info(f"중복 제거 후 법령: {unique_statute_strings}")
+                        self.logger.info(f"법령 검증 시작: {combined_statutes}")
+                        
+                        statute_validation_service = StatuteValidationService()
+                        validation_results = statute_validation_service.validate_statutes(combined_statutes)
+                        
+                        # 검증된 법령을 새로운 형식으로 변환
+                        enhanced_statutes = statute_validation_service.enhance_statutes_response(
+                            validation_results, 
+                            original_statutes
+                        )
+                        
+                        # StatuteReference 객체 리스트로 변환
+                        statute_references = []
+                        
+                        # 검증에 성공한 법령이 없어도 원본 법령명은 유지
+                        if not enhanced_statutes:
+                            self.logger.info("검증에 성공한 법령이 없지만 원본 법령명 유지")
+                            for item in original_statutes:
+                                if hasattr(item, 'code') and item.code:
+                                    statute_ref = StatuteReference(
+                                        code=item.code,
+                                        articles=[],
+                                        description=f"{item.code} (검증 실패하였으나 유지)",
+                                        statute_id=None,
+                                        department=None,
+                                        confidence=0.5  # 낮은 신뢰도로 유지
+                                    )
+                                    statute_references.append(statute_ref)
+                        else:
+                            for enhanced in enhanced_statutes:
+                                statute_ref = StatuteReference(
+                                    code=enhanced.code,
+                                    articles=enhanced.articles,
+                                    description=enhanced.description,
+                                    statute_id=enhanced.statute_id,
+                                    department=enhanced.department,
+                                    confidence=enhanced.confidence
+                                )
+                                statute_references.append(statute_ref)
+                        
+                        # 결과 업데이트
+                        case_analysis_result.statutes = statute_references
+                        self.logger.info(f"최종 법령 결과 설정: {len(statute_references)}개 - {[s.code for s in statute_references]}")
+                        
+                        # 통계 로깅
+                        validation_stats = {
+                            "total": len(validation_results),
+                            "matched": len([r for r in validation_results if r.validation_result == "matched"]),
+                            "corrected": len([r for r in validation_results if r.validation_result == "corrected"]),
+                            "removed": len([r for r in validation_results if r.validation_result == "removed"]),
+                            "suggested": len([r for r in validation_results if r.validation_result == "suggested"])
+                        }
+                        
+                        self.logger.info(f"법령 검증 완료: {validation_stats}")
+                        return
+                    else:
+                        # 빈 리스트로 설정
+                        case_analysis_result.statutes = []
+                        return
+                
+                # 빈 리스트라면 그대로 유지
+                elif isinstance(original_statutes, list):
+                    self.logger.info(f"빈 statutes 리스트 유지: {original_statutes}")
+                    return
+                
+                # 문자열이라면 검증 진행
+                elif isinstance(original_statutes, str) and original_statutes.strip():
+                    statute_validation_service = StatuteValidationService()
+                    
+                    self.logger.info(f"법령 검증 시작: {original_statutes}")
+                    
+                    # 법령 검증 실행
+                    validation_results = statute_validation_service.validate_statutes(original_statutes)
+                    
+                    # 검증된 법령을 새로운 형식으로 변환
+                    enhanced_statutes = statute_validation_service.enhance_statutes_response(
+                        validation_results, 
+                        []  # 원본 statutes 정보가 문자열이므로 빈 리스트 전달
+                    )
+                    
+                    # StatuteReference 객체 리스트로 변환
+                    statute_references = []
+                    for enhanced in enhanced_statutes:
+                        statute_ref = StatuteReference(
+                            code=enhanced.code,
+                            articles=enhanced.articles,
+                            description=enhanced.description,
+                            statute_id=enhanced.statute_id,
+                            department=enhanced.department,
+                            confidence=enhanced.confidence
+                        )
+                        statute_references.append(statute_ref)
+                    
+                    # 결과 업데이트
+                    case_analysis_result.statutes = statute_references
+                    
+                    # 통계 로깅
+                    validation_stats = {
+                        "total": len(validation_results),
+                        "matched": len([r for r in validation_results if r.validation_result == "matched"]),
+                        "corrected": len([r for r in validation_results if r.validation_result == "corrected"]),
+                        "removed": len([r for r in validation_results if r.validation_result == "removed"]),
+                        "suggested": len([r for r in validation_results if r.validation_result == "suggested"])
+                    }
+                    
+                    self.logger.info(f"법령 검증 완료: {validation_stats}")
+                    
+                else:
+                    # 빈 문자열이거나 None인 경우 빈 리스트로 설정
+                    case_analysis_result.statutes = []
+                    self.logger.info(f"원본 statutes가 비어있어 빈 리스트로 설정: {original_statutes}")
+            
+        except Exception as e:
+            self.logger.error(f"법령 검증 및 보강 중 오류 발생: {e}")
+            # 오류 발생 시 빈 리스트로 fallback
+            if not hasattr(case_analysis_result, 'statutes'):
+                case_analysis_result.statutes = []
+        
+        # 메서드 종료 시 최종 상태 로깅
+        final_statutes_count = len(case_analysis_result.statutes) if hasattr(case_analysis_result, 'statutes') else 0
+        self.logger.info(f"법령 검증 파이프라인 완료 - 최종 statutes 개수: {final_statutes_count}")
     
 
 # 사용 예시 (기존 analyze_case 함수와 호환성을 위해)
