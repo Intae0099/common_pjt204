@@ -139,7 +139,7 @@ public class SecurityConfig {
       ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", refreshToken)
           .httpOnly(true)
           .secure(true)
-          .sameSite("Strict")
+          .sameSite("None")
           .path("/")
           .maxAge(Duration.ofDays(7))
           .build();
@@ -276,7 +276,7 @@ public class SecurityConfig {
           ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", refreshToken)
               .httpOnly(true)
               .secure(true)
-              .sameSite("Strict")
+              .sameSite("None")
               .path("/")
               .maxAge(Duration.ofDays(7))
               .build();
