@@ -1,7 +1,7 @@
 {
   "evaluation_summary": {
-    "total_cases": 2,
-    "timestamp": "2025-08-13T16:59:04.752023",
+    "total_cases": 3,
+    "timestamp": "2025-08-13T17:20:30.001664",
     "config": {
       "k_values": [
         1,
@@ -23,14 +23,14 @@
   },
   "analysis_metrics": {
     "citation_accuracy": 0.0,
-    "sentence_prediction_accuracy": 0.5,
-    "tag_f1": 0.65,
-    "statute_relevance": 0.5
+    "sentence_prediction_accuracy": 1.0,
+    "tag_f1": 0.7000000000000001,
+    "statute_relevance": 0.6666666666666666
   },
   "overall_metrics": {
     "end_to_end_accuracy": 0.0,
-    "average_latency_ms": 14764.078140258789,
-    "total_runtime_s": 29.539063930511475,
+    "average_latency_ms": 14463.639656702677,
+    "total_runtime_s": 43.424416065216064,
     "success_rate": 1.0
   },
   "case_results": [
@@ -40,7 +40,7 @@
       "analysis_success": true,
       "citation_found": false,
       "sentence_match": true,
-      "latency_ms": 14564.048290252686,
+      "latency_ms": 14946.776628494263,
       "search_results_count": 3
     },
     {
@@ -49,7 +49,16 @@
       "analysis_success": true,
       "citation_found": false,
       "sentence_match": false,
-      "latency_ms": 14964.107990264893,
+      "latency_ms": 13577.650785446167,
+      "search_results_count": 3
+    },
+    {
+      "case_id": "eval_0003",
+      "search_success": true,
+      "analysis_success": true,
+      "citation_found": false,
+      "sentence_match": true,
+      "latency_ms": 14866.491556167603,
       "search_results_count": 3
     }
   ],

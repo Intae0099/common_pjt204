@@ -141,35 +141,126 @@ class MetricsCalculator:
         return list(set(citations))  # 중복 제거
     
     def _calculate_sentence_accuracy(self, gold_sentence: str, pred_sentence: str) -> float:
-        """판결 문장 정확도 계산"""
+        """의미적 유사성을 고려한 판결 문장 정확도 계산"""
         if not gold_sentence.strip():
             return 1.0
         
         gold_clean = gold_sentence.lower().strip()
         pred_clean = pred_sentence.lower().strip()
         
-        # 완전 일치 검사
+        # 1. 완전 일치 검사
         if gold_clean == pred_clean:
             return 1.0
         
-        # 부분 일치 검사 (금본이 예측에 포함되어 있는지)
-        if gold_clean in pred_clean:
+        # 2. 정규화된 비교 (순서 무관)
+        normalized_score = self._calculate_normalized_similarity(gold_clean, pred_clean)
+        if normalized_score >= 0.9:  # 90% 이상 유사하면 정답으로 인정
             return 1.0
         
-        # 키워드 기반 유사도 (선택적)
-        return self._calculate_keyword_similarity(gold_clean, pred_clean)
+        # 3. 법률 용어 의미적 유사성 검사
+        semantic_score = self._calculate_legal_semantic_similarity(gold_clean, pred_clean)
+        if semantic_score >= 0.8:  # 80% 이상 유사하면 정답으로 인정
+            return 1.0
+        
+        # 4. 부분 점수 반환 (더 높은 점수 채택)
+        return max(normalized_score, semantic_score)
     
-    def _calculate_keyword_similarity(self, gold: str, pred: str) -> float:
-        """키워드 기반 유사도 계산"""
-        # 간단한 키워드 매칭
-        gold_keywords = set(gold.split())
-        pred_keywords = set(pred.split())
+    def _calculate_normalized_similarity(self, gold: str, pred: str) -> float:
+        """정규화된 문자열 유사도 계산 (순서, 형태 변화 고려)"""
+        import re
         
-        if not gold_keywords:
+        # 숫자와 단위 정규화 ("2년" vs "2 년" vs "이년")
+        def normalize_text(text):
+            # 공백 정규화
+            text = re.sub(r'\s+', '', text)
+            # 숫자 한글 변환 (간단한 경우만)
+            text = text.replace('일', '1').replace('이', '2').replace('삼', '3')
+            text = text.replace('사', '4').replace('오', '5').replace('육', '6')
+            return text
+        
+        gold_norm = normalize_text(gold)
+        pred_norm = normalize_text(pred)
+        
+        # 정규화 후 완전 일치
+        if gold_norm == pred_norm:
             return 1.0
         
-        intersection = gold_keywords & pred_keywords
-        return len(intersection) / len(gold_keywords)
+        # 정규화 후 포함 관계
+        if gold_norm in pred_norm or pred_norm in gold_norm:
+            return 0.9
+        
+        # 편집 거리 기반 유사도
+        return self._calculate_edit_distance_similarity(gold_norm, pred_norm)
+    
+    def _calculate_legal_semantic_similarity(self, gold: str, pred: str) -> float:
+        """법률 용어 의미적 유사성 계산"""
+        # 법률 용어 동의어/유사어 매핑
+        legal_synonyms = {
+            '무죄': ['무죄', '무죄추정', '무죄판결', '면죄', '불기소'],
+            '유죄': ['유죄', '유죄판결', '기소', '처벌'],
+            '징역': ['징역', '금고', '실형', '형량', '선고'],
+            '집행유예': ['집행유예', '유예', '선고유예', '집유'],
+            '벌금': ['벌금', '과료', '금전적처벌', '범칙금'],
+            '기각': ['기각', '각하', '패소', '인용불가'],
+            '인용': ['인용', '승소', '받아들임', '채택'],
+            '무효': ['무효', '취소', '파기', '폐지']
+        }
+        
+        # 정답과 예측에서 법률 용어 추출
+        gold_terms = self._extract_legal_terms(gold, legal_synonyms)
+        pred_terms = self._extract_legal_terms(pred, legal_synonyms)
+        
+        if not gold_terms:
+            return 0.0
+        
+        # 동일한 의미 그룹에 속하는 용어들의 매칭 비율
+        matched_groups = 0
+        for gold_group in gold_terms:
+            if any(pred_group == gold_group for pred_group in pred_terms):
+                matched_groups += 1
+        
+        return matched_groups / len(gold_terms)
+    
+    def _extract_legal_terms(self, text: str, synonym_dict: dict) -> list:
+        """텍스트에서 법률 용어 그룹 추출"""
+        found_groups = []
+        for group_key, synonyms in synonym_dict.items():
+            for synonym in synonyms:
+                if synonym in text:
+                    found_groups.append(group_key)
+                    break  # 같은 그룹에서 여러 용어가 발견되어도 한 번만 카운트
+        return found_groups
+    
+    def _calculate_edit_distance_similarity(self, str1: str, str2: str) -> float:
+        """편집 거리 기반 유사도 계산"""
+        def levenshtein_distance(s1, s2):
+            if len(s1) < len(s2):
+                return levenshtein_distance(s2, s1)
+            
+            if len(s2) == 0:
+                return len(s1)
+            
+            previous_row = list(range(len(s2) + 1))
+            for i, c1 in enumerate(s1):
+                current_row = [i + 1]
+                for j, c2 in enumerate(s2):
+                    insertions = previous_row[j + 1] + 1
+                    deletions = current_row[j] + 1
+                    substitutions = previous_row[j] + (c1 != c2)
+                    current_row.append(min(insertions, deletions, substitutions))
+                previous_row = current_row
+            
+            return previous_row[-1]
+        
+        if not str1 or not str2:
+            return 0.0
+        
+        max_len = max(len(str1), len(str2))
+        if max_len == 0:
+            return 1.0
+        
+        distance = levenshtein_distance(str1, str2)
+        return (max_len - distance) / max_len
     
     def _calculate_tag_f1(self, gold_tags: List[str], pred_tags: List[str]) -> float:
         """태그 F1 점수 계산"""
