@@ -145,14 +145,28 @@ public class SecurityConfig {
           .build();
       res.setHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
 
-      // BE 개발 편의를 위해 8080으로 변경 (-> front 서버 결합 시 5173으로 변경 필요)
-      String frontBase = resolveFrontRedirectBase(req);
+      /*
+      redirectUrl를 도메인 프론트로 설정
+       */
+/*      String frontBase = resolveFrontRedirectBase(req);
 
       String redirectUrl = UriComponentsBuilder
-          .fromUriString(frontBase)
-          .path("/oauth2/callback/").path(regId)   // .../oauth2/callback/kakao
+          .fromUriString(frontBase + "/oauth2/callback/kakao")
           .queryParam("accessToken", accessToken)
           .build().toUriString();
+
+      System.out.println("frontBase={" +  frontBase + "} redirectUrl={"  +  redirectUrl + "}");
+*/
+
+
+      /*
+       redirectUrl을 로컬 프론트로 설정
+       */
+      String redirectUrl = UriComponentsBuilder
+          .fromUriString("http://localhost:5173/oauth2/callback/kakao")
+          .queryParam("accessToken", accessToken)
+          .build().toUriString();
+
 
       res.sendRedirect(redirectUrl);
     }
@@ -172,8 +186,7 @@ public class SecurityConfig {
 
       if (fHost != null && allowHosts.contains(fHost)) {
         String proto = (fProto != null) ? fProto : "https";
-        String prefix = (fPrefix != null) ? fPrefix : "/api"; // 운영은 /api 유지
-        return proto + "://" + fHost + (prefix.startsWith("/") ? prefix : ("/" + prefix));
+        return proto + "://" + fHost;
       }
 
       // 2) 로컬/그 외 폴백
@@ -193,6 +206,7 @@ public class SecurityConfig {
       String v = req.getHeader(name);
       return (v == null || v.isBlank()) ? null : v;
     }
+
   }
 
   @Bean("lawyerAuthenticationManager")
@@ -236,11 +250,16 @@ public class SecurityConfig {
   ) throws Exception {
 
     // 의뢰인 OAuth2 로그인 실패 핸들러
-    AuthenticationFailureHandler oauth2FailureHandler = (
-        req,
-        res,
-        ex) ->
-        res.sendError(HttpServletResponse.SC_UNAUTHORIZED, "OAuth2 Login Failed");
+    AuthenticationFailureHandler oauth2FailureHandler = ( req, res, ex) ->{
+      String msg = ex.getMessage();
+      if (msg != null && msg.contains("rate limit")) {
+        res.setStatus(429);
+        res.setContentType("application/json;charset=UTF-8");
+        res.getWriter().write("{\"error\":\"kakao_rate_limit\",\"message\":\"잠시 후 다시 시도해주세요.\"}");
+        return;
+      }
+      res.sendError(HttpServletResponse.SC_UNAUTHORIZED, "OAuth2 Login Failed");
+    };
 
     // 변호사 로컬 로그인 성공 핸들러 → JWT 발급
     AuthenticationSuccessHandler lawyerLoginSuccessHandler =

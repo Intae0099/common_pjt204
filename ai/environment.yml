@@ -1,0 +1,9 @@
+name: legal-ai-platform
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.11
+  - pip
+  # Install pip packages using:
+  # pip install -r requirements.txt

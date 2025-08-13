@@ -1,9 +1,8 @@
 // src/stores/cases.js
 
 import { defineStore } from 'pinia';
-import axios from 'axios';
+import { fastapiApiClient } from '@/lib/axios'
 
-const API_URL = 'http://122.38.210.80:8997/api';
 
 export const useCasesStore = defineStore('cases', {
   /**
@@ -69,11 +68,11 @@ export const useCasesStore = defineStore('cases', {
       this.searchPerformed = true;
 
       try {
-        const response = await axios.get(`${API_URL}/search/cases`, {
+        const response = await fastapiApiClient.get(`/search/cases`, {
           params: {
             keyword: this.query,
             page: 1,
-            size: 20, // ✨ API 요청 시 20개 데이터를 받아옵니다.
+            size: 20,
           },
         });
 
