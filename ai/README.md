@@ -23,7 +23,7 @@ ALaw 플랫폼은 법률 상담의 진입장벽을 낮추기 위해 기획되었
 
 ## 3. 기술 스택 (Tech Stack)
 
-- **Language**: Python 3.10+
+- **Language**: Python 3.10+ 
 - **Framework**: FastAPI, Pydantic
 - **AI & LLM**: LangChain, OpenAI GPT-4o, Sentence-Transformers
 - **API & Database**: SQLAlchemy, PostgreSQL, pgvector (벡터 검색)
