@@ -65,11 +65,13 @@ public class TagService {
             .lawyerId(m.lawyer.getId())
             .name(m.lawyer.getName())
             .introduction(m.lawyer.getIntroduction())
+            .exam(m.lawyer.getExam())
             .tags(
                 m.lawyer.getTags().stream()
                     .map(lt -> lt.getTag().getId())
                     .toList()
             )
+            .consultationCnt(m.lawyer.getConsultationCount())
             .build()
         )
         .toList();

@@ -15,5 +15,7 @@ public class RecommendedLawyerDto {
   private Long lawyerId;
   private String name;
   private String introduction;
+  private String exam;
   private List<Long> tags;
+  private int consultationCnt;
 }
