@@ -22,14 +22,13 @@ langsmith==0.4.8
 openai==1.97.1
 
 # Vector search and embeddings
-faiss-cpu==1.7.4
 sentence-transformers==5.0.0
 
-# ML libraries
-torch==2.7.1
+# ML libraries - PyTorch는 베이스 이미지에서 CUDA 지원으로 이미 설치됨
+# torch==2.7.0+cu128 (베이스 이미지에 포함)
 transformers==4.53.3
 tokenizers==0.21.2
-onnxruntime==1.22.1
+onnxruntime-gpu==1.22.0
 numpy==1.26.4
 scikit-learn==1.7.1
 

@@ -9,7 +9,18 @@ services:
     restart: always
     ports:
       - "8997:8000"
+    # GPU 지원 설정
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
     # 환경변수는 컨테이너 내부의 config/.env에서 로드됨
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
     volumes:
       - ../data:/app/data
       - ../logs:/app/logs

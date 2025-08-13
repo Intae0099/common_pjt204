@@ -1,5 +1,5 @@
-# Python 3.11 base image
-FROM python:3.11-slim
+# CUDA 12.8 지원 PyTorch 공식 베이스 이미지 사용
+FROM pytorch/pytorch:2.7.0-cuda12.8-cudnn9-devel
 
 # 작업 디렉토리 설정
 WORKDIR /app
@@ -10,18 +10,27 @@ RUN apt-get update && apt-get install -y \
     curl \
     git \
     libgomp1 \
+    ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
 # 기본 패키지 먼저 설치
 RUN pip install --no-cache-dir --upgrade pip
 
-# PyTorch 먼저 설치 (CPU 버전)  
-RUN pip install --no-cache-dir torch==2.7.1 --index-url https://download.pytorch.org/whl/cpu
+# CUDA 환경 변수 설정
+ENV NVIDIA_VISIBLE_DEVICES=all
+ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility
+ENV CUDA_DEVICE_ORDER=PCI_BUS_ID
+
+# PyTorch CUDA 지원 확인 (이미 설치되어 있지만 확인)
+RUN python -c "import torch; print(f'PyTorch version: {torch.__version__}'); print(f'CUDA available: {torch.cuda.is_available()}'); print(f'CUDA version: {torch.version.cuda}'); print(f'cuDNN version: {torch.backends.cudnn.version()}')"
 
 # 로컬 파일 복사 (GitLab Runner에서 이미 최신 코드 보유)
 COPY config/.env config/.env
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
+
+# GPU 메모리 체크를 위한 추가 검증
+RUN python -c "import torch; print(f'GPU device count: {torch.cuda.device_count()}'); [print(f'GPU {i}: {torch.cuda.get_device_name(i)}') for i in range(torch.cuda.device_count())] if torch.cuda.is_available() else print('No GPU detected')"
 
 # 애플리케이션 코드 복사
 COPY . /app/
