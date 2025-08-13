@@ -13,7 +13,7 @@ cd evaluation
 python evaluate_rag.py --config config.yaml
 
 # 3. 결과 확인  
-cat reports/latest_summary.md
+cat reports/latest-evaluation_summary.md
 ```
 
 ## 📊 현재 시스템 상태
@@ -71,9 +71,9 @@ evaluation:
 ## 📈 출력 결과
 
 평가 완료 후 다음 파일 생성:
-- `latest_summary.md`: 요약 리포트 (마크다운)
-- `latest_metrics.json`: 상세 메트릭 (JSON)
-- `metrics_YYYYMMDD_HHMMSS.*`: 타임스탬프별 보관
+- `latest-evaluation_summary.md`: 최신 요약 리포트 (마크다운)
+- `latest-evaluation_metrics.json`: 최신 상세 메트릭 (JSON)
+- `YYYY-MM-DD/rag-eval_20cases_k1-5-10_YYYY-MM-DD_HH-MM_*`: 날짜별 보관
 
 ## 🧪 테스트
 
