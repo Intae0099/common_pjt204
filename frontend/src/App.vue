@@ -2,7 +2,7 @@
   <component :is="layoutComponent" :key="$route.name">
     <RouterView :key="$route.fullPath" />
   </component>
-  <BaseFooter />
+  <BaseFooter v-if="!hideFooter"/>
 </template>
 
 
@@ -18,6 +18,9 @@ const noLayoutNames = ['Main','CasesSearch', 'CaseDetail','ConsultForm','Meeting
 const layoutComponent = computed(() => {
   return noLayoutNames.includes(route.name) ? 'div' : LayoutDefault
 })
+
+// 푸터 숨김 여부
+const hideFooter = computed(() => route.matched.some(r => r.meta?.hideFooter))
 </script>
 
 <style scoped>
