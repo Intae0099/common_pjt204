@@ -1,11 +1,13 @@
 # RAG 평가 설정
 api:
-  base_url: "http://122.38.210.80:8997/"
+  base_url: "http://122.38.210.80:8998/"
   timeout_seconds: 30
   
 evaluation:
-  k_values: [1, 5, 10]
+  k_values: [1, 3, 10]
   enable_analysis: true
+  enable_search: true
+  search_top_k: 10
   enable_charts: false
   
 data:

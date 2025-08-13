@@ -147,15 +147,20 @@ class ReportGenerator:
         if search_metrics:
             md_content.append("### 🔍 검색 성능\n")
             
-            recall_1 = search_metrics.get('recall@1', 0) * 100
-            recall_5 = search_metrics.get('recall@5', 0) * 100
-            recall_10 = search_metrics.get('recall@10', 0) * 100
+            # config에서 k_values 가져오기
+            k_values = config.get('evaluation', {}).get('k_values', [1, 3, 10])
+            
+            # 동적으로 recall 메트릭 생성
+            md_content.append("#### Recall 메트릭\n")
+            for k in k_values:
+                recall_k = search_metrics.get(f'recall@{k}', 0) * 100
+                md_content.append(f"- **Recall@{k}**: {recall_k:.1f}% (상위 {k}개 내 정답 포함률)\n")
+            
+            # Precision@1과 MRR
             precision_1 = search_metrics.get('precision@1', 0) * 100
             mrr = search_metrics.get('mrr', 0)
             
-            md_content.append(f"- **Recall@1**: {recall_1:.1f}% (첫 번째 결과에 정답 포함률)\n")
-            md_content.append(f"- **Recall@5**: {recall_5:.1f}% (상위 5개 내 정답 포함률)\n")
-            md_content.append(f"- **Recall@10**: {recall_10:.1f}% (상위 10개 내 정답 포함률)\n")
+            md_content.append(f"\n#### 기타 메트릭\n")
             md_content.append(f"- **Precision@1**: {precision_1:.1f}% (첫 번째 결과의 정확도)\n")
             
             # MRR이 0인 경우 처리

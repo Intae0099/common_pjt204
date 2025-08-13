@@ -1,11 +1,11 @@
 {
   "evaluation_summary": {
     "total_cases": 20,
-    "timestamp": "2025-08-13T23:35:10.305639",
+    "timestamp": "2025-08-13T22:50:22.409866",
     "config": {
       "k_values": [
         1,
-        3,
+        5,
         10
       ],
       "api_endpoint": "http://122.38.210.80:8998/",
@@ -13,24 +13,24 @@
     }
   },
   "search_metrics": {
-    "recall@1": 0.0,
-    "precision@1": 0.0,
-    "recall@3": 0.1,
-    "precision@3": 0.03333333333333333,
+    "recall@1": 0.05,
+    "precision@1": 0.05,
+    "recall@5": 0.25,
+    "precision@5": 0.05,
     "recall@10": 0.3,
     "precision@10": 0.03,
-    "mrr": 0.07172619047619047
+    "mrr": 0.11624999999999999
   },
   "analysis_metrics": {
     "citation_accuracy": 0.25,
-    "sentence_prediction_accuracy": 0.3201461988304093,
+    "sentence_prediction_accuracy": 0.3634005426362986,
     "tag_f1": 0.485,
-    "statute_relevance": 0.3449999999999999
+    "statute_relevance": 0.30999999999999994
   },
   "overall_metrics": {
     "end_to_end_accuracy": 0.2,
-    "average_latency_ms": 17277.913451194763,
-    "total_runtime_s": 345.5907189846039,
+    "average_latency_ms": 18099.957597255707,
+    "total_runtime_s": 375.0312285423279,
     "success_rate": 1.0
   },
   "case_results": [
@@ -39,8 +39,8 @@
       "search_success": true,
       "analysis_success": true,
       "citation_found": false,
-      "sentence_match": false,
-      "latency_ms": 17307.78694152832,
+      "sentence_match": true,
+      "latency_ms": 14853.076696395874,
       "search_results_count": 10
     },
     {
@@ -48,8 +48,8 @@
       "search_success": true,
       "analysis_success": true,
       "citation_found": false,
-      "sentence_match": false,
-      "latency_ms": 16717.5612449646,
+      "sentence_match": true,
+      "latency_ms": 15154.260635375977,
       "search_results_count": 10
     },
     {
@@ -58,7 +58,7 @@
       "analysis_success": true,
       "citation_found": false,
       "sentence_match": false,
-      "latency_ms": 15964.034795761108,
+      "latency_ms": 16385.870218276978,
       "search_results_count": 10
     },
     {
@@ -67,7 +67,7 @@
       "analysis_success": true,
       "citation_found": true,
       "sentence_match": false,
-      "latency_ms": 19640.38920402527,
+      "latency_ms": 18688.167095184326,
       "search_results_count": 10
     },
     {
@@ -76,7 +76,7 @@
       "analysis_success": true,
       "citation_found": true,
       "sentence_match": true,
-      "latency_ms": 19552.90651321411,
+      "latency_ms": 18009.615421295166,
       "search_results_count": 10
     },
     {
@@ -85,7 +85,7 @@
       "analysis_success": true,
       "citation_found": false,
       "sentence_match": false,
-      "latency_ms": 18000.378608703613,
+      "latency_ms": 16545.336484909058,
       "search_results_count": 10
     },
     {
@@ -94,7 +94,7 @@
       "analysis_success": true,
       "citation_found": false,
       "sentence_match": false,
-      "latency_ms": 17364.389419555664,
+      "latency_ms": 21056.926012039185,
       "search_results_count": 10
     },
     {
@@ -103,7 +103,7 @@
       "analysis_success": true,
       "citation_found": true,
       "sentence_match": false,
-      "latency_ms": 13363.220691680908,
+      "latency_ms": 16963.543176651,
       "search_results_count": 10
     },
     {
@@ -112,7 +112,7 @@
       "analysis_success": true,
       "citation_found": false,
       "sentence_match": false,
-      "latency_ms": 10741.978883743286,
+      "latency_ms": 14570.663690567017,
       "search_results_count": 10
     },
     {
@@ -121,7 +121,7 @@
       "analysis_success": true,
       "citation_found": false,
       "sentence_match": false,
-      "latency_ms": 16552.56175994873,
+      "latency_ms": 16149.05309677124,
       "search_results_count": 10
     },
     {
@@ -130,7 +130,7 @@
       "analysis_success": true,
       "citation_found": false,
       "sentence_match": false,
-      "latency_ms": 19235.34345626831,
+      "latency_ms": 21572.935104370117,
       "search_results_count": 10
     },
     {
@@ -139,7 +139,7 @@
       "analysis_success": true,
       "citation_found": false,
       "sentence_match": false,
-      "latency_ms": 17192.843198776245,
+      "latency_ms": 19738.93451690674,
       "search_results_count": 10
     },
     {
@@ -148,7 +148,7 @@
       "analysis_success": true,
       "citation_found": false,
       "sentence_match": false,
-      "latency_ms": 20777.679443359375,
+      "latency_ms": 18550.393104553223,
       "search_results_count": 10
     },
     {
@@ -157,7 +157,7 @@
       "analysis_success": true,
       "citation_found": false,
       "sentence_match": false,
-      "latency_ms": 15451.269149780273,
+      "latency_ms": 16866.968631744385,
       "search_results_count": 10
     },
     {
@@ -166,7 +166,7 @@
       "analysis_success": true,
       "citation_found": false,
       "sentence_match": false,
-      "latency_ms": 21287.108421325684,
+      "latency_ms": 19186.12265586853,
       "search_results_count": 10
     },
     {
@@ -175,7 +175,7 @@
       "analysis_success": true,
       "citation_found": false,
       "sentence_match": false,
-      "latency_ms": 21093.099355697632,
+      "latency_ms": 19473.488092422485,
       "search_results_count": 10
     },
     {
@@ -184,7 +184,7 @@
       "analysis_success": true,
       "citation_found": true,
       "sentence_match": false,
-      "latency_ms": 16053.861141204834,
+      "latency_ms": 19949.734449386597,
       "search_results_count": 10
     },
     {
@@ -193,7 +193,7 @@
       "analysis_success": true,
       "citation_found": false,
       "sentence_match": false,
-      "latency_ms": 16798.19965362549,
+      "latency_ms": 17893.32914352417,
       "search_results_count": 10
     },
     {
@@ -202,7 +202,7 @@
       "analysis_success": true,
       "citation_found": false,
       "sentence_match": false,
-      "latency_ms": 14825.25086402893,
+      "latency_ms": 18645.349979400635,
       "search_results_count": 10
     },
     {
@@ -211,7 +211,7 @@
       "analysis_success": true,
       "citation_found": false,
       "sentence_match": false,
-      "latency_ms": 17638.40627670288,
+      "latency_ms": 21745.383739471436,
       "search_results_count": 10
     }
   ],

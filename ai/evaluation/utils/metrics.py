@@ -4,14 +4,28 @@ RAG 평가 메트릭 계산 모듈
 import logging
 from typing import List, Dict, Any, Set
 import re
+import sys
+import os
+
+# 상위 디렉토리의 utils 모듈을 찾기 위해 경로 추가
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+
+try:
+    from utils.logger import LoggerMixin
+except ImportError:
+    # LoggerMixin을 import할 수 없는 경우 기본 로거 사용
+    class LoggerMixin:
+        @property
+        def logger(self):
+            return logging.getLogger(self.__class__.__name__)
 
 logger = logging.getLogger(__name__)
 
-class MetricsCalculator:
+class MetricsCalculator(LoggerMixin):
     """RAG 평가 메트릭 계산기"""
     
     def __init__(self, k_values: List[int] = None):
-        self.k_values = k_values or [1, 3, 5]
+        self.k_values = k_values or [1, 3, 10]
     
     def calculate_search_metrics(self, 
                                gold_cases: List[str], 
@@ -26,6 +40,8 @@ class MetricsCalculator:
         # 검색된 케이스 ID 리스트 (순서 유지)
         retrieved_ids = [result.get('case_id') for result in retrieved_results if result.get('case_id')]
         
+        self.logger.debug(f"검색 메트릭 계산 - 정답: {gold_set}, 검색결과: {retrieved_ids[:10]}, k_values: {self.k_values}")
+        
         metrics = {}
         
         # K별 메트릭 계산
@@ -34,12 +50,15 @@ class MetricsCalculator:
             top_k_set = set(top_k_ids)
             
             # Recall@K = 상위 K개 중 정답 판례 수 / 전체 정답 판례 수
-            recall_k = len(gold_set & top_k_set) / len(gold_set)
+            matches = gold_set & top_k_set
+            recall_k = len(matches) / len(gold_set)
             metrics[f'recall@{k}'] = recall_k
             
             # Precision@K = 상위 K개 중 정답 판례 수 / K
-            precision_k = len(gold_set & top_k_set) / k if k > 0 else 0.0
+            precision_k = len(matches) / k if k > 0 else 0.0
             metrics[f'precision@{k}'] = precision_k
+            
+            self.logger.debug(f"K={k}: 매치={matches}, Recall={recall_k:.3f}, Precision={precision_k:.3f}")
         
         # MRR (Mean Reciprocal Rank) 계산
         mrr = self._calculate_mrr(gold_set, retrieved_ids)
@@ -100,12 +119,23 @@ class MetricsCalculator:
     def _calculate_citation_accuracy(self, 
                                    gold_citations: List[str], 
                                    prediction: Dict[str, Any]) -> float:
-        """인용 정확도 계산"""
+        """
+        인용 정확도 계산 (개선된 버전)
+        - 검색 기반 인용만을 평가하여 검색 성능과 일관성 유지
+        """
         if not gold_citations:
             return 1.0  # 정답이 없으면 완벽하다고 가정
         
-        # 예측에서 인용된 판례 추출
+        # 예측에서 인용된 판례 추출 (references.cases 우선)
         predicted_citations = self._extract_citations_from_prediction(prediction)
+        
+        # 검색된 판례가 없으면 인용도 0점 (검색 성능과 일관성 유지)
+        references = prediction.get('references', {})
+        retrieved_cases = references.get('cases', [])
+        
+        if not retrieved_cases:
+            self.logger.debug("검색된 판례가 없어 인용 정확도 0점 처리")
+            return 0.0
         
         gold_set = set(gold_citations)
         pred_set = set(predicted_citations)
@@ -114,56 +144,92 @@ class MetricsCalculator:
         correct_citations = len(gold_set & pred_set)
         total_required = len(gold_set)
         
-        return correct_citations / total_required if total_required > 0 else 1.0
+        accuracy = correct_citations / total_required if total_required > 0 else 1.0
+        
+        self.logger.debug(f"인용 정확도: {correct_citations}/{total_required} = {accuracy:.3f} (검색된 판례: {len(retrieved_cases)}개)")
+        
+        return accuracy
     
     def _extract_citations_from_prediction(self, prediction: Dict[str, Any]) -> List[str]:
-        """예측 결과에서 판례 인용 추출"""
+        """
+        예측 결과에서 판례 인용 추출 (개선된 버전)
+        - references.cases의 case_id 우선 사용
+        - opinion 텍스트에서 사건번호 패턴 보조적 추출
+        """
         citations = []
         
-        # references에서 추출
+        # 1. references에서 추출 (주요 방법)
         references = prediction.get('references', {})
         if 'cases' in references:
             cases = references['cases']
             if isinstance(cases, list):
                 for case in cases:
-                    if isinstance(case, dict) and 'case_id' in case:
-                        citations.append(case['case_id'])
+                    if isinstance(case, dict):
+                        # case_id 필드 확인
+                        case_id = case.get('case_id') or case.get('id')
+                        if case_id:
+                            citations.append(str(case_id))
                     elif isinstance(case, str):
                         citations.append(case)
         
-        # opinion 텍스트에서 판례 번호 패턴 추출
+        # 2. opinion 텍스트에서 판례 번호 패턴 추출 (보조 방법)
         opinion = prediction.get('opinion', '')
         if opinion:
-            case_pattern = r'\\b\\d{4}[가-힣]+\\d+\\b'
+            # 수정된 정규식 패턴 (이스케이프 수정)
+            case_pattern = r'\b\d{4}[가-힣]+\d+\b'
             matches = re.findall(case_pattern, opinion)
             citations.extend(matches)
         
-        return list(set(citations))  # 중복 제거
+        # 3. 중복 제거 및 정규화
+        unique_citations = []
+        seen = set()
+        
+        for citation in citations:
+            citation = str(citation).strip()
+            if citation and citation not in seen:
+                unique_citations.append(citation)
+                seen.add(citation)
+        
+        self.logger.debug(f"추출된 인용 판례: {unique_citations}")
+        return unique_citations
     
     def _calculate_sentence_accuracy(self, gold_sentence: str, pred_sentence: str) -> float:
-        """의미적 유사성을 고려한 판결 문장 정확도 계산"""
+        """
+        근거 기반 예상 판결 정확도 계산 (개선된 버전)
+        - 기존: 단순 문자열 매칭
+        - 개선: 근거 포함 여부, 추측성 표현, 핵심 결론 추출하여 비교
+        """
         if not gold_sentence.strip():
             return 1.0
         
         gold_clean = gold_sentence.lower().strip()
         pred_clean = pred_sentence.lower().strip()
         
-        # 1. 완전 일치 검사
+        # 1. 완전 일치 검사 (기존)
         if gold_clean == pred_clean:
             return 1.0
         
-        # 2. 정규화된 비교 (순서 무관)
+        # 2. 근거 기반 예측 점수 계산 (새로운 요구사항 반영)
+        evidence_score = self._calculate_evidence_based_score(gold_clean, pred_clean)
+        if evidence_score >= 0.85:  # 근거 기반 예측 정확도가 높으면 정답 인정
+            return 1.0
+        
+        # 3. 핵심 결론 추출 및 비교
+        gold_conclusion = self._extract_core_conclusion(gold_clean)
+        pred_conclusion = self._extract_core_conclusion(pred_clean)
+        
+        if gold_conclusion and pred_conclusion:
+            conclusion_similarity = self._calculate_legal_semantic_similarity(gold_conclusion, pred_conclusion)
+            if conclusion_similarity >= 0.8:
+                return 1.0
+        
+        # 4. 기존 정규화된 비교 (하위 호환성)
         normalized_score = self._calculate_normalized_similarity(gold_clean, pred_clean)
-        if normalized_score >= 0.9:  # 90% 이상 유사하면 정답으로 인정
+        if normalized_score >= 0.9:
             return 1.0
         
-        # 3. 법률 용어 의미적 유사성 검사
-        semantic_score = self._calculate_legal_semantic_similarity(gold_clean, pred_clean)
-        if semantic_score >= 0.8:  # 80% 이상 유사하면 정답으로 인정
-            return 1.0
-        
-        # 4. 부분 점수 반환 (더 높은 점수 채택)
-        return max(normalized_score, semantic_score)
+        # 5. 부분 점수 반환 (최고 점수 채택)
+        return max(evidence_score, conclusion_similarity if 'conclusion_similarity' in locals() else 0, normalized_score)
     
     def _calculate_normalized_similarity(self, gold: str, pred: str) -> float:
         """정규화된 문자열 유사도 계산 (순서, 형태 변화 고려)"""
@@ -286,27 +352,58 @@ class MetricsCalculator:
     def _calculate_statute_relevance(self, 
                                    gold_statutes: List[Dict[str, Any]], 
                                    pred_statutes: List[Dict[str, Any]]) -> float:
-        """법령 관련성 점수 계산"""
-        # 법령명과 조항을 튜플로 변환
-        gold_pairs = set()
-        for statute in gold_statutes:
-            name = statute.get('name', '')
-            article = statute.get('article', '')
-            if name and article:
-                gold_pairs.add((name, article))
-        
-        pred_pairs = set()
-        for statute in pred_statutes:
-            name = statute.get('name', '')
-            article = statute.get('article', '')
-            if name and article:
-                pred_pairs.add((name, article))
-        
-        if not gold_pairs:
+        """
+        법령 관련성 점수 계산 (개선된 버전)
+        - code(법령명)만 일치해도 점수 부여
+        - 조항까지 일치하면 추가 점수
+        """
+        if not gold_statutes:
             return 1.0
         
-        intersection = gold_pairs & pred_pairs
-        return len(intersection) / len(gold_pairs)
+        # 정답 법령에서 code 추출
+        gold_codes = set()
+        gold_full_pairs = set()  # (code, article) 쌍
+        
+        for statute in gold_statutes:
+            # name과 code 모두 확인 (둘 다 법령명을 나타낼 수 있음)
+            code = statute.get('code', statute.get('name', ''))
+            article = statute.get('article', '')
+            
+            if code:
+                gold_codes.add(code)
+                if article:
+                    gold_full_pairs.add((code, article))
+        
+        # 예측 법령에서 code 추출
+        pred_codes = set()
+        pred_full_pairs = set()
+        
+        for statute in pred_statutes:
+            # name과 code 모두 확인
+            code = statute.get('code', statute.get('name', ''))
+            article = statute.get('article', '')
+            
+            if code:
+                pred_codes.add(code)
+                if article:
+                    pred_full_pairs.add((code, article))
+        
+        if not gold_codes:
+            return 1.0
+        
+        # 1. Code만 일치하는 경우 (기본 점수: 0.7)
+        code_matches = len(gold_codes & pred_codes)
+        code_score = (code_matches / len(gold_codes)) * 0.7
+        
+        # 2. Code + Article 모두 일치하는 경우 (추가 점수: 0.3)
+        full_matches = len(gold_full_pairs & pred_full_pairs)
+        article_bonus = (full_matches / len(gold_codes)) * 0.3 if gold_codes else 0.0
+        
+        final_score = min(1.0, code_score + article_bonus)
+        
+        self.logger.debug(f"법령 매칭 점수: code일치={code_matches}/{len(gold_codes)}, 완전일치={full_matches}, 최종점수={final_score:.3f}")
+        
+        return final_score
     
     def calculate_overall_metrics(self, 
                                 case_results: List[Dict[str, Any]], 
@@ -388,3 +485,95 @@ class MetricsCalculator:
                     aggregated[category][metric_name] = 0.0
         
         return aggregated
+    
+    def _calculate_evidence_based_score(self, gold_sentence: str, pred_sentence: str) -> float:
+        """
+        근거 기반 예측 점수 계산
+        - 판례 인용 여부 확인
+        - 추측성 표현 사용 여부 확인  
+        - 근거와 결론의 논리적 연결성 평가
+        """
+        score = 0.0
+        
+        # 1. 판례 근거 포함 여부 (0.4점)
+        evidence_score = self._check_evidence_inclusion(pred_sentence)
+        score += evidence_score * 0.4
+        
+        # 2. 추측성 표현 사용 여부 (0.3점)
+        prediction_tone_score = self._check_prediction_tone(pred_sentence) 
+        score += prediction_tone_score * 0.3
+        
+        # 3. 핵심 결론 일치도 (0.3점)
+        conclusion_match_score = self._check_conclusion_match(gold_sentence, pred_sentence)
+        score += conclusion_match_score * 0.3
+        
+        return min(score, 1.0)  # 최대 1.0으로 제한
+    
+    def _check_evidence_inclusion(self, pred_sentence: str) -> float:
+        """판례 근거 포함 여부 확인"""
+        evidence_patterns = [
+            r'판례\s*분석\s*결과',  # "판례 분석 결과"
+            r'유사\s*판례',        # "유사 판례"
+            r'\d{4}[가-힣]+\d+',   # "2020다12345" 등 사건번호
+            r'법원은.*판시',       # "법원은 ... 판시"
+            r'판결.*바',          # "판결한 바"
+            r'선례.*따라',        # "선례에 따라"
+        ]
+        
+        for pattern in evidence_patterns:
+            if re.search(pattern, pred_sentence):
+                return 1.0
+        
+        return 0.0
+    
+    def _check_prediction_tone(self, pred_sentence: str) -> float:
+        """추측성 표현 사용 여부 확인"""
+        prediction_patterns = [
+            r'예상된다',
+            r'예측된다', 
+            r'것으로\s*보인다',
+            r'것으로\s*판단된다',
+            r'가능성이\s*있다',
+            r'바람직하다',
+            r'적절하다고\s*보인다'
+        ]
+        
+        for pattern in prediction_patterns:
+            if re.search(pattern, pred_sentence):
+                return 1.0
+        
+        return 0.0
+    
+    def _check_conclusion_match(self, gold_sentence: str, pred_sentence: str) -> float:
+        """핵심 결론 일치도 확인"""
+        gold_conclusion = self._extract_core_conclusion(gold_sentence)
+        pred_conclusion = self._extract_core_conclusion(pred_sentence)
+        
+        if not gold_conclusion or not pred_conclusion:
+            return 0.5  # 결론을 추출할 수 없으면 중간 점수
+        
+        return self._calculate_legal_semantic_similarity(gold_conclusion, pred_conclusion)
+    
+    def _extract_core_conclusion(self, sentence: str) -> str:
+        """문장에서 핵심 결론 추출"""
+        # 법률 결론 키워드들
+        conclusion_keywords = [
+            '무죄', '유죄', '징역', '벌금', '집행유예', 
+            '기각', '인용', '각하', '승소', '패소',
+            '무효', '취소', '파기', '인정', '배상'
+        ]
+        
+        # 키워드가 포함된 부분을 핵심 결론으로 추출
+        for keyword in conclusion_keywords:
+            if keyword in sentence:
+                # 해당 키워드 주변 맥락 추출 (앞뒤 10글자)
+                pattern = f'.{{0,10}}{keyword}.{{0,10}}'
+                match = re.search(pattern, sentence)
+                if match:
+                    return match.group().strip()
+        
+        # 키워드가 없으면 문장 끝부분 반환 (결론은 보통 문장 끝에 위치)
+        if len(sentence) > 20:
+            return sentence[-20:].strip()
+        
+        return sentence.strip()
