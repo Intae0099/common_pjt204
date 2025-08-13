@@ -91,12 +91,27 @@ class ServiceCaller:
             if not search_response.get('success', False):
                 return []
             
-            data = search_response.get('data', {})
-            items = data.get('items', [])
+            # API 응답 구조 확인: data가 리스트인지 dict인지 확인
+            data = search_response.get('data', [])
+            
+            # data가 리스트인 경우 (실제 API 응답)
+            if isinstance(data, list):
+                items = data
+            # data가 dict인 경우 (이전 예상 구조)
+            elif isinstance(data, dict):
+                items = data.get('items', [])
+            else:
+                logger.warning(f"예상치 못한 data 구조: {type(data)}")
+                return []
             
             # 검색 결과를 평가용 형태로 변환
             results = []
             for idx, item in enumerate(items):
+                # item이 dict인지 확인
+                if not isinstance(item, dict):
+                    logger.warning(f"검색 결과 item이 dict가 아님: {type(item)}, 값: {item}")
+                    continue
+                
                 results.append({
                     'case_id': item.get('caseId'),
                     'title': item.get('title'),
@@ -109,6 +124,7 @@ class ServiceCaller:
             
         except Exception as e:
             logger.error(f"검색 결과 추출 오류: {e}")
+            logger.error(f"응답 구조: {search_response}")
             return []
     
     def extract_analysis_result(self, analysis_response: Dict[str, Any]) -> Optional[Dict[str, Any]]:

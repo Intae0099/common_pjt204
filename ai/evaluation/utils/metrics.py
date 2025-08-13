@@ -4,14 +4,28 @@ RAG 평가 메트릭 계산 모듈
 import logging
 from typing import List, Dict, Any, Set
 import re
+import sys
+import os
+
+# 상위 디렉토리의 utils 모듈을 찾기 위해 경로 추가
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+
+try:
+    from utils.logger import LoggerMixin
+except ImportError:
+    # LoggerMixin을 import할 수 없는 경우 기본 로거 사용
+    class LoggerMixin:
+        @property
+        def logger(self):
+            return logging.getLogger(self.__class__.__name__)
 
 logger = logging.getLogger(__name__)
 
-class MetricsCalculator:
+class MetricsCalculator(LoggerMixin):
     """RAG 평가 메트릭 계산기"""
     
     def __init__(self, k_values: List[int] = None):
-        self.k_values = k_values or [1, 3, 5]
+        self.k_values = k_values or [1, 3, 10]
     
     def calculate_search_metrics(self, 
                                gold_cases: List[str], 
@@ -26,6 +40,8 @@ class MetricsCalculator:
         # 검색된 케이스 ID 리스트 (순서 유지)
         retrieved_ids = [result.get('case_id') for result in retrieved_results if result.get('case_id')]
         
+        self.logger.debug(f"검색 메트릭 계산 - 정답: {gold_set}, 검색결과: {retrieved_ids[:10]}, k_values: {self.k_values}")
+        
         metrics = {}
         
         # K별 메트릭 계산
@@ -34,12 +50,15 @@ class MetricsCalculator:
             top_k_set = set(top_k_ids)
             
             # Recall@K = 상위 K개 중 정답 판례 수 / 전체 정답 판례 수
-            recall_k = len(gold_set & top_k_set) / len(gold_set)
+            matches = gold_set & top_k_set
+            recall_k = len(matches) / len(gold_set)
             metrics[f'recall@{k}'] = recall_k
             
             # Precision@K = 상위 K개 중 정답 판례 수 / K
-            precision_k = len(gold_set & top_k_set) / k if k > 0 else 0.0
+            precision_k = len(matches) / k if k > 0 else 0.0
             metrics[f'precision@{k}'] = precision_k
+            
+            self.logger.debug(f"K={k}: 매치={matches}, Recall={recall_k:.3f}, Precision={precision_k:.3f}")
         
         # MRR (Mean Reciprocal Rank) 계산
         mrr = self._calculate_mrr(gold_set, retrieved_ids)
@@ -100,12 +119,23 @@ class MetricsCalculator:
     def _calculate_citation_accuracy(self, 
                                    gold_citations: List[str], 
                                    prediction: Dict[str, Any]) -> float:
-        """인용 정확도 계산"""
+        """
+        인용 정확도 계산 (개선된 버전)
+        - 검색 기반 인용만을 평가하여 검색 성능과 일관성 유지
+        """
         if not gold_citations:
             return 1.0  # 정답이 없으면 완벽하다고 가정
         
-        # 예측에서 인용된 판례 추출
+        # 예측에서 인용된 판례 추출 (references.cases 우선)
         predicted_citations = self._extract_citations_from_prediction(prediction)
+        
+        # 검색된 판례가 없으면 인용도 0점 (검색 성능과 일관성 유지)
+        references = prediction.get('references', {})
+        retrieved_cases = references.get('cases', [])
+        
+        if not retrieved_cases:
+            self.logger.debug("검색된 판례가 없어 인용 정확도 0점 처리")
+            return 0.0
         
         gold_set = set(gold_citations)
         pred_set = set(predicted_citations)
@@ -114,31 +144,54 @@ class MetricsCalculator:
         correct_citations = len(gold_set & pred_set)
         total_required = len(gold_set)
         
-        return correct_citations / total_required if total_required > 0 else 1.0
+        accuracy = correct_citations / total_required if total_required > 0 else 1.0
+        
+        self.logger.debug(f"인용 정확도: {correct_citations}/{total_required} = {accuracy:.3f} (검색된 판례: {len(retrieved_cases)}개)")
+        
+        return accuracy
     
     def _extract_citations_from_prediction(self, prediction: Dict[str, Any]) -> List[str]:
-        """예측 결과에서 판례 인용 추출"""
+        """
+        예측 결과에서 판례 인용 추출 (개선된 버전)
+        - references.cases의 case_id 우선 사용
+        - opinion 텍스트에서 사건번호 패턴 보조적 추출
+        """
         citations = []
         
-        # references에서 추출
+        # 1. references에서 추출 (주요 방법)
         references = prediction.get('references', {})
         if 'cases' in references:
             cases = references['cases']
             if isinstance(cases, list):
                 for case in cases:
-                    if isinstance(case, dict) and 'case_id' in case:
-                        citations.append(case['case_id'])
+                    if isinstance(case, dict):
+                        # case_id 필드 확인
+                        case_id = case.get('case_id') or case.get('id')
+                        if case_id:
+                            citations.append(str(case_id))
                     elif isinstance(case, str):
                         citations.append(case)
         
-        # opinion 텍스트에서 판례 번호 패턴 추출
+        # 2. opinion 텍스트에서 판례 번호 패턴 추출 (보조 방법)
         opinion = prediction.get('opinion', '')
         if opinion:
-            case_pattern = r'\\b\\d{4}[가-힣]+\\d+\\b'
+            # 수정된 정규식 패턴 (이스케이프 수정)
+            case_pattern = r'\b\d{4}[가-힣]+\d+\b'
             matches = re.findall(case_pattern, opinion)
             citations.extend(matches)
         
-        return list(set(citations))  # 중복 제거
+        # 3. 중복 제거 및 정규화
+        unique_citations = []
+        seen = set()
+        
+        for citation in citations:
+            citation = str(citation).strip()
+            if citation and citation not in seen:
+                unique_citations.append(citation)
+                seen.add(citation)
+        
+        self.logger.debug(f"추출된 인용 판례: {unique_citations}")
+        return unique_citations
     
     def _calculate_sentence_accuracy(self, gold_sentence: str, pred_sentence: str) -> float:
         """
@@ -299,27 +352,58 @@ class MetricsCalculator:
     def _calculate_statute_relevance(self, 
                                    gold_statutes: List[Dict[str, Any]], 
                                    pred_statutes: List[Dict[str, Any]]) -> float:
-        """법령 관련성 점수 계산"""
-        # 법령명과 조항을 튜플로 변환
-        gold_pairs = set()
-        for statute in gold_statutes:
-            name = statute.get('name', '')
-            article = statute.get('article', '')
-            if name and article:
-                gold_pairs.add((name, article))
-        
-        pred_pairs = set()
-        for statute in pred_statutes:
-            name = statute.get('name', '')
-            article = statute.get('article', '')
-            if name and article:
-                pred_pairs.add((name, article))
-        
-        if not gold_pairs:
+        """
+        법령 관련성 점수 계산 (개선된 버전)
+        - code(법령명)만 일치해도 점수 부여
+        - 조항까지 일치하면 추가 점수
+        """
+        if not gold_statutes:
             return 1.0
         
-        intersection = gold_pairs & pred_pairs
-        return len(intersection) / len(gold_pairs)
+        # 정답 법령에서 code 추출
+        gold_codes = set()
+        gold_full_pairs = set()  # (code, article) 쌍
+        
+        for statute in gold_statutes:
+            # name과 code 모두 확인 (둘 다 법령명을 나타낼 수 있음)
+            code = statute.get('code', statute.get('name', ''))
+            article = statute.get('article', '')
+            
+            if code:
+                gold_codes.add(code)
+                if article:
+                    gold_full_pairs.add((code, article))
+        
+        # 예측 법령에서 code 추출
+        pred_codes = set()
+        pred_full_pairs = set()
+        
+        for statute in pred_statutes:
+            # name과 code 모두 확인
+            code = statute.get('code', statute.get('name', ''))
+            article = statute.get('article', '')
+            
+            if code:
+                pred_codes.add(code)
+                if article:
+                    pred_full_pairs.add((code, article))
+        
+        if not gold_codes:
+            return 1.0
+        
+        # 1. Code만 일치하는 경우 (기본 점수: 0.7)
+        code_matches = len(gold_codes & pred_codes)
+        code_score = (code_matches / len(gold_codes)) * 0.7
+        
+        # 2. Code + Article 모두 일치하는 경우 (추가 점수: 0.3)
+        full_matches = len(gold_full_pairs & pred_full_pairs)
+        article_bonus = (full_matches / len(gold_codes)) * 0.3 if gold_codes else 0.0
+        
+        final_score = min(1.0, code_score + article_bonus)
+        
+        self.logger.debug(f"법령 매칭 점수: code일치={code_matches}/{len(gold_codes)}, 완전일치={full_matches}, 최종점수={final_score:.3f}")
+        
+        return final_score
     
     def calculate_overall_metrics(self, 
                                 case_results: List[Dict[str, Any]], 

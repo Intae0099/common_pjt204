@@ -172,42 +172,37 @@ class EvaluationRunner:
         start_time = time.time()
         
         try:
-            # 1. 분석 평가 (전체 RAG 파이프라인)
-            analysis_response = self.service_caller.analyze_case(query_case)
-            analysis_result = self.service_caller.extract_analysis_result(analysis_response)
-            analysis_success = analysis_result is not None
-            
-            # 분석 결과에서 검색된 판례 정보 추출하여 검색 메트릭 계산
+            # 1. 검색 평가 (순수 검색 성능)
             search_results = []
             search_success = False
             search_metrics = {}
             
-            if analysis_result:
-                # references에서 검색된 판례 추출
-                references = analysis_result.get('references', {})
-                if 'cases' in references:
-                    cases = references['cases']
-                    if isinstance(cases, list):
-                        search_results = []
-                        for idx, case in enumerate(cases):
-                            if isinstance(case, dict):
-                                search_results.append({
-                                    'case_id': case.get('case_id', ''),
-                                    'title': case.get('title', ''),
-                                    'category': case.get('category', ''),
-                                    'summary': case.get('summary', ''),
-                                    'rank': idx + 1
-                                })
-                
-                search_success = len(search_results) > 0
-                
-                # 검색 메트릭 계산
-                search_metrics = self.metrics_calculator.calculate_search_metrics(
-                    gold_cases=gold_data['must_cite_cases'],
-                    retrieved_results=search_results
-                )
+            if self.config['evaluation']['enable_search']:
+                try:
+                    # 별도 검색 API 호출
+                    search_query = query_case.get('fullText', '') or query_case.get('summary', '')
+                    search_response = self.service_caller.search_cases(
+                        query=search_query, 
+                        size=self.config['evaluation']['search_top_k']
+                    )
+                    search_results = self.service_caller.extract_search_results(search_response)
+                    search_success = len(search_results) > 0
+                    
+                    # 검색 메트릭 계산
+                    search_metrics = self.metrics_calculator.calculate_search_metrics(
+                        gold_cases=gold_data['must_cite_cases'],
+                        retrieved_results=search_results
+                    )
+                except Exception as e:
+                    self.logger.error(f"검색 평가 오류: {e}")
+                    search_metrics = self.metrics_calculator._empty_search_metrics()
             else:
                 search_metrics = self.metrics_calculator._empty_search_metrics()
+            
+            # 2. 분석 평가 (전체 RAG 파이프라인)
+            analysis_response = self.service_caller.analyze_case(query_case)
+            analysis_result = self.service_caller.extract_analysis_result(analysis_response)
+            analysis_success = analysis_result is not None
             
             # 2. 분석 메트릭 계산
             analysis_metrics = {}
