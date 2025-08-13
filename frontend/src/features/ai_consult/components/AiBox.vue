@@ -42,7 +42,8 @@
             <div v-if="verdictResult.references?.cases?.length" class="precedent-section">
               <h4>유사 판례</h4>
               <div class="case-list">
-                <div v-for="(caseItem, index) in verdictResult.references.cases" :key="`case-${index}`" class="case-item">
+                <div v-for="(caseItem, index) in verdictResult.references.cases" :key="`case-${index}`"
+                  class="case-item">
                   <div class="case-row">
                     <span class="case-label">사건</span>
                     <span class="case-value">{{ caseItem.title }} ({{ caseItem.id }})</span>
@@ -66,13 +67,21 @@
               <h4>관련 법령</h4>
               <ul style="list-style-type: none; padding-left: 0; margin-top: 0.5rem;">
                 <!-- 1. statutes 배열을 순회합니다. (예: 형법, 민법) -->
-                <li v-for="(statute, index) in verdictResult.statutes" :key="`statute-${index}`" style="margin-bottom: 0.5rem;">
-                  <strong>{{ statute.code }}</strong>
+                <li v-for="(statute, index) in verdictResult.statutes" :key="`statute-${index}`"
+                  style="margin-bottom: 0.5rem;">
+                  <a :href="`http://law.go.kr/법령/${encodeURIComponent(statute.code)}`" target="_blank"
+                    rel="noopener noreferrer">
+                    <strong>{{ statute.code }}</strong>
+                  </a>
                   <!-- 2. articles 배열이 존재하고, 비어있지 않은 경우에만 내부 목록을 표시합니다. -->
-                  <ul v-if="statute.articles && statute.articles.length > 0" style="padding-left: 20px; margin-top: 5px; list-style-type: disc;">
+                  <ul v-if="statute.articles && statute.articles.length > 0"
+                    style="padding-left: 20px; margin-top: 5px; list-style-type: disc;">
                     <!-- 3. articles 배열을 순회하며 각 조항을 표시합니다. -->
                     <li v-for="article in statute.articles" :key="article" style="font-size: 0.9rem;">
-                      제{{ article }}조
+                      <a :href="`http://law.go.kr/법령/${encodeURIComponent(statute.code)}/${article}`" target="_blank"
+                        rel="noopener noreferrer">
+                        제{{ article }}조
+                      </a>
                     </li>
                   </ul>
                 </li>
@@ -85,7 +94,7 @@
 
     <div v-else class="empty-state">
       <h1>AI 사전 상담</h1>
-      <p>질문만 입력하면 상황을 정리해드리고,<br/>
+      <p>질문만 입력하면 상황을 정리해드리고,<br />
         유사한 판례까지 AI가 찾아드립니다.</p>
       <img class="guide-bot" src="@/assets/ai-consult-bot.png" alt="AI 봇" />
     </div>
