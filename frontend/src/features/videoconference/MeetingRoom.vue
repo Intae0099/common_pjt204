@@ -131,7 +131,7 @@ const route = useRoute();
 const router = useRouter();
 
 const publisherRef = ref(null); // 내 비디오를 붙일 DOM 요소
-
+const screenVideoEl = ref(null);
 // 상태 관리
 const isCameraOn = ref(true);
 const isMicOn = ref(true);
@@ -151,6 +151,13 @@ function flushSegments(tool, color, width){
     data: JSON.stringify({ op: 'seg', t: tool, c: color, w: width, pts })
   });
 }
+
+function clearHolderKeepCanvas(holder) {
+  [...holder.children].forEach(n => {
+    if (n.tagName?.toLowerCase() !== 'canvas') n.remove();
+  });
+}
+
 //펜 컬러/굵기
 const penColor = ref('#4da3ff');
 const penWidth = ref(2);
@@ -161,6 +168,42 @@ function applyCommonStrokeStyle(context) {
   context.lineCap = 'round';
   context.lineJoin = 'round';
 }
+
+function applyToolToCanvas() {
+  // 항상 최신 DOM에서 다시 찾아서 보장
+  const el = document.getElementById('draw-canvas');
+  if (!el) return;
+
+  // 전역 참조도 갱신 (혹시 바뀌었을 수 있음)
+  if (canvas !== el) {
+    canvas = el;
+    ctx = canvas.getContext('2d');
+  }
+
+  // 툴 상태 강제 적용
+  const tool = currentTool.value;
+  el.style.pointerEvents = tool === 'pointer' ? 'none' : 'auto';
+  el.classList.remove('pen-cursor', 'eraser-cursor');
+  if (tool === 'pen') el.classList.add('pen-cursor');
+  if (tool === 'eraser') el.classList.add('eraser-cursor');
+
+  el.style.cursor = (tool === 'pointer') ? 'default' : 'crosshair';
+
+  // 비디오가 포인터를 가로채지 못하게 최상단 확보
+  el.style.zIndex = '999';
+  const holder = document.getElementById('client-video');
+  if (holder) holder.style.position = 'relative';
+}
+
+
+function isScreenStream(stream) {
+  const t = stream?.typeOfVideo?.toUpperCase?.();
+  if (t === 'SCREEN') return true;
+  const label = stream?.getMediaStream?.()?.getVideoTracks?.()?.[0]?.label?.toLowerCase?.() || '';
+  return label.includes('screen') || label.includes('share');
+}
+
+
 
 
 /* ---------- 그리기 상태 ---------- */
@@ -204,11 +247,9 @@ function dxy_css(p) {
 
 function setTool(tool) {
   currentTool.value = tool;
-  if (!canvas) return;
-  canvas.style.pointerEvents = tool === 'pointer' ? 'none' : 'auto';
-  canvas.classList.toggle('pen-cursor', tool === 'pen');
-  canvas.classList.toggle('eraser-cursor', tool === 'eraser');
+  applyToolToCanvas();
 }
+
 
 // URL 쿼리에서 토큰과 예약 ID 받아오기
 const token = route.query.token;
@@ -232,6 +273,7 @@ const toggleMic = () => {
 
 /* ---------- 로컬 그리기 (이하 생략된 부분은 기존 코드와 동일) ---------- */
 function startDraw(e) {
+  if (!isAnyScreenSharing.value) return;
   if (currentTool.value === 'pointer') return;
   isDrawing.value = true;
 
@@ -311,14 +353,31 @@ function endDraw() {
 }
 
 
+function safeEnsureCanvasReady() {
+  if (!canvas || !ctx) {
+    const el = document.getElementById('draw-canvas');
+    console.log('client-video size:', el?.offsetWidth, el?.offsetHeight);
+    if (el) {
+      canvas = el;
+      ctx = canvas.getContext('2d');
+      resizeCanvas();
+    }
+  }
+}
+
 // === 상대방 그리기: 받은 색/굵기 그대로 적용
-function handleRemoteDraw({ data }) {
+async function handleRemoteDraw({ data }) {
   const msg = JSON.parse(data);
 
-  if (msg.op === 'clear') {
-    clearCanvasLocal();
-    return;
+  // 캔버스가 아직이면 한 틱 뒤 재시도
+  if (!canvas || !ctx) {
+    await nextTick();
+    safeEnsureCanvasReady();
+    if (!canvas || !ctx) return; // 아직 레이아웃이 안 열렸으면 무시(다음 메시지에서 그려짐)
   }
+
+  if (msg.op === 'clear') { clearCanvasLocal(); return; }
+
   const isPen = msg.t === 'pen';
   const color = msg.c ?? '#000000';
   const width = msg.w ?? (isPen ? 2 : 20);
@@ -329,7 +388,6 @@ function handleRemoteDraw({ data }) {
     ctx.globalCompositeOperation = isPen ? 'source-over' : 'destination-out';
     ctx.lineWidth = width;
     if (isPen) ctx.strokeStyle = color;
-
     const { x, y } = dxy_css(msg.p);
     ctx.beginPath();
     ctx.moveTo(x, y);
@@ -340,7 +398,6 @@ function handleRemoteDraw({ data }) {
     ctx.globalCompositeOperation = isPen ? 'source-over' : 'destination-out';
     ctx.lineWidth = width;
     if (isPen) ctx.strokeStyle = color;
-
     for (const pt of msg.pts) {
       const { x, y } = dxy_css(pt);
       ctx.lineTo(x, y);
@@ -349,9 +406,7 @@ function handleRemoteDraw({ data }) {
     return;
   }
 
-  if (msg.op === 'end') {
-    ctx.closePath();
-  }
+  if (msg.op === 'end') ctx.closePath();
 }
 
 
@@ -378,25 +433,34 @@ const clearCanvas = () => {
 };
 
 
+let canvasRO = null;
+
 async function initCanvas() {
   await nextTick();
-  canvas = document.getElementById('draw-canvas');
-  if(!canvas) return;
-  ctx = canvas.getContext('2d');
+  const el = document.getElementById('draw-canvas');
+  if (!el) return;
 
+  // 기존 옵저버/리스너 정리
+  canvasRO?.disconnect(); canvasRO = null;
+  window.removeEventListener('resize', resizeCanvas);
+
+  canvas = el;
+  ctx = canvas.getContext('2d');
   resizeCanvas();
 
-  // 반응형 대응: 크기 변하면 다시 세팅
-  const ro = new ResizeObserver(() => resizeCanvas());
-  ro.observe(canvas);
+  canvas.onmousedown  = startDraw;
+  canvas.onmousemove  = draw;
+  canvas.onmouseup    = endDraw;
+  canvas.onmouseleave = endDraw;
 
+  canvasRO = new ResizeObserver(() => resizeCanvas());
+  canvasRO.observe(canvas);
   window.addEventListener('resize', resizeCanvas);
 
-  canvas.addEventListener('mousedown', startDraw);
-  canvas.addEventListener('mousemove', draw);
-  canvas.addEventListener('mouseup', endDraw);
-  canvas.addEventListener('mouseleave', endDraw);
+  setTool(currentTool.value);
+  applyToolToCanvas();
 }
+
 
 // ✅ [핵심 수정] 안정적인 콜백 기반으로 전체 로직 변경
 onMounted(() => {
@@ -406,38 +470,72 @@ onMounted(() => {
 
   // 1. 상대방 스트림이 생겼을 때의 이벤트 핸들러
   // 바꿔치기
-  session.value.on('streamCreated', (event) => {
-    // 화면공유 스트림인지 판별
-    const isScreen =
-      event.stream?.typeOfVideo === 'SCREEN' ||
-      event.stream?.getMediaStream()?.getVideoTracks()?.[0]?.label
-        ?.toLowerCase()
-        .includes('screen');
+  session.value.on('streamCreated', async (event) => {
+    const stream = event.stream;
 
-    const targetId = isScreen ? 'client-video' : 'lawyer-video';
-    const subscriber = session.value.subscribe(event.stream, targetId);
+  if (isScreenStream(stream)) {
+    const isOwnScreen =
+      !!screenSession.value &&
+      stream?.connection?.connectionId === screenSession.value.connection.connectionId;
+
+    isAnyScreenSharing.value = true;
+    await nextTick();
+    const holder = document.getElementById('client-video');
+
+    if (isOwnScreen) {
+      requestAnimationFrame(() => {
+        resizeCanvas();
+        initCanvas();
+        applyToolToCanvas();
+      });
+      return;
+    }
+
+    // 상대 화면 구독
+    clearHolderKeepCanvas(holder);
+    const subscriber = session.value.subscribe(stream, holder);
+    subscriber.on('videoElementCreated', () => {
+      // ⬇ 비디오 DOM이 붙은 직후 프레임에 initCanvas() 실행
+      requestAnimationFrame(() => {
+        resizeCanvas();
+        initCanvas();
+        applyToolToCanvas();
+      });
+    });
     subscribers.value.push(subscriber);
+    return;
+  }
 
-    if (isScreen) {
-      isAnyScreenSharing.value = true;     // 보는 사람 쪽도 레이아웃 전환
-      nextTick(() => initCanvas());     // 캔버스 초기화
-    }
+    // 일반 카메라
+    const sub = session.value.subscribe(stream, 'lawyer-video');
+    subscribers.value.push(sub);
   });
 
 
-  session.value.on('streamDestroyed', (event) => {
-    subscribers.value = subscribers.value.filter(
-      (sub) => sub.stream.streamId !== event.stream.streamId
-    );
 
-    const isScreen = event.stream?.typeOfVideo === 'SCREEN';
-    if (isScreen) {
-      isAnyScreenSharing.value = false;
-      setTool('pointer')
-      const el = document.getElementById('client-video');
-      if (el) el.innerHTML = '<canvas id="draw-canvas" class="drawing-canvas"></canvas>';
+
+session.value.on('streamDestroyed', (event) => {
+  subscribers.value = subscribers.value.filter(
+    (sub) => sub.stream.streamId !== event.stream.streamId
+  );
+
+  if (isScreenStream(event.stream)) {
+    isAnyScreenSharing.value = false;
+    setTool('pointer');
+
+    const holder = document.getElementById('client-video');
+    if (holder) {
+      clearHolderKeepCanvas(holder);
+      clearCanvasLocal();
     }
-  });
+
+    // ✅ 캔버스 리스너/옵저버 재설정
+    initCanvas();
+    applyToolToCanvas();
+  }
+});
+
+
 
   // 3. 드로잉 시그널 이벤트 핸들러
   session.value.on('signal:drawing', handleRemoteDraw);
@@ -508,6 +606,10 @@ const stopScreenShare = ({ silent = false } = {}) => {
     isMyScreenSharing.value  = false;
     isAnyScreenSharing.value = false;
     setTool('pointer');
+    if (screenVideoEl.value?.parentNode) {
+      screenVideoEl.value.parentNode.removeChild(screenVideoEl.value);
+    }
+    screenVideoEl.value = null;
     if (!silent) console.log('화면공유 종료');
   }
 };
@@ -517,64 +619,71 @@ const stopScreenShare = ({ silent = false } = {}) => {
 
 // 화면 공유를 시작하는 함수
 const shareScreen = async () => {
-
   if (isAnyScreenSharing.value && !isMyScreenSharing.value) {
     alert('이미 다른 참가자가 화면을 공유 중입니다.');
     return;
   }
-
   try {
-    // 1) 백엔드에서 화면공유 토큰 받기
-    console.log('screenshare call:', `/api/rooms/${appointmentId}/screenshare`)
-    const { data } = await axios.post(`/api/rooms/${appointmentId}/screenshare`)
-    if (!data?.success) throw new Error(data?.message || '화면공유 토큰 발급 실패')
-    const screenToken = data.data.openviduToken
+    const { data } = await axios.post(`/api/rooms/${appointmentId}/screenshare`);
+    const screenToken = data.data.openviduToken;
 
-    // 2) 화면공유용 OpenVidu/Session 별도 생성
-    screenOV.value = new OpenVidu()
-    screenOV.value.enableProdMode()
-    screenSession.value = screenOV.value.initSession()
+    screenOV.value = new OpenVidu();
+    screenOV.value.enableProdMode();
+    screenSession.value = screenOV.value.initSession();
 
-    // (선택) 이벤트: 재연결/종료 로그 등 필요시 추가
-    screenSession.value.on('sessionDisconnected', (e) => {
-      console.log('화면공유 세션 종료', e)
-      stopScreenShare({ silent: true })
-    })
+    screenSession.value.on('sessionDisconnected', () => {
+      stopScreenShare({ silent: true });
+    });
 
-    // 3) 화면공유 세션 연결
-    await screenSession.value.connect(screenToken, { clientData: 'screenshare' })
-
-    // 4) 화면공유 Publisher 생성 (오직 비디오만, 오디오X 권장)
+    await screenSession.value.connect(screenToken, { clientData: 'screenshare' });
     screenPublisher.value = await screenOV.value.initPublisherAsync(undefined, {
       videoSource: 'screen',
       publishAudio: false,
       publishVideo: true,
       mirror: false,
-    })
+    });
+    await screenSession.value.publish(screenPublisher.value);
 
-    // 5) 해당 세션에 화면공유 스트림 게시
-    await screenSession.value.publish(screenPublisher.value)
+    // 먼저 플래그 켜서 레이아웃/컨테이너가 보이게
+    isAnyScreenSharing.value = true;
+    isMyScreenSharing.value  = true;
+    await nextTick();
 
-    // 7) 브라우저 화면공유 종료 이벤트(사용자가 ‘공유 중지’ 누르면)
-    const track = screenPublisher.value.stream.getMediaStream().getVideoTracks()[0]
-    if (track) {
-      track.addEventListener('ended', () => {
-        stopScreenShare()
-      })
+    // 내 미리보기 비디오 붙이기
+    const holder = document.getElementById('client-video');
+    if (holder) {
+      clearHolderKeepCanvas(holder);
+      // 이전 미리보기 제거
+      if (screenVideoEl.value?.parentNode) {
+        screenVideoEl.value.parentNode.removeChild(screenVideoEl.value);
+      }
+
+      const v = document.createElement('video');
+      v.setAttribute('playsinline', 'true');
+      v.autoplay = true;
+      v.muted = true;
+      Object.assign(v.style, {
+        position: 'absolute', inset: '0',
+        width: '100%', height: '100%',
+        objectFit: 'contain', zIndex: 1
+      });
+
+      holder.prepend(v);
+      screenPublisher.value.addVideoElement(v);
+      screenVideoEl.value = v;
+      applyToolToCanvas();
     }
 
-    await initCanvas()
-    isAnyScreenSharing.value = true;   // 방 전체 ON
-    isMyScreenSharing.value  = true;   // 내 공유 ON
-    console.log('화면공유 시작')
+    initCanvas(); // 캔버스는 위(z-index 10)
 
+    const track = screenPublisher.value.stream.getMediaStream().getVideoTracks()[0];
+    track?.addEventListener('ended', () => stopScreenShare());
   } catch (err) {
-    console.error('화면공유 실패:', err)
-    console.error('status=', err.response?.status)
-    console.error('data=', JSON.stringify(err.response?.data, null, 2))
-    alert(err.response?.data?.message || '화면공유를 시작할 수 없습니다.')
+    console.error('화면공유 실패:', err);
+    alert(err.response?.data?.message || '화면공유를 시작할 수 없습니다.');
   }
-}
+};
+
 
 
 
@@ -723,6 +832,9 @@ html, body, .meeting-room { background: #131516; }
   display: block;    /* 불필요한 여백을 제거합니다 */
   border-radius: 10px; /* 부모 요소와 스타일에 맞게 둥글게 처리 */
 }
+.video-box:not(.shared-screen) :deep(video) {
+  object-fit: cover;
+}
 
 /* 내 화면(publisher)은 좌우 반전되어 있으므로, 그 안의 라벨만 다시 정상으로 돌려놓습니다 */
 #publisher :deep(.role-label) {
@@ -769,6 +881,10 @@ html, body, .meeting-room { background: #131516; }
   z-index: 10;
   background: transparent;
 }
+.shared-screen canvas.drawing-canvas {
+  pointer-events: auto;
+  z-index: 10;
+}
 .shared-screen video{
   position:absolute;
   inset:0;
@@ -776,6 +892,14 @@ html, body, .meeting-room { background: #131516; }
   height:100%;
   object-fit:contain;
   z-index: 1;
+}
+.shared-screen :deep(video) {
+  object-fit: contain;
+  background: #000;
+  pointer-events: none
+}
+.shared-screen :deep(.OV_video-container) {
+  pointer-events: none !important;
 }
 .drawing-canvas{
   position:absolute; inset:0;
