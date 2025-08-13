@@ -90,7 +90,7 @@ public class AdminController {
       String subject = "ADMIN:" + admin.getLoginEmail();
 
       // 리프레시 토큰 생성·저장
-      String refreshToken = jwtUtil.generateRefreshToken(subject);
+      String refreshToken = jwtUtil.generateRefreshToken(subject, "ADMIN");
       refreshTokenService.createForAdmin(admin, refreshToken);
 
       // 쿠키 세팅

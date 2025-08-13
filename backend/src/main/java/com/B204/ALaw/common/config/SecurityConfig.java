@@ -132,7 +132,7 @@ public class SecurityConfig {
           "CLIENT"
       );
 
-      String refreshToken = jwtUtil.generateRefreshToken(client.getOauthIdentifier());
+      String refreshToken = jwtUtil.generateRefreshToken(client.getOauthIdentifier(), "CLIENT");
       refreshTokenService.createForClient(client, refreshToken);
 
       ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", refreshToken)
@@ -268,7 +268,7 @@ public class SecurityConfig {
 
           Lawyer lawyer = lawyerService.findByLoginEmail(email);
           String subject = String.valueOf(lawyer.getId());
-          String refreshToken = jwtUtil.generateRefreshToken(subject);
+          String refreshToken = jwtUtil.generateRefreshToken(subject, "LAWYER");
           refreshTokenService.createForLawyer(lawyer, refreshToken);
 
           ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", refreshToken)
