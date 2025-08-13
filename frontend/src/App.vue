@@ -2,6 +2,7 @@
   <component :is="layoutComponent" :key="$route.name">
     <RouterView :key="$route.fullPath" />
   </component>
+  <BaseFooter />
 </template>
 
 
@@ -9,6 +10,7 @@
 import { useRoute } from 'vue-router'
 import { computed } from 'vue'
 import LayoutDefault from '@/components/layout/LayoutDefault.vue'
+import BaseFooter from './components/BaseFooter.vue'
 const route = useRoute()
 
 // 배너가 있는 페이지 경로
