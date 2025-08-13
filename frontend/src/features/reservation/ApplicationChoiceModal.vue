@@ -14,6 +14,9 @@
           </div>
         </div>
         <div class="custom-options" v-if="isDropdownOpen">
+          <div class="custom-option" @click="selectDefaultOption">
+            상담신청서 선택
+          </div>
           <div
             class="custom-option"
             v-for="app in applications"
@@ -103,6 +106,9 @@ const selectApplication = (app) => {
   closeDropdown()
 }
 
+const selectDefaultOption = () => {
+  closeDropdown()
+}
 
 const submitReservation = async () => {
   try {
@@ -220,6 +226,7 @@ onMounted(fetchApplications)
 }
 
 .custom-options {
+  color: #888;
   position: absolute;
   top: 100%;
   left: 0;
@@ -231,11 +238,13 @@ onMounted(fetchApplications)
   max-height: 200px;
   overflow-y: auto;
   z-index: 1001; /* 모달 위로 올라오도록 설정 */
-  margin-top: -1px; /* select 박스와 경계선 겹치게 */
+  margin-top: -4px; /* select 박스와 경계선 겹치게 */
 }
 
 .custom-option {
+  color: #888;
   padding: 10px;
+  padding-top: 5px;
   cursor: pointer;
   font-size: 14px;
   /* 말줄임표 스타일 */
@@ -252,7 +261,7 @@ onMounted(fetchApplications)
 
 .no-app-message {
   font-size: 13px;
-  color: #777;
+  color: #888;
   margin-bottom: 12px;
   text-align: left;
 }
@@ -260,7 +269,7 @@ onMounted(fetchApplications)
 .new-app-btn {
   background: none;
   border: none;
-  color: #007bff;
+  color: #6c9bcf;
   font-size: 14px;
   cursor: pointer;
   margin-bottom: 20px;

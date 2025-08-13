@@ -73,6 +73,7 @@ const year = new Date().getFullYear()
 
 <style scoped>
 .base-footer {
+  font-family: 'Noto Sans KR', sans-serif;
   background: #1d2b50; /* 네이비 */
   color: #f4f7fb; /* 거의 흰색 */
 }

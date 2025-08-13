@@ -221,17 +221,17 @@ const handleFinalSubmit = async (formData) => {
   font-size: 1.8rem;
   font-weight: bold;
   margin-bottom: 1rem;
-  color: #072D45;
+  color: #333333;
 }
 
 .subtitle {
   font-size: 1rem;
-  color: #82A0B3;
+  color: #888;
   line-height: 1.6;
 }
 .form-divider {
   border: none;
-  border-top: 1px solid #cfdfe9;
+  border-top: 1px solid #cfcfcf;
   max-width: 800px;
   margin: 2rem auto;
 }
