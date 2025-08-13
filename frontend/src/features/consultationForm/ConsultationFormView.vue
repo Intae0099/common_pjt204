@@ -19,6 +19,7 @@
         v-else-if="!showCompareView"
         @submitted="handleFormSubmit"
         @application-selected="handleApplicationSelect"
+        @reset="handleReset"
       />
 
       <ConsultationCompareResult
@@ -68,6 +69,14 @@ onMounted(() => {
   }, 1000)  // 1초 로딩 후 처리
 })
 
+const handleReset = () => {
+  // 새로 작성하는 것이므로, 이전에 불러온 신청서 ID가 있다면 초기화합니다.
+  applicationId.value = null;
+  // 사용자 입력 데이터도 초기화합니다. (비교 화면 등에서 돌아왔을 경우 대비)
+  userInput.value = null;
+  console.log('Parent view has handled the reset event.');
+};
+
 const handleApplicationSelect = (id) => {
   applicationId.value = id;
 };
@@ -81,7 +90,7 @@ const handleFormSubmit = async (formData) => {
       case: {
         title: formData.title,
         summary: formData.summary || '',
-        fullText: formData.content,
+        fullText: formData.summary || '',
       },
       desiredOutcome: formData.outcome,
       weakPoints: formData.disadvantage,
@@ -131,7 +140,7 @@ const handleFinalSubmit = async (formData) => {
    const payload = {
     title: formData.title,
     summary: formData.summary || '',
-    content: formData.content,
+    content: formData.summary || '',
     outcome: formData.outcome,
     disadvantage: formData.disadvantage,
     recommendedQuestion: {

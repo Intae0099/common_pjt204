@@ -47,7 +47,7 @@
               <div class="tooltip-container">
                 <InformationCircleIcon class="info-icon" />
                 <div class="tooltip-text">
-                  AI상담을 기반으로 작성된<br />사건 경위서를 불러오실 수 있습니다.
+                  입력하신 내용을 바탕으로<br/>AI가 변호사에게 할 만한<br/>질문을 추천해 드립니다.
                 </div>
               </div>
             </label>
