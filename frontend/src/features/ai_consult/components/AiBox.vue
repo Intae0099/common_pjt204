@@ -59,6 +59,10 @@
                     <span class="case-label">요약</span>
                     <span class="case-value">{{ caseItem.chunk_summary }}</span>
                   </div>
+                  <div class="case-row">
+                    <span class="case-label">법령 링크</span>
+                    <span class="case-value">{{ statutes.code }}</span>
+                  </div>
                 </div>
               </div>
             </div>
