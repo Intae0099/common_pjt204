@@ -59,18 +59,22 @@
                     <span class="case-label">요약</span>
                     <span class="case-value">{{ caseItem.chunk_summary }}</span>
                   </div>
-                  <div class="case-row">
-                    <span class="case-label">법령 링크</span>
-                    <span class="case-value">{{ statutes.code }}</span>
-                  </div>
                 </div>
               </div>
             </div>
-            <div v-if="verdictResult.references?.statutes?.length" style="margin-top: 1rem;">
+            <div v-if="verdictResult.statutes?.length" style="margin-top: 1.5rem;">
               <h4>관련 법령</h4>
-              <ul>
-                <li v-for="(statute, index) in verdictResult.references.statutes" :key="`statute-${index}`">
-                  <p>{{ statute.code }} 제{{ statute.article }}</p>
+              <ul style="list-style-type: none; padding-left: 0; margin-top: 0.5rem;">
+                <!-- 1. statutes 배열을 순회합니다. (예: 형법, 민법) -->
+                <li v-for="(statute, index) in verdictResult.statutes" :key="`statute-${index}`" style="margin-bottom: 0.5rem;">
+                  <strong>{{ statute.code }}</strong>
+                  <!-- 2. articles 배열이 존재하고, 비어있지 않은 경우에만 내부 목록을 표시합니다. -->
+                  <ul v-if="statute.articles && statute.articles.length > 0" style="padding-left: 20px; margin-top: 5px; list-style-type: disc;">
+                    <!-- 3. articles 배열을 순회하며 각 조항을 표시합니다. -->
+                    <li v-for="article in statute.articles" :key="article" style="font-size: 0.9rem;">
+                      제{{ article }}조
+                    </li>
+                  </ul>
                 </li>
               </ul>
             </div>
