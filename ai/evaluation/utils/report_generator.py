@@ -22,21 +22,32 @@ class ReportGenerator:
         """전체 리포트 생성"""
         timestamp = datetime.now()
         
-        # 파일명에 타임스탬프 포함
-        timestamp_str = timestamp.strftime("%Y%m%d_%H%M%S")
+        # 평가 정보 추출
+        total_cases = len(evaluation_results.get('case_results', []))
+        k_values = config.get('evaluation', {}).get('k_values', [1, 5, 10])
+        k_str = '-'.join(map(str, k_values))
+        
+        # 의미있는 파일명 생성: rag-eval_20cases_k1-5-10_2025-01-13_15-30
+        date_str = timestamp.strftime("%Y-%m-%d")
+        time_str = timestamp.strftime("%H-%M")
+        report_name = f"rag-eval_{total_cases}cases_k{k_str}_{date_str}_{time_str}"
+        
+        # 하위 폴더 구조 생성: reports/2025-01-13/
+        date_folder = self.reports_dir / date_str
+        date_folder.mkdir(parents=True, exist_ok=True)
         
         # JSON 리포트 생성
-        metrics_file = self.reports_dir / f"metrics_{timestamp_str}.json"
+        metrics_file = date_folder / f"{report_name}_metrics.json"
         self._generate_json_report(evaluation_results, config, metrics_file, timestamp)
         
         # 마크다운 요약 리포트 생성
-        summary_file = self.reports_dir / f"summary_{timestamp_str}.md"
+        summary_file = date_folder / f"{report_name}_summary.md"
         self._generate_markdown_report(evaluation_results, config, summary_file, timestamp)
         
-        # 최신 리포트 심볼릭 링크 생성 (선택적)
+        # 최신 리포트 링크 생성 (루트 reports 폴더에)
         try:
-            latest_metrics = self.reports_dir / "latest_metrics.json"
-            latest_summary = self.reports_dir / "latest_summary.md"
+            latest_metrics = self.reports_dir / "latest-evaluation_metrics.json"
+            latest_summary = self.reports_dir / "latest-evaluation_summary.md"
             
             # 기존 파일이 있으면 삭제
             if latest_metrics.exists():
@@ -138,11 +149,13 @@ class ReportGenerator:
             
             recall_1 = search_metrics.get('recall@1', 0) * 100
             recall_5 = search_metrics.get('recall@5', 0) * 100
+            recall_10 = search_metrics.get('recall@10', 0) * 100
             precision_1 = search_metrics.get('precision@1', 0) * 100
             mrr = search_metrics.get('mrr', 0)
             
             md_content.append(f"- **Recall@1**: {recall_1:.1f}% (첫 번째 결과에 정답 포함률)\n")
             md_content.append(f"- **Recall@5**: {recall_5:.1f}% (상위 5개 내 정답 포함률)\n")
+            md_content.append(f"- **Recall@10**: {recall_10:.1f}% (상위 10개 내 정답 포함률)\n")
             md_content.append(f"- **Precision@1**: {precision_1:.1f}% (첫 번째 결과의 정확도)\n")
             
             # MRR이 0인 경우 처리
