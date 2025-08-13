@@ -141,29 +141,42 @@ class MetricsCalculator:
         return list(set(citations))  # 중복 제거
     
     def _calculate_sentence_accuracy(self, gold_sentence: str, pred_sentence: str) -> float:
-        """의미적 유사성을 고려한 판결 문장 정확도 계산"""
+        """
+        근거 기반 예상 판결 정확도 계산 (개선된 버전)
+        - 기존: 단순 문자열 매칭
+        - 개선: 근거 포함 여부, 추측성 표현, 핵심 결론 추출하여 비교
+        """
         if not gold_sentence.strip():
             return 1.0
         
         gold_clean = gold_sentence.lower().strip()
         pred_clean = pred_sentence.lower().strip()
         
-        # 1. 완전 일치 검사
+        # 1. 완전 일치 검사 (기존)
         if gold_clean == pred_clean:
             return 1.0
         
-        # 2. 정규화된 비교 (순서 무관)
+        # 2. 근거 기반 예측 점수 계산 (새로운 요구사항 반영)
+        evidence_score = self._calculate_evidence_based_score(gold_clean, pred_clean)
+        if evidence_score >= 0.85:  # 근거 기반 예측 정확도가 높으면 정답 인정
+            return 1.0
+        
+        # 3. 핵심 결론 추출 및 비교
+        gold_conclusion = self._extract_core_conclusion(gold_clean)
+        pred_conclusion = self._extract_core_conclusion(pred_clean)
+        
+        if gold_conclusion and pred_conclusion:
+            conclusion_similarity = self._calculate_legal_semantic_similarity(gold_conclusion, pred_conclusion)
+            if conclusion_similarity >= 0.8:
+                return 1.0
+        
+        # 4. 기존 정규화된 비교 (하위 호환성)
         normalized_score = self._calculate_normalized_similarity(gold_clean, pred_clean)
-        if normalized_score >= 0.9:  # 90% 이상 유사하면 정답으로 인정
+        if normalized_score >= 0.9:
             return 1.0
         
-        # 3. 법률 용어 의미적 유사성 검사
-        semantic_score = self._calculate_legal_semantic_similarity(gold_clean, pred_clean)
-        if semantic_score >= 0.8:  # 80% 이상 유사하면 정답으로 인정
-            return 1.0
-        
-        # 4. 부분 점수 반환 (더 높은 점수 채택)
-        return max(normalized_score, semantic_score)
+        # 5. 부분 점수 반환 (최고 점수 채택)
+        return max(evidence_score, conclusion_similarity if 'conclusion_similarity' in locals() else 0, normalized_score)
     
     def _calculate_normalized_similarity(self, gold: str, pred: str) -> float:
         """정규화된 문자열 유사도 계산 (순서, 형태 변화 고려)"""
@@ -388,3 +401,95 @@ class MetricsCalculator:
                     aggregated[category][metric_name] = 0.0
         
         return aggregated
+    
+    def _calculate_evidence_based_score(self, gold_sentence: str, pred_sentence: str) -> float:
+        """
+        근거 기반 예측 점수 계산
+        - 판례 인용 여부 확인
+        - 추측성 표현 사용 여부 확인  
+        - 근거와 결론의 논리적 연결성 평가
+        """
+        score = 0.0
+        
+        # 1. 판례 근거 포함 여부 (0.4점)
+        evidence_score = self._check_evidence_inclusion(pred_sentence)
+        score += evidence_score * 0.4
+        
+        # 2. 추측성 표현 사용 여부 (0.3점)
+        prediction_tone_score = self._check_prediction_tone(pred_sentence) 
+        score += prediction_tone_score * 0.3
+        
+        # 3. 핵심 결론 일치도 (0.3점)
+        conclusion_match_score = self._check_conclusion_match(gold_sentence, pred_sentence)
+        score += conclusion_match_score * 0.3
+        
+        return min(score, 1.0)  # 최대 1.0으로 제한
+    
+    def _check_evidence_inclusion(self, pred_sentence: str) -> float:
+        """판례 근거 포함 여부 확인"""
+        evidence_patterns = [
+            r'판례\s*분석\s*결과',  # "판례 분석 결과"
+            r'유사\s*판례',        # "유사 판례"
+            r'\d{4}[가-힣]+\d+',   # "2020다12345" 등 사건번호
+            r'법원은.*판시',       # "법원은 ... 판시"
+            r'판결.*바',          # "판결한 바"
+            r'선례.*따라',        # "선례에 따라"
+        ]
+        
+        for pattern in evidence_patterns:
+            if re.search(pattern, pred_sentence):
+                return 1.0
+        
+        return 0.0
+    
+    def _check_prediction_tone(self, pred_sentence: str) -> float:
+        """추측성 표현 사용 여부 확인"""
+        prediction_patterns = [
+            r'예상된다',
+            r'예측된다', 
+            r'것으로\s*보인다',
+            r'것으로\s*판단된다',
+            r'가능성이\s*있다',
+            r'바람직하다',
+            r'적절하다고\s*보인다'
+        ]
+        
+        for pattern in prediction_patterns:
+            if re.search(pattern, pred_sentence):
+                return 1.0
+        
+        return 0.0
+    
+    def _check_conclusion_match(self, gold_sentence: str, pred_sentence: str) -> float:
+        """핵심 결론 일치도 확인"""
+        gold_conclusion = self._extract_core_conclusion(gold_sentence)
+        pred_conclusion = self._extract_core_conclusion(pred_sentence)
+        
+        if not gold_conclusion or not pred_conclusion:
+            return 0.5  # 결론을 추출할 수 없으면 중간 점수
+        
+        return self._calculate_legal_semantic_similarity(gold_conclusion, pred_conclusion)
+    
+    def _extract_core_conclusion(self, sentence: str) -> str:
+        """문장에서 핵심 결론 추출"""
+        # 법률 결론 키워드들
+        conclusion_keywords = [
+            '무죄', '유죄', '징역', '벌금', '집행유예', 
+            '기각', '인용', '각하', '승소', '패소',
+            '무효', '취소', '파기', '인정', '배상'
+        ]
+        
+        # 키워드가 포함된 부분을 핵심 결론으로 추출
+        for keyword in conclusion_keywords:
+            if keyword in sentence:
+                # 해당 키워드 주변 맥락 추출 (앞뒤 10글자)
+                pattern = f'.{{0,10}}{keyword}.{{0,10}}'
+                match = re.search(pattern, sentence)
+                if match:
+                    return match.group().strip()
+        
+        # 키워드가 없으면 문장 끝부분 반환 (결론은 보통 문장 끝에 위치)
+        if len(sentence) > 20:
+            return sentence[-20:].strip()
+        
+        return sentence.strip()

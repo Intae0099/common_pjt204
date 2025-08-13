@@ -14,6 +14,7 @@ from services.search_service import SearchService
 from services.lawyer_recommendation_service import LawyerRecommendationService
 from utils.logger import LoggerMixin
 from utils.exceptions import handle_service_exceptions, LLMError
+from utils.confidence_calculator import ConfidenceCalculator
 
 class CaseAnalysisService(LoggerMixin):
     def __init__(self, llm: LLM, search_service: SearchService, lawyer_recommendation_service: Optional[LawyerRecommendationService] = None):
@@ -30,6 +31,7 @@ class CaseAnalysisService(LoggerMixin):
         self.lawyer_recommendation_service = lawyer_recommendation_service
         self.prompt_template = get_cot_prompt()
         self.parser = CotOutputParser()
+        self.confidence_calculator = ConfidenceCalculator()  # 신뢰도 계산기 추가
         # `prompt | llm` 로 RunnableSequence를 만듭니다. (LangChain 0.1.17 이상 권장 방식)
         self.chain = self.prompt_template | self.llm
 
@@ -94,6 +96,18 @@ class CaseAnalysisService(LoggerMixin):
             # 디버깅: CoT 결과와 태그 확인
             self.logger.debug(f"Raw conclusion text: {conclusion_text}")
             self.logger.debug(f"Parsed case_analysis_result: {vars(case_analysis_result)}")
+
+            # 객관적 근거 기반 신뢰도 계산 (LLM이 생성한 값 대체)
+            similarity_scores = [doc.get('_score', 0.5) for doc in retrieved_docs]
+            calculated_confidence = self.confidence_calculator.calculate_confidence(
+                query_case=user_query,
+                retrieved_docs=retrieved_docs,
+                similarity_scores=similarity_scores
+            )
+            
+            # 계산된 신뢰도로 대체
+            case_analysis_result.confidence = calculated_confidence
+            self.logger.info(f"신뢰도 계산 완료: LLM 원본={case_analysis_result.confidence} -> 계산된 값={calculated_confidence}")
 
             # 법령 검증 및 보강 (새로운 기능)
             self._validate_and_enhance_statutes(case_analysis_result)
