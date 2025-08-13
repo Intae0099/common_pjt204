@@ -50,7 +50,6 @@ import { useAuthStore } from '@/stores/auth';
 import LawyerCertifications from '@/features/admin/LawyerCertifications.vue';
 import ApplicationListView from '@/features/profile/user/ApplicationListView.vue';
 import LawyerFindPasswordView from '@/features/auth/lawyer/LawyerFindPasswordView.vue';
-import ConsultationFormtemp from '@/features/consultationForm/component/ConsultationFormtemp.vue';
 
 
 const router = createRouter({
@@ -173,11 +172,6 @@ const router = createRouter({
       path: '/consult-form',
       name:'ConsultForm',
       component: ConsultationFormView,
-    },
-    {
-      path: '/consult-form-temp',
-      name: 'ConsultFormTemp',
-      component: ConsultationFormtemp
     },
     //화상회의
     {
