@@ -95,7 +95,7 @@ public class AdminController {
 
       // 쿠키 세팅
       ResponseCookie cookie = ResponseCookie.from("refresh_token", refreshToken)
-          .httpOnly(true).secure(true).sameSite("Strict")
+          .httpOnly(true).secure(true).sameSite("None")
           .path("/").maxAge(Duration.ofDays(7)).build();
       response.setHeader(HttpHeaders.SET_COOKIE, cookie.toString());
       // 액세스 토큰 발급
