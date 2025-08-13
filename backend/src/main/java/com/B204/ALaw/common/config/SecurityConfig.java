@@ -383,7 +383,12 @@ public class SecurityConfig {
 
             .requestMatchers(HttpMethod.OPTIONS).permitAll()
             .anyRequest().authenticated()
-        );
+        )
+        .exceptionHandling(ex -> ex.authenticationEntryPoint((req, res, e) -> {
+          res.setStatus(401);
+          res.setContentType("application/json;charset=UTF-8");
+          res.getWriter().write("{\"error\":\"unauthorized\"}");
+        }));
 
     return http.build();
   }
