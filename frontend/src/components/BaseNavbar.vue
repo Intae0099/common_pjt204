@@ -195,7 +195,7 @@ const refreshData = async () => {
     return; // 리프레시 토큰 없다고 판단
   }
   try {
-    const res = await axios.post('/api/auth/refresh', null);
+    const res = await axios.post('/api/auth/refresh', null, { withCredentials: true });
     const { accessToken } = res.data;
     if (accessToken) {
       console.log("refresh 갱신 성공")
@@ -203,22 +203,10 @@ const refreshData = async () => {
       localStorage.setItem('accessToken', accessToken);
       axios.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
     }
-    await fetchUser();
   } catch (e) {
     console.error('토큰 갱신 실패:', e);
   }
 };
-
-
-const fetchUser = async () => {
-  try {
-    const res = await axios.get('/api/lawyers/me');
-    authStore.user = res.data;
-  } catch (e) {
-    console.error('유저 조회 실패:', e);
-  }
-};
-
 
 
 </script>
