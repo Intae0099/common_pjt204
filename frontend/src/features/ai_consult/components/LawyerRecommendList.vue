@@ -19,9 +19,9 @@
           <h3>{{ lawyer.name }}</h3>
           <p><strong>소개:</strong> {{ lawyer.introduction }}</p>
           <p><strong>시험 유형:</strong> {{ lawyer.exam }}</p>
-          <p><strong>상담 횟수:</strong> {{ lawyer.consultationCount }}회</p>
+          <p><strong>상담 횟수:</strong> {{ lawyer.consultationCnt }}회</p>
           <p><strong>전문 분야:</strong> {{ lawyer.tags?.join(', ') }}</p>
-          <p><strong>AI 적합도:</strong> {{ lawyer.matchScore }}</p>
+          <!-- <p><strong>AI 적합도:</strong> {{ lawyer.matchScore }}</p> -->
           <!-- ✅ 바로 상담하기 버튼 -->
           <button
             v-if="userType !== 'LAWYER'"
