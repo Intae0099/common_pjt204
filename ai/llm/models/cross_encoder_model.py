@@ -13,10 +13,10 @@ class CrossEncoderModel:
 
     def _load_model(self):
         if self._model is None:
-            logger.info(f"Cross-encoder 모델 로드 중: {self.model_name}")
+            logger.info(f"Cross-encoder 모델 로드 중: {self.model_name} (device=cuda)")
             self._model = CrossEncoder(
                 model_name_or_path=self.model_name,
-                device=os.getenv("DEVICE", "cuda" if os.environ.get("CUDA_VISIBLE_DEVICES") else "cpu"),
+                device="cuda",
                 trust_remote_code=True
             )
             logger.info("Cross-encoder 모델 로드 완료.")
