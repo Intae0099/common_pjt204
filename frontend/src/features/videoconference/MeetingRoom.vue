@@ -153,9 +153,11 @@ function flushSegments(tool, color, width){
 }
 
 function clearHolderKeepCanvas(holder) {
-  [...holder.children].forEach(n => {
-    if (n.tagName?.toLowerCase() !== 'canvas') n.remove();
-  });
+  if (!holder) return;
+  // 우리가 만든 미리보기만 제거
+  const local = holder.querySelector('.local-preview');
+  if (local?.parentNode) local.parentNode.removeChild(local);
+  // ❗ OpenVidu가 만든 요소(OV_video-container, <video> 등)는 절대 건드리지 않기
 }
 
 //펜 컬러/굵기
@@ -492,7 +494,6 @@ onMounted(() => {
     }
 
     // 상대 화면 구독
-    clearHolderKeepCanvas(holder);
     const subscriber = session.value.subscribe(stream, holder);
     subscriber.on('videoElementCreated', () => {
       // ⬇ 비디오 DOM이 붙은 직후 프레임에 initCanvas() 실행
@@ -522,12 +523,7 @@ session.value.on('streamDestroyed', (event) => {
   if (isScreenStream(event.stream)) {
     isAnyScreenSharing.value = false;
     setTool('pointer');
-
-    const holder = document.getElementById('client-video');
-    if (holder) {
-      clearHolderKeepCanvas(holder);
-      clearCanvasLocal();
-    }
+    clearCanvasLocal();
 
     // ✅ 캔버스 리스너/옵저버 재설정
     initCanvas();
@@ -587,9 +583,10 @@ session.value.on('streamDestroyed', (event) => {
 
 });
 
-
+const isScreenStopping = ref(false);
 const stopScreenShare = ({ silent = false } = {}) => {
   if (!screenPublisher.value) return;
+  isScreenStopping.value=true
   try {
     const screenStream = screenPublisher.value.stream?.getMediaStream();
     if (screenStream) {
@@ -599,6 +596,14 @@ const stopScreenShare = ({ silent = false } = {}) => {
   } catch(e) {
     console.error("Error during screen share stop:", e);
   } finally {
+
+    try {
+      screenPublisher.value?.removeVideoElement(screenVideoEl.value);
+    } catch (err) {
+      console.warn('removeVideoElement 실패', err);
+    }
+    screenVideoEl.value=null
+
     screenPublisher.value = null;
     screenSession.value = null;
     screenOV.value = null;
@@ -606,11 +611,12 @@ const stopScreenShare = ({ silent = false } = {}) => {
     isMyScreenSharing.value  = false;
     isAnyScreenSharing.value = false;
     setTool('pointer');
-    if (screenVideoEl.value?.parentNode) {
-      screenVideoEl.value.parentNode.removeChild(screenVideoEl.value);
-    }
+    try {
+      screenPublisher.value?.removeVideoElement(screenVideoEl.value);
+    } catch (err) {console.warn('removeVideoElement 실패', err);}
     screenVideoEl.value = null;
     if (!silent) console.log('화면공유 종료');
+      isScreenStopping.value = false;
   }
 };
 
@@ -632,7 +638,9 @@ const shareScreen = async () => {
     screenSession.value = screenOV.value.initSession();
 
     screenSession.value.on('sessionDisconnected', () => {
-      stopScreenShare({ silent: true });
+      if (!isScreenStopping.value) {
+        stopScreenShare({silent: true});
+      }
     });
 
     await screenSession.value.connect(screenToken, { clientData: 'screenshare' });
@@ -653,15 +661,12 @@ const shareScreen = async () => {
     const holder = document.getElementById('client-video');
     if (holder) {
       clearHolderKeepCanvas(holder);
-      // 이전 미리보기 제거
-      if (screenVideoEl.value?.parentNode) {
-        screenVideoEl.value.parentNode.removeChild(screenVideoEl.value);
-      }
 
       const v = document.createElement('video');
       v.setAttribute('playsinline', 'true');
       v.autoplay = true;
       v.muted = true;
+       v.classList.add('local-preview');
       Object.assign(v.style, {
         position: 'absolute', inset: '0',
         width: '100%', height: '100%',
@@ -683,9 +688,6 @@ const shareScreen = async () => {
     alert(err.response?.data?.message || '화면공유를 시작할 수 없습니다.');
   }
 };
-
-
-
 
 // 퇴장 함수
 const leaveSession = () => {
