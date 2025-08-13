@@ -516,14 +516,14 @@ h4 {
 
 /* 메뉴 */
 .menu-section {
-  border-top: 1px solid #e0e0e0;
+  border-top: 1px solid #cfcfcf;
 }
 .menu-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 16px 0;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid #cfcfcf;
   font-size: 1rem;
   cursor: pointer;
 }
