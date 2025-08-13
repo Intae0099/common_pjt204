@@ -1,5 +1,6 @@
 <template>
   <div v-if="user && appointments !== null" class="mypage-container">
+    <h1 class="mypage-title">마이페이지</h1>
     <!-- ✅ 프로필 영역 -->
     <section class="profile-section">
       <div class="profile-box">
@@ -21,9 +22,9 @@
     <!-- ✅ 예약 일정 -->
     <section class="appointment-section">
       <h4>예약된 상담</h4>
-      <ul v-if="filteredAppointments.length > 0" class="appointment-list">
+      <ul v-if="confirmedAppointments.length > 0" class="appointment-list">
         <li
-          v-for="appt in filteredAppointments"
+          v-for="appt in confirmedAppointments"
           :key="appt.appointmentId"
           class="appointment-item"
         >
@@ -56,6 +57,42 @@
       <p v-else class="no-appt">예약된 일정이 없습니다.</p>
     </section>
 
+    <section class="appointment-section">
+      <h4>예약 요청한 상담</h4>
+      <ul v-if="requestedAppointments.length > 0" class="appointment-list">
+        <li
+          v-for="appt in requestedAppointments"
+          :key="appt.appointmentId"
+          class="appointment-item"
+        >
+          <!-- X 버튼 (PENDING일 때만 노출) -->
+          <button
+            class="cancel-x-btn"
+            @click.stop="cancelAppointment(appt)"
+          >×</button>
+
+          <div class="appt-info">
+            <div>
+              <p class="lawyer-name">{{ lawyerMap[String(appt.lawyerId)] || '알 수 없음' }} 변호사</p>
+              <p class="appt-time">{{ formatDateTime(appt.startTime) }}</p>
+              <span
+                @click="openDetailModal(appt.applicationId)"
+                class="view-application-link"
+              >
+                상담신청서 보기
+              </span>
+            </div>
+            <div class="status-group">
+              <p :class="statusClass(appt.appointmentStatus)" class="appointment-status">
+                {{ statusText(appt.appointmentStatus) }}
+              </p>
+            </div>
+          </div>
+        </li>
+      </ul>
+      <p v-else class="no-appt">예약 요청한 상담이 없습니다.</p>
+    </section>
+
     <!-- ✅ 상담신청서 보관함 -->
     <section class="application-section">
       <h4 @click="goToAllApplications" class="section-title-link">
@@ -84,7 +121,7 @@
     <!-- ✅ 기타 메뉴 -->
     <section class="menu-section">
       <div class="menu-item" @click="$router.push('/user/consult-history')">
-        상담내역 보기
+        상담내역
         <span class="arrow">›</span>
       </div>
       <div class="menu-item" @click="handleWithdraw">
@@ -119,14 +156,34 @@ const applications = ref([])
 const isDetailModalOpen = ref(false)
 const selectedApplication = ref(null)
 
-const filteredAppointments = computed(() => {
-  const now = new Date()
-  return appointments.value.filter(appt => {
-    const apptTime = new Date(appt.startTime);
-    // ✅ 시작 시간이 현재 시간보다 늦은 모든 상담 (오늘 이후)
-    return apptTime > now;
-  });
+const confirmedAppointments = computed(() => {
+  return appointments.value
+    .filter(a => a.appointmentStatus === 'CONFIRMED')
+    // 필요하면 ‘다가올 일정만’으로 제한하려면 아래 줄 주석 해제
+    // .filter(a => new Date(a.startTime) > new Date())
 })
+
+const requestedAppointments = computed(() => {
+  return appointments.value.filter(a =>
+    ['PENDING', 'REJECTED', 'CANCELLED'].includes(a.appointmentStatus)
+  )
+})
+
+const cancelAppointment = async (appt) => {
+  if (!confirm('상담 예약을 취소하시겠습니까?')) return
+  try {
+    // 백엔드 명세에 맞춰 cancel 엔드포인트 호출 (POST가 일반적)
+    await axios.post(`/api/appointments/${appt.appointmentId}/cancel`)
+    // 낙관적 업데이트: 상태를 CANCELLED로 갱신하여 목록에서 즉시 반영
+    appt.appointmentStatus = 'CANCELLED'
+    alert('예약이 취소되었습니다.')
+  } catch (err) {
+    console.error('예약 취소 실패:', err)
+    alert('취소 중 오류가 발생했습니다. 다시 시도해주세요.')
+  }
+}
+
+
 
 const formatDateTime = (dateStr) => {
   const date = new Date(dateStr)
@@ -228,7 +285,7 @@ onMounted(async () => {
     const [userRes, appointmentRes, formRes, lawyerListRes] = await Promise.all([
       axios.get('/api/clients/me'),
       axios.get('/api/appointments/me'),
-      axios.get('/api/applications/me'),
+       axios.get('/api/applications/me', { params: { isCompleted: true } }),
       axios.get('/api/lawyers/list'),
     ])
     user.value = userRes.data
@@ -262,14 +319,26 @@ onMounted(async () => {
   align-items: center;
 }
 .section-title-link:hover {
-  color: #007bff; /* 호버 시 색상 변경 (예시) */
+  color: #6c9bcf; /* 호버 시 색상 변경 (예시) */
 }
 .mypage-container {
   max-width: 700px;
   margin: 0 auto;
   padding: 100px 20px;
   font-family: 'Noto Sans KR', sans-serif;
+  color: #333333
 }
+.mypage-container h1 {
+  text-align: center;
+  margin-top: 15px;
+  margin-bottom: 5px;
+}
+.mypage-title {
+  font-size: 24px;
+  margin-bottom: 40px;
+  font-weight: bold;
+}
+
 
 /* 프로필 */
 .profile-section {
@@ -283,7 +352,7 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   background: #fff;
-  border: 1px solid #e0e0e0;
+  border: 1px solid #cfcfcf;
   border-radius: 12px;
   padding: 20px;
   width: 100%;
@@ -314,7 +383,7 @@ onMounted(async () => {
   margin-bottom: 4px;
 }
 .email {
-  color: #999;
+  color: #888;
   font-size: 0.9rem;
 }
 .setting-btn {
@@ -345,15 +414,43 @@ h4 {
   margin: 0;
 }
 .appointment-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border: 1px solid #e0e0e0;
-  background: #f9f9f9;
+  color: #333;
+  border: 1px solid #cfcfcf;
+  background: #ffffff;
   border-radius: 10px;
   padding: 16px;
   margin-bottom: 12px;
+  position: relative;
 }
+.appointment-item:hover {
+  background: #f4f7fb;
+  border-color: #6c9bcf;
+  transform: translateY(-1px);;
+}
+
+
+/* X 버튼 */
+.cancel-x-btn {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  z-index: 2;                    /* appt-info 위로 */
+  background: transparent;              /* 카드 배경과 동일 */
+  border-radius: 6px;
+  border: none;
+  padding: 1px 8px;
+  height: auto;
+  width: auto;                   /* "취소" 글자 안 잘리게 */
+  line-height: normal;
+  font-size: 0.85rem;
+  color: #888;
+  /* transition: transform 0.12s ease, border-color 0.15s ease; */
+}
+.cancel-x-btn:hover {
+  color: #6c9bcf; /* 밝은 파랑(사용 중인 포커스 컬러) */
+}
+
+
 .appt-info {
   display: flex;
   flex-grow: 1; /* ✅ 추가 */
@@ -365,6 +462,7 @@ h4 {
 .form-title {
   font-size: 1rem;
   font-weight: bold;
+  margin-bottom: 4px;
 }
 .appt-time {
   font-size: 0.95rem;
@@ -395,17 +493,22 @@ h4 {
 
 /* ✅ 상담 상태 스타일 추가 */
 .appointment-status {
-  font-weight: bold;
-  font-size: 0.95rem;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  white-space: nowrap;
 }
 .status-pending {
-  color: #f5a623;
+  background: #FFBF66;
+  color: white;
 }
 .status-confirmed {
-  color: #3478ff;
+  background: #6c9bcf;
+  color: white;
 }
 .status-rejected, .status-cancelled {
-  color: #f44336;
+  background: #B3261E;
+  color: white;
 }
 .status-ended {
   color: #888;

@@ -1,5 +1,6 @@
 <template>
   <div class="mypage-container">
+    <h1 class="mypage-title">마이페이지</h1>
     <section class="profile-section">
       <div class="profile-box">
         <div class="profile-left">
@@ -34,30 +35,32 @@
         <li v-for="appt in pendingAppointments" :key="appt.appointmentId" class="appointment-item">
           <div class="appt-info">
             <div>
-              <p class="client-name">{{ appt.client?.name }} 의뢰인</p>
+              <p class="client-name">{{ appt.client?.name }} 의뢰인 ({{ appt.client?.loginEmail }})</p>
               <p class="appt-time">{{ formatAppointmentDateTime(appt.startTime) }}</p>
-              <p v-if="appt.isTimeConflict" class="conflict-warning">
-                ❗ 같은 시간에 다른 대기 중인 요청이 있습니다.
-              </p>
-              <p v-if="appt.isSlotUnavailable" class="conflict-warning">
-                🚫 이미 확정된 예약과 시간이 겹칩니다.
-              </p>
-              <p v-if="appt.isTimeExpired" class="conflict-warning">
-                ⏰ 상담 수락 가능 시간이 지났습니다.
-              </p>
               <span @click="viewApplication(appt.applicationId)" class="view-application-link">
                 상담신청서 보기
               </span>
             </div>
-            <div class="action-buttons">
-              <button
-                @click="updateAppointmentStatus(appt.appointmentId, 'CONFIRMED')"
-                class="accept-btn"
-                :disabled="appt.isSlotUnavailable || appt.isTimeExpired"
-              >
-                수락
-              </button>
-              <button @click="updateAppointmentStatus(appt.appointmentId, 'REJECTED')" class="reject-btn" :disabled="appt.isTimeExpired">거절</button>
+            <!-- ✅ 우측 컬럼: 상단에 pc-flags, 하단에 버튼 -->
+            <div class="right-col">
+              <div class="pc-flags">
+                <span v-if="appt.isTimeConflict" class="chip chip-warn">동시간대 요청</span>
+                <span v-if="appt.isSlotUnavailable" class="chip chip-error">확정 예약과 겹침</span>
+                <span v-else-if="appt.isTimeExpired" class="chip chip-muted">마감 지남</span>
+              </div>
+
+              <div class="action-buttons">
+                <button
+                  @click="updateAppointmentStatus(appt.appointmentId, 'CONFIRMED')"
+                  class="accept-btn"
+                  :disabled="appt.isSlotUnavailable || appt.isTimeExpired"
+                >수락</button>
+                <button
+                  @click="updateAppointmentStatus(appt.appointmentId, 'REJECTED')"
+                  class="reject-btn"
+                  :disabled="appt.isTimeExpired"
+                >거절</button>
+              </div>
             </div>
           </div>
         </li>
@@ -79,6 +82,9 @@
           :format="'yyyy.MM.dd'"
           :min-date="new Date()"
           :highlighted="highlightedDates"
+          :auto-apply="true"
+          :enable-time-picker="false"
+          @update:model-value="onDateChange"
         />
       </div>
 
@@ -355,6 +361,24 @@ onMounted(async () => {
   margin: 0 auto;
   padding: 100px 20px;
   font-family: 'Noto Sans KR', sans-serif;
+  color: #333333
+
+}
+.mypage-container h1 {
+  text-align: center;
+  margin-top: 15px;
+  margin-bottom: 5px;
+}
+
+.mypage-title {
+  font-size: 24px;
+  margin-bottom: 40px;
+  font-weight: bold;
+}
+h4 {
+  font-size: 1.2rem;
+  margin-bottom: 16px;
+  font-weight: bold;
 }
 
 /* 프로필 */
@@ -362,21 +386,19 @@ onMounted(async () => {
   width: 100%;
   display: flex;
   justify-content: center;
-  margin-bottom: 60px;
-  font-size: 0.8rem;
+  margin-bottom: 40px;
 }
 .profile-box {
   position: relative;
   display: flex;
-  align-items: center; /* 세로 중앙정렬 */
-  justify-content: flex-start; /* 좌측 정렬 */
+  align-items: center;
   background: #fff;
   border: 1px solid #e0e0e0;
   border-radius: 12px;
   padding: 20px;
-  width: 100%; /* ✅ 부모 영역(mypage-container)에 꽉 차게 */
+  width: 100%;
   max-width: 100%;
-  margin-top: 30px; /* ✅ 위에 여백 추가 */
+  margin-top: 40px;
 }
 .profile-left {
   display: flex;
@@ -390,6 +412,12 @@ onMounted(async () => {
   font-size: 0.8rem;
   margin-left: 1rem;
 }
+.profile-info h3 {
+  font-size: 1.4rem;
+  font-weight: bold;
+  margin-bottom: 0px;
+  margin-top: 10px;
+}
 .profile-img {
   width: 160px;
   height: 120px;
@@ -401,16 +429,14 @@ onMounted(async () => {
   width: 25px; /* 아이콘 크기 조절 */
   height: 25px;
   margin-top: 7px;
+  margin-bottom: 10px;
   margin-left: 4px; /* 이름과 아이콘 사이 간격 */
   /* 필요에 따라 추가적인 스타일을 지정할 수 있습니다. */
 }
 .intro {
-  font-size: 0.85rem;
-  color: #333;
-  margin: 8px 0;
-  padding: 6px 10px;
-  background: #f5f7fa;
-  border-radius: 8px;
+  font-size: 13px; color: #333;
+  background: #f4f7fb; border: 1px solid #EEF2F7;
+  padding: 10px; border-radius: 8px;
 }
 
 .tags {
@@ -420,9 +446,9 @@ onMounted(async () => {
 }
 
 .tag-badge {
-  background-color: #1d2b50;
-  color: white;
-  padding: 4px 10px;
+  background-color: #f1f1f1;
+  color: #333;
+  padding: 4px 8px;
   border-radius: 12px;
   font-size: 0.7rem;
 }
@@ -446,25 +472,57 @@ onMounted(async () => {
 .pending-appointments-section h4 {
   margin-bottom: 20px;
 }
+.right-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;  /* 오른쪽 정렬 */
+  gap: 10px;
+  min-width: 220px;       /* 버튼 2개 폭 고려해 살짝 여유 */
+}
+
+/* 뱃지 묶음 */
+.pc-flags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+/* 뱃지 기본 */
+.chip {
+  border: 1px solid #cfcfcf;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 12px;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/* 상태별 색상 */
+.chip-warn { background: #FFF7E6; border-color: #FFBF66; color: #B56100; }
+.chip-error { background: #FEECEC; border-color: #F19999; color: #B3261E; }
+.chip-muted { background: #F2F4F7; border-color: #D0D5DD; color: #667085; }
+
 .action-buttons {
   display: flex;
   gap: 8px;
 }
 .action-buttons button {
   padding: 8px 12px;
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 0.85rem;
-  font-weight: bold;
+  /* font-weight: bold; */
   cursor: pointer;
-  border: none;
+  border: 1px solid
 }
 .accept-btn {
-  background-color: #3478ff;
+  background-color: #1d2b50;
   color: white;
 }
 .reject-btn {
-  background-color: #f44336;
-  color: white;
+  background-color: #ffffff;
+  border-color: #1d2b50;;
+  color: #1d2b50;
 }
 
 .conflict-warning {
@@ -475,6 +533,7 @@ onMounted(async () => {
 
 .accept-btn:disabled {
   background-color: #ccc;
+  border-color: #ccc;
   cursor: not-allowed;
 }
 .action-buttons button:disabled {
@@ -517,11 +576,18 @@ onMounted(async () => {
   margin-top: 20px;
 }
 .appointment-item {
-  border: 1px solid #e0e0e0;
-  background: #f9f9f9;
+  color: #333;
+  border: 1px solid #cfcfcf;
+  background: #ffffff;
   border-radius: 10px;
   padding: 16px;
   margin-bottom: 12px;
+
+}
+.appointment-item:hover {
+  background: #f4f7fb;
+  border-color: #6c9bcf;
+  transform: translateY(-1px);
 }
 .appt-info {
   display: flex;
@@ -531,25 +597,29 @@ onMounted(async () => {
 .client-name {
   font-size: 1rem;
   font-weight: bold;
+  margin-bottom: 4px;
 }
 .appt-time {
   font-size: 0.95rem;
   color: #333;
-  margin-top: 4px;
 }
 .status-badge {
-  padding: 0px 8px;
+  padding: 2px 8px;
   border-radius: 6px;
   font-size: 0.8rem;
-  font-weight: bold;
   white-space: nowrap;
 }
-.status-badge.APPROVED {
-  background: #3478ff;
+.status-badge.CONFIRMED {
+  background: #6c9bcf;
   color: white;
 }
 .status-badge.PENDING {
-  background: #f5a623;
+  background: #FFBF66;
+  color: white;
+}
+
+.status-badge.REJECTED {
+  background: #B3261E;
   color: white;
 }
 .no-appt {
@@ -559,14 +629,14 @@ onMounted(async () => {
 
 /* 메뉴 섹션 */
 .menu-section {
-  border-top: 1px solid #e0e0e0;
+  border-top: 1px solid #cfcfcf;
 }
 .menu-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 16px 0;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid #cfcfcf;
   font-size: 1rem;
   cursor: pointer;
 }
