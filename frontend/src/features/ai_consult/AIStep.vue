@@ -208,7 +208,7 @@ const handleModalRoute = (target) => {
 }
 .layout-background {
   position: relative;
-  width: 100vw;
+  width: 99vw;
   left: 50%;
   right: 50%;
   margin-left: -50vw;
@@ -219,6 +219,7 @@ const handleModalRoute = (target) => {
   background-position: center;
   min-height: 100vh;
   background-color: #F7FCFF;
+  z-index: 0;
 }
 .container{
   padding: 100px 16px;
