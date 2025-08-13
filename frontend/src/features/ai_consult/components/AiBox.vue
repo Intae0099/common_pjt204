@@ -91,12 +91,24 @@
         </template>
       </div>
     </div>
-
     <div v-else class="empty-state">
+<<<<<<< HEAD
       <h1>AI 사전 상담</h1>
       <p>질문만 입력하면 상황을 정리해드리고,<br />
         유사한 판례까지 AI가 찾아드립니다.</p>
+=======
+      <h1 class="title-ko">로우봇</h1>
+      <p class="title-en">Law Bot</p>
+
+>>>>>>> 4a80cf5 (fix: ai상담 디자인 수정)
       <img class="guide-bot" src="@/assets/ai-consult-bot.png" alt="AI 봇" />
+
+      <p class="lead">
+        궁금한 내용을 질문으로 입력하시면, AI가 해당 상황을 분석하여 핵심을 정리해드립니다.
+      </p>
+      <p class="lead">
+        또한 유사 판례를 함께 찾아 제공해드려 보다 깊이 있고 신뢰할 수 있는 정보를 확인하실 수 있습니다.
+      </p>
     </div>
   </div>
 </template>
@@ -178,9 +190,8 @@ watch(() => props.response, (newResponse) => {
 
 <style scoped>
 .ai-box-wrapper {
-  flex: 1;
-  max-width: 500px;
-  min-width: 350px;
+  width: 100%;
+  max-width: 920px;
 }
 *{
   font-family: 'Noto Sans KR', sans-serif;
@@ -281,24 +292,38 @@ h6{
   text-align: center;
 }
 
-.empty-state h1 {
-  margin-top: 10px;
-  font-size: 2.5rem;
-  font-weight: bold;
-  margin-bottom: 1rem;
-  color: #072D45;
-}
 
 .empty-state p {
   font-size: 1rem;
   font-weight: medium;
-  color: #82A0B3;
-  line-height: 1.5;
+  color: #86A3B7;
+  line-height: 1.2;
+}
+/* 타이틀 */
+.title-ko {
+  margin-top: 8px;
+  margin-bottom: 2px;
+  font-size: 2.0rem;
+  font-weight: 800;
+  color: #072D45;
+}
+.title-en {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #86A3B7;
 }
 
 .guide-bot {
-  width: 250px;
-  margin-top: 15px;
+  width: 220px;
+  margin: 10px 0 14px;
+}
+
+.lead {
+  margin: 6px 0;
+  font-size: 0.98rem;
+  line-height: 1.8;
+  color: #82A0B3;
 }
 .loading-container.initial-loading {
   display: flex;
@@ -308,7 +333,7 @@ h6{
   width: 100%;
   min-height: 120px;
   color: #82A0B3;
-  margin-top: 100px;
+  margin-top: 10px;
 }
 
 /* 판례 검색 로딩 컨테이너 스타일 추가 */

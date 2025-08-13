@@ -80,13 +80,12 @@ const submit = () => {
 .chat-input-box {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
   gap: 10px;
   position: relative;
-  flex: 1; /* 왼쪽 컬럼의 공간을 차지하도록 flex 속성 추가 */
-  max-width: 500px;
-  min-width: 350px;
-  margin-top: 81px;
+  max-width: 100%;
+  min-width: 920px;
+  margin-top: 8px;
 }
 
 .input-area {
@@ -97,7 +96,7 @@ const submit = () => {
 .input-wrapper {
   position: relative;
   width: 100%;
-  max-width: 500px;
+  max-width: 920px;
 }
 
 .textarea {
@@ -113,8 +112,8 @@ const submit = () => {
   outline: none;
   background: white;
   overflow-y: hidden;
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 .textarea::placeholder {
   color: #d1dee8;
