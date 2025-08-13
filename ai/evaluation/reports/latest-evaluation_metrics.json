@@ -1,0 +1,219 @@
+{
+  "evaluation_summary": {
+    "total_cases": 20,
+    "timestamp": "2025-08-13T17:49:39.405150",
+    "config": {
+      "k_values": [
+        1,
+        5,
+        10
+      ],
+      "api_endpoint": "http://122.38.210.80:8997/",
+      "timeout_seconds": 30
+    }
+  },
+  "search_metrics": {
+    "recall@1": 0.0,
+    "precision@1": 0.0,
+    "recall@5": 0.0,
+    "precision@5": 0.0,
+    "recall@10": 0.0,
+    "precision@10": 0.0,
+    "mrr": 0.0
+  },
+  "analysis_metrics": {
+    "citation_accuracy": 0.0,
+    "sentence_prediction_accuracy": 0.22917303246776122,
+    "tag_f1": 0.5049999999999999,
+    "statute_relevance": 0.1
+  },
+  "overall_metrics": {
+    "end_to_end_accuracy": 0.0,
+    "average_latency_ms": 12646.089518070221,
+    "total_runtime_s": 252.95055270195007,
+    "success_rate": 1.0
+  },
+  "case_results": [
+    {
+      "case_id": "eval_0001",
+      "search_success": true,
+      "analysis_success": true,
+      "citation_found": false,
+      "sentence_match": true,
+      "latency_ms": 11969.14291381836,
+      "search_results_count": 3
+    },
+    {
+      "case_id": "eval_0002",
+      "search_success": true,
+      "analysis_success": true,
+      "citation_found": false,
+      "sentence_match": false,
+      "latency_ms": 12605.867147445679,
+      "search_results_count": 3
+    },
+    {
+      "case_id": "eval_0003",
+      "search_success": true,
+      "analysis_success": true,
+      "citation_found": false,
+      "sentence_match": true,
+      "latency_ms": 11113.646030426025,
+      "search_results_count": 3
+    },
+    {
+      "case_id": "eval_0004",
+      "search_success": true,
+      "analysis_success": true,
+      "citation_found": false,
+      "sentence_match": false,
+      "latency_ms": 19559.058666229248,
+      "search_results_count": 3
+    },
+    {
+      "case_id": "eval_0005",
+      "search_success": true,
+      "analysis_success": true,
+      "citation_found": false,
+      "sentence_match": true,
+      "latency_ms": 11668.034315109253,
+      "search_results_count": 3
+    },
+    {
+      "case_id": "eval_0006",
+      "search_success": true,
+      "analysis_success": true,
+      "citation_found": false,
+      "sentence_match": false,
+      "latency_ms": 10920.769453048706,
+      "search_results_count": 3
+    },
+    {
+      "case_id": "eval_0007",
+      "search_success": true,
+      "analysis_success": true,
+      "citation_found": false,
+      "sentence_match": false,
+      "latency_ms": 11070.772171020508,
+      "search_results_count": 3
+    },
+    {
+      "case_id": "eval_0008",
+      "search_success": true,
+      "analysis_success": true,
+      "citation_found": false,
+      "sentence_match": false,
+      "latency_ms": 12548.347234725952,
+      "search_results_count": 3
+    },
+    {
+      "case_id": "eval_0009",
+      "search_success": true,
+      "analysis_success": true,
+      "citation_found": false,
+      "sentence_match": false,
+      "latency_ms": 8054.038524627686,
+      "search_results_count": 3
+    },
+    {
+      "case_id": "eval_0010",
+      "search_success": true,
+      "analysis_success": true,
+      "citation_found": false,
+      "sentence_match": false,
+      "latency_ms": 10684.16976928711,
+      "search_results_count": 3
+    },
+    {
+      "case_id": "eval_0011",
+      "search_success": true,
+      "analysis_success": true,
+      "citation_found": false,
+      "sentence_match": false,
+      "latency_ms": 12459.70869064331,
+      "search_results_count": 3
+    },
+    {
+      "case_id": "eval_0012",
+      "search_success": true,
+      "analysis_success": true,
+      "citation_found": false,
+      "sentence_match": false,
+      "latency_ms": 11018.709659576416,
+      "search_results_count": 3
+    },
+    {
+      "case_id": "eval_0013",
+      "search_success": true,
+      "analysis_success": true,
+      "citation_found": false,
+      "sentence_match": false,
+      "latency_ms": 13872.023105621338,
+      "search_results_count": 3
+    },
+    {
+      "case_id": "eval_0014",
+      "search_success": true,
+      "analysis_success": true,
+      "citation_found": false,
+      "sentence_match": false,
+      "latency_ms": 11250.110626220703,
+      "search_results_count": 3
+    },
+    {
+      "case_id": "eval_0015",
+      "search_success": true,
+      "analysis_success": true,
+      "citation_found": false,
+      "sentence_match": false,
+      "latency_ms": 13199.028968811035,
+      "search_results_count": 3
+    },
+    {
+      "case_id": "eval_0016",
+      "search_success": true,
+      "analysis_success": true,
+      "citation_found": false,
+      "sentence_match": false,
+      "latency_ms": 14846.094846725464,
+      "search_results_count": 3
+    },
+    {
+      "case_id": "eval_0017",
+      "search_success": true,
+      "analysis_success": true,
+      "citation_found": false,
+      "sentence_match": false,
+      "latency_ms": 13580.501794815063,
+      "search_results_count": 3
+    },
+    {
+      "case_id": "eval_0018",
+      "search_success": true,
+      "analysis_success": true,
+      "citation_found": false,
+      "sentence_match": false,
+      "latency_ms": 15883.496522903442,
+      "search_results_count": 3
+    },
+    {
+      "case_id": "eval_0019",
+      "search_success": true,
+      "analysis_success": true,
+      "citation_found": false,
+      "sentence_match": false,
+      "latency_ms": 15354.969501495361,
+      "search_results_count": 3
+    },
+    {
+      "case_id": "eval_0020",
+      "search_success": true,
+      "analysis_success": true,
+      "citation_found": false,
+      "sentence_match": false,
+      "latency_ms": 11263.30041885376,
+      "search_results_count": 3
+    }
+  ],
+  "errors": []
+}
