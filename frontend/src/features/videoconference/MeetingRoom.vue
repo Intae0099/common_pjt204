@@ -78,11 +78,11 @@
   <!-- 오른쪽: 채팅·챗봇·나가기 (기존 그대로) -->
   <div class="footer-right">
     <div class="chat-btn-wrapper">
-      <button class="footer-btn" @click="toggleChat('realtime')">
-        <MessageSquareText class="footer-icon" />
+      <button class="footer-btn" @click="toggleChat('realtime')" :aria-pressed="activeChat==='realtime'">
+        <MessageSquareText class="footer-icon icon-chat" :class="{ active: activeChat === 'realtime' }"/>
       </button>
-      <button class="footer-btn" @click="toggleChat('chatbot')">
-        <img src="@/assets/ai-bot.png" class="footer-icon" />
+      <button class="footer-btn" @click="toggleChat('chatbot')" :aria-pressed="activeChat==='chatbot'">
+        <img src="@/assets/ai-bot.png" class="footer-icon bot-img" :class="{ active: activeChat === 'chatbot' }"/>
       </button>
     </div>
 
@@ -998,6 +998,22 @@ html, body, .meeting-room { background: #131516; }
   display: flex;
   gap: 1rem;
 }
+
+.chat-btn-wrapper .icon-chat { color: #9aa3ab; transition: color .15s ease; }
+.chat-btn-wrapper .icon-chat.active { color: #ffffff; }
+
+.chat-btn-wrapper .bot-img {
+  filter: grayscale(1) brightness(0.9);
+  opacity: .6;
+  transition: filter .15s ease, opacity .15s ease;
+}
+.chat-btn-wrapper .bot-img.active {
+  filter: none;
+  opacity: 1;
+}
+
+.chat-btn-wrapper .footer-btn:hover .icon-chat:not(.active) { color: #b7c0c7; }
+.chat-btn-wrapper .footer-btn:hover .bot-img:not(.active) { opacity: .75; }
 
 .footer-btn {
   background-color: #131516;

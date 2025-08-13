@@ -190,7 +190,7 @@ const router = createRouter({
       path: '/meeting',
       name: 'MeetingRoom',
       component: MeetingRoom,
-      meta: { requiresAuth: true }
+      meta: { requiresAuth: true, hideFooter: true  }
     },
     {
       path: '/chat/chatbot',

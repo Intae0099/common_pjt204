@@ -27,7 +27,7 @@
           <RouterLink to="/cases/search" class="nav-link" :class="{ active: isActive('/cases/search') }">판례 검색</RouterLink>
         </li>
         <li class="nav-item">
-          <RouterLink to="/lawyers" class="nav-link">변호사 조회</RouterLink>
+          <RouterLink to="/lawyers" class="nav-link">변호사 찾기</RouterLink>
         </li>
         <li class="nav-item">
           <RouterLink to="/consult-form" class="nav-link" :class="{ active: isActive('/consult-form') }" @click.prevent="goToConsultForm">AI상담신청서</RouterLink>

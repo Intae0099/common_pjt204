@@ -464,6 +464,7 @@ const goToReservation = lawyer => {
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 30px;
   margin-top: 20px;
+  align-items: start;
 }
 .lawyer-card {
   background-color: white;
@@ -476,8 +477,9 @@ const goToReservation = lawyer => {
   transition: box-shadow 0.2s ease, transform 0.2s ease;
   display: flex;
   flex-direction: column;
-  height: 100%;
+  /* height: 100%;  신규 삭제*/
   min-height: 260px;
+  align-self: start; /* 신규 추가 */
 }
 .lawyer-card:hover {
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12),
