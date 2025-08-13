@@ -26,7 +26,7 @@ const pinia = createPinia()
 app.use(pinia)
 app.use(router)
 
-const casesStore = useCasesStore(pinia)
-casesStore.initializeSearch()
+// const casesStore = useCasesStore(pinia)
+// casesStore.initializeSearch()
 
 app.mount('#app')
