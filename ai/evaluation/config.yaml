@@ -1,0 +1,21 @@
+# RAG 평가 설정
+api:
+  base_url: "http://122.38.210.80:8997/"
+  timeout_seconds: 30
+  
+evaluation:
+  k_values: [1, 3, 5]
+  enable_analysis: true
+  enable_charts: false
+  
+data:
+  eval_file: "../data/eval/total_eval_data.json"
+  
+output:
+  reports_dir: "evaluation/reports"
+  include_case_details: true
+  generate_charts: false
+
+logging:
+  level: "INFO"
+  file: "evaluation/logs/evaluation.log"

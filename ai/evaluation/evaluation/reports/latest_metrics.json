@@ -1,0 +1,57 @@
+{
+  "evaluation_summary": {
+    "total_cases": 2,
+    "timestamp": "2025-08-13T16:59:04.752023",
+    "config": {
+      "k_values": [
+        1,
+        3,
+        5
+      ],
+      "api_endpoint": "http://122.38.210.80:8997/",
+      "timeout_seconds": 30
+    }
+  },
+  "search_metrics": {
+    "recall@1": 0.0,
+    "precision@1": 0.0,
+    "recall@3": 0.0,
+    "precision@3": 0.0,
+    "recall@5": 0.0,
+    "precision@5": 0.0,
+    "mrr": 0.0
+  },
+  "analysis_metrics": {
+    "citation_accuracy": 0.0,
+    "sentence_prediction_accuracy": 0.5,
+    "tag_f1": 0.65,
+    "statute_relevance": 0.5
+  },
+  "overall_metrics": {
+    "end_to_end_accuracy": 0.0,
+    "average_latency_ms": 14764.078140258789,
+    "total_runtime_s": 29.539063930511475,
+    "success_rate": 1.0
+  },
+  "case_results": [
+    {
+      "case_id": "eval_0001",
+      "search_success": true,
+      "analysis_success": true,
+      "citation_found": false,
+      "sentence_match": true,
+      "latency_ms": 14564.048290252686,
+      "search_results_count": 3
+    },
+    {
+      "case_id": "eval_0002",
+      "search_success": true,
+      "analysis_success": true,
+      "citation_found": false,
+      "sentence_match": false,
+      "latency_ms": 14964.107990264893,
+      "search_results_count": 3
+    }
+  ],
+  "errors": []
+}
