@@ -116,7 +116,7 @@ const handleFormSubmit = async (formData) => {
   }
 }
 const handleFinalSubmit = async () => {
-  const hasPreviousApplication = applicationId.value !== null;
+  window.scrollTo(0, 0);
   const tagNamesFromAI = aiResult.value.tags || [];
 
   // ★★★ 핵심 변환 로직 ★★★

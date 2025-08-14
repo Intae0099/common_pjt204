@@ -27,7 +27,7 @@
           </div>
           <div class="form-group scrollable-group">
             <label>사건 개요</label>
-            <p class="scrollable-content">{{ aiData.fullText }}</p>
+            <p class="scrollable-content">{{ aiData.summary }}</p>
           </div>
           <div class="form-group scrollable-group">
             <label>원하는 결과</label>
@@ -72,7 +72,7 @@
 <script setup>
 import { ref } from 'vue'
 
-import ConsultationForm from './ConsultationForm.vue'
+
 import { InformationCircleIcon } from '@heroicons/vue/24/outline'
 
 const props = defineProps({
