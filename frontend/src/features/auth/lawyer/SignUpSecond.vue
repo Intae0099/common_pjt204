@@ -8,10 +8,10 @@
 
     <!-- 페이지 단계 표시 -->
     <div class="step-indicator">
-      <span class="step">1</span>
-      <span class="dot">···</span>
+      <span class="step" @click="goToFirstStep">1</span>
+      <span class="dot"></span>
       <span class="step active">2</span>
-      <span class="dot">···</span>
+      <span class="dot"></span>
       <span class="step">3</span>
     </div>
 
@@ -23,7 +23,10 @@
           <select v-model="form.exam" required class="custom-select">
             <option disabled value="">시험선택</option>
             <option value="사법시험">사법시험</option>
-            <option value="로스쿨">로스쿨</option>
+            <option value="변호사시험">변호사시험</option>
+            <option value="군법무관 임용시험">군법무관 임용시험</option>
+            <option value="고등고시">고등고시</option>
+
           </select>
         </div>
 
@@ -62,6 +65,10 @@ export default {
     };
   },
   methods: {
+    goToFirstStep() {
+      this.$router.push('/signup/step1'); // SignUpFirst.vue의 경로
+    },
+
     handleSubmit() {
       const authStore = useAuthStore();
 
@@ -130,11 +137,11 @@ export default {
 }
 
 .dot {
-  color: #B9D0DF;
-  font-size: 1.5rem;
+  color: #6c9bcf;
+  font-size: 0rem;
   display: flex;
   align-items: center;
-  letter-spacing: 0.2rem;
+  margin-top: 15px;
 }
 
 .signup-box {

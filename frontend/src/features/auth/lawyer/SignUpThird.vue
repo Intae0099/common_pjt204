@@ -8,10 +8,10 @@
 
     <!-- 페이지 단계 표시 -->
     <div class="step-indicator">
-      <span class="step">1</span>
-      <span class="dot">···</span>
-      <span class="step">2</span>
-      <span class="dot">···</span>
+      <span class="step" @click="goToFirstStep">1</span>
+      <span class="dot"></span>
+      <span class="step" @click="goToSecondStep">2</span>
+      <span class="dot"></span>
       <span class="step active">3</span>
     </div>
 
@@ -21,7 +21,7 @@
         <!-- 프로필 사진 -->
         <div class="form-group">
           <label>프로필 사진 (필수, 1MB 미만)</label> <!-- 안내 문구 수정 -->
-          <input type="file" accept="image/*" @change="handleImageUpload" />
+          <input type="file" accept="image/*" class="file-choice" @change="handleImageUpload" />
 
           <!-- [수정 1] 파일 크기 에러 메시지를 표시할 부분 -->
           <p v-if="imageError" class="error-message">{{ imageError }}</p>
@@ -111,6 +111,14 @@ export default {
       }
     },
 
+    goToFirstStep() {
+      this.$router.push('/signup/step1'); // SignUpFirst.vue의 경로
+    },
+    goToSecondStep() {
+      this.$router.push('/signup/step2'); // SignUpFirst.vue의 경로
+    },
+
+
     // [수정 3] 파일 크기 검증 로직 추가된 handleImageUpload 메소드
     handleImageUpload(event) {
       const file = event.target.files[0];
@@ -172,6 +180,7 @@ export default {
   flex-direction: column;
   align-items: center;
   margin-top: 120px;
+  margin-bottom: 50px;
   font-family: 'Pretendard', sans-serif;
 }
 .signup-header {
@@ -208,11 +217,11 @@ export default {
   font-size: 1.5rem;
 }
 .dot {
-  color: #B9D0DF;
-  font-size: 1.5rem;
+  color: #6c9bcf;
+  font-size: 0rem;
   display: flex;
   align-items: center;
-  letter-spacing: 0.2rem;
+  margin-top: 15px;
 }
 .signup-box {
   width: 400px;
@@ -238,6 +247,14 @@ export default {
   font-weight: bold;
   color: #072D45;
 }
+.file-choice {
+  width: 100%;
+  padding: 2px;
+  font-size: 14px;
+  border-radius: 6px;
+  /* border: 1px solid #ccc; */
+  margin-top: 8px;
+}
 .textarea-input {
   width: 100%;
   padding: 10px;
@@ -259,19 +276,19 @@ export default {
   gap: 10px;
 }
 .tag-btn {
-  padding: 6px 12px;
-  border-radius: 20px;
+  padding: 4px 8px;
+  border-radius: 12px;
   border: 1px solid #ccc;
-  background-color: #f1f5f9;
+  background-color: #f1f1f1;
   font-size: 13px;
   color: #333;
   cursor: pointer;
   transition: all 0.2s;
 }
 .tag-btn.selected {
-  background-color: #0c2c46;
+  background-color: #1d2b50;
   color: white;
-  border-color: #0c2c46;
+  border-color: #1d2b50;
 }
 .next-btn {
   background-color: #0c2c46;

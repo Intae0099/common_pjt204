@@ -105,6 +105,7 @@ const handleLogin = async () => {
   align-items: center;
   height: 100vh;
   background-color: #f0f2f5;
+  font-family: 'Noto Sans KR', sans-serif;
 }
 
 .login-box {
@@ -145,7 +146,7 @@ h2 {
 button {
   width: 100%;
   padding: 0.75rem;
-  background-color: #007bff;
+  background-color: #1d2b50;
   color: white;
   border: none;
   border-radius: 4px;
@@ -156,16 +157,16 @@ button {
 }
 
 button:hover {
-  background-color: #0056b3;
+  background-color: #6c9bcf;
 }
 
 button:disabled {
-  background-color: #a0c7e4;
+  background-color: #888;
   cursor: not-allowed;
 }
 
 .error-message {
-  color: #d93025;
+  color: #d32f2f;
   margin-top: 1rem;
   font-size: 0.9rem;
 }

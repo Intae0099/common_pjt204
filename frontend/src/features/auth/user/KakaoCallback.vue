@@ -19,7 +19,9 @@ onMounted(() => {
   if (accessToken) {
     auth.setToken(accessToken)
     auth.setUserType('USER')
+    localStorage.setItem('hasRefresh', 'true');
     router.replace({ name: 'UserMyPage' })
+
   } else {
     alert('로그인에 실패했습니다.')
     router.replace({ name: 'SocialLogin' })

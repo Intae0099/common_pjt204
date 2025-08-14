@@ -9,9 +9,9 @@
     <!-- 페이지 단계 표시 -->
     <div class="step-indicator">
       <span class="step active">1</span>
-      <span class="dot">···</span>
+      <span class="dot"></span>
       <span class="step">2</span>
-      <span class="dot">···</span>
+      <span class="dot"></span>
       <span class="step">3</span>
     </div>
 
@@ -69,7 +69,7 @@
 
     <!-- 하단 링크 -->
     <div class="footer-links">
-      <router-link to="/">메인화면으로</router-link>
+      <router-link to="/" class="main_link">메인화면으로</router-link>
     </div>
   </div>
 </template>
@@ -225,13 +225,12 @@ export default {
   font-size: 1.5rem;
 }
 .dot {
-  color: #B9D0DF;
-  font-size: 1.5rem;
+  color: #6c9bcf;
+  font-size: 0rem;
   display: flex;
   align-items: center;
-  letter-spacing: 0.2rem;
+  margin-top: 15px;
 }
-
 
 .signup-box {
   width: 400px;
@@ -314,8 +313,17 @@ export default {
 .footer-links {
   margin-top: 20px;
   font-size: 13px;
-  color: #777;
+
 }
+.main_link {
+  color: #888;
+  font-style: none;
+  text-decoration: none;
+}
+.main_link:hover {
+  color: #6c9bcf;
+}
+
 .error-message {
   color: red;
   font-size: 0.8rem;

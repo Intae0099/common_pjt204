@@ -298,6 +298,7 @@ h1{
 .empty {
   margin-top: 10px;
   color: #cfcfcf;
+  text-align: center;
 }
 .back-button {
   margin-top: 100px;

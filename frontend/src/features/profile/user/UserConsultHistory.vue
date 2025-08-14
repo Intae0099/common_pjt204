@@ -151,6 +151,7 @@ const filterText = (status) => {
     case 'all': return '전체';
     case 'PENDING': return '대기중';
     case 'CONFIRMED': return '상담확정';
+    case 'IN_PROGRESS': return '진행중';
     case 'REJECTED': return '거절됨';
     case 'CANCELLED': return '취소됨';
     case 'ENDED': return '상담종료';
@@ -278,6 +279,7 @@ h1{
   border: 1px solid #cfcfcf;
   border-radius: 8px;
   padding: 1.5rem;
+
 }
 .card-left {
   display: flex;
@@ -300,6 +302,8 @@ h1{
 .empty {
   margin-top: 10px;
   color: #cfcfcf;
+  text-align: center;
+
 }
 .back-button {
   margin-top: 100px;
@@ -377,6 +381,12 @@ h1{
 .status-pending,
 .status-rejected,
 .status-cancelled,
+.status-in_progress {
+  padding: 2px 10px;
+  border-radius: 15px;
+  font-size: 0.8rem;
+  display: inline-block;
+}
 .status-ended {
   padding: 2px 10px;
   border-radius: 15px;
@@ -398,6 +408,10 @@ h1{
 }
 .status-cancelled {
   background: #B3261E;
+  color: white;
+}
+.status-in_progress{
+  background: #3d4db5;
   color: white;
 }
 .status-ended {

@@ -5,7 +5,7 @@
 
     <!-- 변호사 목록 조회 -->
     <div class="search-section">
-      <button @click="fetchPendingLawyers" :disabled="loading">
+      <button class="reset-btn" @click="fetchPendingLawyers" :disabled="loading">
         {{ loading ? '조회 중...' : '대기중인 변호사 목록 조회' }}
       </button>
       <p v-if="error" class="error-message">{{ error }}</p>
@@ -44,7 +44,7 @@
         </tr>
       </tbody>
     </table>
-    <p v-else-if="!loading">처리할 변호사가 없습니다.</p>
+    <p v-else-if="!loading" class="no-lawyer">처리할 변호사가 없습니다.</p>
   </div>
 </template>
 
@@ -136,15 +136,63 @@ const isProcessing = (lawyerId) => {
 
 <style scoped>
 /* 이전 컴포넌트와 유사한 스타일 */
-.container { padding: 20px; }
+.container {
+  font-family: 'Noto Sans KR', sans-serif;
+  padding: 20px;
+}
+h1 {
+  font-size: 1.8rem;
+  margin-bottom: 16px;
+  font-weight: bold;
+}
+.reset-btn {
+  background-color: #f4f7fb;
+  color: #333333;
+  padding: 4px 8px;
+  border: 1px solid #6c9bcf;
+  border-radius: 15px;
+  cursor: pointer;
+  margin-bottom: 20px;
+  font-size: 0.8rem;
+}
 .error-message { color: red; }
 .search-section { margin-bottom: 20px; }
-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-th { background-color: #f2f2f2; }
+table {
+  width: 100%;
+  border : 1px solid #888;
+  margin-top: 20px;
+  color:#333333;
+  font-size: 0.8rem;
+
+}
+tr {
+  font-style: bold;
+  background-color: #f4f7fb;
+}
+th, td {
+  border: 1px solid #ddd;
+  padding: 6px;
+  text-align: center;
+}
+th {
+  background-color: #f2f2f2;
+}
+
+table th:nth-child(2),
+table td:nth-child(2) {
+  white-space: nowrap; /* 줄바꿈 방지 */
+}
+
+table th:nth-child(5),
+table td:nth-child(5) {
+  white-space: nowrap; /* 줄바꿈 방지 */
+}
 td button { margin-right: 5px; }
 .reject-btn { background-color: #f44336; color: white; }
 .status-pending { color: orange; font-weight: bold; }
 .status-approved { color: green; font-weight: bold; }
 .status-rejected { color: red; font-weight: bold; }
+.no-lawyer {
+  color: #888;
+}
 </style>

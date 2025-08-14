@@ -371,6 +371,7 @@ onMounted(async () => {
   border-radius: 50%;
   object-fit: cover;
   margin-right: 20px;
+  margin-bottom: 15px;
 }
 .profile-info {
   display: flex;
