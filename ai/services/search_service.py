@@ -22,26 +22,8 @@ class SearchService:
 
     async def vector_search(self, query: str, page: int = 1, size: int = 10, use_rerank: bool = True) -> tuple[list[dict], int]:
         """
-        주어진 질의(query)에 대해 임베딩 유사도 기준으로
-        유사한 법률 문서 청크를 조회한다.
+        주어진 질의(query)에 대해 임베딩 유사도 기준으로 유사한 법률 문서 청크를 조회한다.
         재정렬 옵션(use_rerank)을 통해 Cross-encoder로 결과를 재정렬할 수 있다.
-
-        매개변수
-        ----------
-        query : str
-            검색어(자연어 문장 또는 키워드).
-        page : int, 기본값 1
-            페이지 번호.
-        size : int, 기본값 10
-            페이지 당 결과 개수.
-        use_rerank : bool, 기본값 True
-            Cross-encoder를 사용하여 검색 결과를 재정렬할지 여부.
-
-        반환값
-        ----------
-        tuple[list[dict], int]
-            각 요소가 {'case_id': str, 'title': str, 'decision_date': date, 'category': str, 'summary': str, 'full_text': str} 형태인 리스트와 총 결과 개수.
-            DB 오류나 예외 발생 시 빈 리스트와 0을 반환한다.
         """
         query_embedding = self.embedding_model.get_embedding(query)
 
@@ -51,11 +33,11 @@ class SearchService:
             register_vector(conn)
 
             with conn.cursor() as cur:
-                # 먼저 전체 개수를 가져옵니다.
+                # 전체 개수
                 cur.execute("SELECT COUNT(DISTINCT lc.case_id) FROM legal_chunks lch JOIN legal_cases lc ON lch.case_id = lc.case_id")
                 total_count = cur.fetchone()[0]
 
-                # 페이지네이션을 고려하여 검색합니다.
+                # 페이지네이션 검색
                 offset = (page - 1) * size
                 cur.execute(
                     """
@@ -80,12 +62,25 @@ class SearchService:
                     }
                     for cid, title, decision_date, category, issue, summary, full_text, chunk_text in cur.fetchall()
                 ]
-            logger.debug(f"Initial search results: {initial_results}")
+
+            # 🔧 DEBUG: 초기 검색 결과 → 제목 + 개수만 표시
+            init_titles = [
+                (doc.get("title") if isinstance(doc.get("title"), str) else str(doc.get("title")))
+                for doc in initial_results
+            ]
+            logger.debug(f"[search] count={len(initial_results)}, titles={init_titles}")
 
             if use_rerank:
                 logger.info("Applying reranking to search results...")
                 reranked = self._rerank_cases(query, initial_results)
-                logger.debug(f"Reranked results: {reranked}")
+
+                # 🔧 DEBUG: 재정렬 결과 → 제목 + 개수만 표시
+                rerank_titles = [
+                    (doc.get("title") if isinstance(doc.get("title"), str) else str(doc.get("title")))
+                    for doc in reranked
+                ]
+                logger.debug(f"[rerank] count={len(reranked)}, titles={rerank_titles}")
+
                 return reranked, total_count
             else:
                 logger.info("Reranking skipped.")
@@ -104,16 +99,6 @@ class SearchService:
     async def get_case_by_id(self, prec_id: str) -> dict | None:
         """
         판례 ID로 판례의 상세 정보를 조회합니다.
-
-        매개변수
-        ----------
-        prec_id : str
-            판례 ID.
-
-        반환값
-        ----------
-        dict | None
-            판례 상세 정보 딕셔너리 또는 찾을 수 없는 경우 None.
         """
         conn = None
         try:
@@ -145,18 +130,6 @@ class SearchService:
     def _rerank_cases(self, query: str, initial_results: list[dict]) -> list[dict]:
         """
         Cross-encoder 모델을 사용하여 초기 검색 결과(판례 요약)를 재평가하여 관련도 순으로 재정렬한다.
-
-        매개변수
-        ----------
-        query : str
-            사용자 질의.
-        initial_results : list[dict]
-            초기 검색 결과. 각 요소는 {'case_id': str, 'summary': str, 'full_text': str} 형태.
-
-        반환값
-        ----------
-        list[dict]
-            재정렬된 검색 결과. 각 요소는 초기 결과와 동일한 형태이며, score 필드가 추가된다.
         """
         if not initial_results:
             return []
@@ -165,9 +138,12 @@ class SearchService:
         for i, doc in enumerate(initial_results):
             summary = doc.get('summary')
             if not isinstance(summary, str):
-                logger.warning(f"Document {i} (Case ID: {doc.get('case_id', 'N/A')}) has non-string summary: Type={type(summary)}, Value={summary}")
+                logger.warning(
+                    f"Document {i} (Case ID: {doc.get('case_id', 'N/A')}) has non-string summary: Type={type(summary)}, Value={summary}"
+                )
                 summary = str(summary) if summary is not None else ""
             documents_to_rerank.append(summary)
+
         scores = self.cross_encoder_model.get_cross_encoder_scores(query, documents_to_rerank)
 
         scored_results = []
@@ -176,6 +152,5 @@ class SearchService:
             scored_results.append(doc)
 
         reranked_results = sorted(scored_results, key=lambda x: x['score'], reverse=True)
-
         logger.info(f"Reranked {len(reranked_results)} cases based on Cross-encoder scores.")
         return reranked_results
