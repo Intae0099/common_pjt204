@@ -145,3 +145,42 @@ def get_container() -> Container:
 def inject(interface: Type[T]) -> T:
     """의존성 주입 헬퍼 함수"""
     return get_container().get(interface)
+
+
+# Container 클래스에 서비스 접근 메서드 추가
+def _add_service_methods():
+    """Container 클래스에 서비스 접근 메서드들을 동적으로 추가"""
+    
+    def case_analysis_service(self):
+        return self.get(CaseAnalysisService)
+    
+    def search_service(self):
+        return self.get(SearchService)
+    
+    def structuring_service(self):
+        return self.get(StructuringService)
+    
+    def chat_service(self):
+        return self.get(ChatService)
+    
+    def consultation_service(self):
+        return self.get(ConsultationService)
+    
+    def external_api_client(self):
+        return self.get(ExternalAPIClient)
+    
+    def lawyer_recommendation_service(self):
+        return self.get(LawyerRecommendationService)
+    
+    # 메서드들을 Container 클래스에 추가
+    Container.case_analysis_service = case_analysis_service
+    Container.search_service = search_service
+    Container.structuring_service = structuring_service
+    Container.chat_service = chat_service
+    Container.consultation_service = consultation_service
+    Container.external_api_client = external_api_client
+    Container.lawyer_recommendation_service = lawyer_recommendation_service
+
+
+# 모듈 로드 시 메서드들을 추가
+_add_service_methods()

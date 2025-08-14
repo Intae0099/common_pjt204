@@ -58,3 +58,6 @@ zstandard==0.23.0
 greenlet==3.2.3
 typer==0.16.0
 tqdm==4.67.1
+
+# 큐 시스템 추가 의존성
+psutil>=5.9.0 

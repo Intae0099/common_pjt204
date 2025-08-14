@@ -14,8 +14,10 @@ from app.api.schemas.search import (
 from app.api.decorators import handle_api_exceptions, validate_pagination
 from app.api.response_models import PaginatedResponse
 from services.search_service import SearchService
-from app.api.dependencies import get_search_service
-from app.api.exceptions import ResourceNotFoundException
+from app.api.dependencies import get_search_service, get_current_user
+from app.api.dependencies_queue import get_queue_service
+from app.api.exceptions import ResourceNotFoundException, BadRequestException
+from services.lightweight_queue_manager import LightweightQueueManager, ResourceExhaustionError, QueueFullError
 
 router = APIRouter()
 
@@ -32,7 +34,8 @@ async def search_cases_endpoint(
     keyword: str = Query(..., min_length=2, description="검색 키워드 (2자 이상)"),
     page: int = Query(1, ge=1, description="페이지 번호"),
     size: int = Query(10, ge=1, le=100, description="페이지 당 결과 수"),
-    search_service: SearchService = Depends(get_search_service)
+    user_id: str = Depends(get_current_user),
+    queue_service: LightweightQueueManager = Depends(get_queue_service)
 ):
     """
     판례 목록 검색 API입니다.
@@ -40,7 +43,31 @@ async def search_cases_endpoint(
     - **page**: 페이지 번호 (기본값 1)
     - **size**: 페이지 당 결과 수 (기본값 10, 최대 100)
     """
-    search_results, total_count = await search_service.vector_search(keyword, page, size, use_rerank=True)
+    try:
+        # 큐를 통한 검색 처리
+        request_data = {
+            "query": keyword,
+            "page": page,
+            "size": size,
+            "use_rerank": True
+        }
+        
+        search_result = await queue_service.submit_and_wait(
+            service_type="search",
+            request_data=request_data,
+            user_id=user_id,
+            timeout=120  # 2분 타임아웃
+        )
+        
+        search_results = search_result["search_results"]
+        total_count = search_result["total_count"]
+        
+    except QueueFullError:
+        raise BadRequestException("현재 검색 요청이 많아 처리할 수 없습니다. 잠시 후 다시 시도해주세요.")
+    except ResourceExhaustionError:
+        raise BadRequestException("시스템 리소스가 부족합니다. 잠시 후 다시 시도해주세요.")
+    except Exception as e:
+        raise BadRequestException(f"검색 처리 중 오류가 발생했습니다: {str(e)}")
 
     items = []
     for result in search_results:

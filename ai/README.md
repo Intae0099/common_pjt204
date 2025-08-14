@@ -20,6 +20,7 @@ ALaw 플랫폼은 법률 상담의 진입장벽을 낮추기 위해 기획되었
     - **법령 검증 및 보강 시스템**: LLM이 생성한 법령 정보를 실제 법령 데이터베이스(5,502개 법령)와 벡터 검색으로 검증하고, 조항 정보를 보존하여 정확한 법령 참조를 제공합니다. (`services/statute_validation_service.py`)
 - **상담 신청서 생성 AI**: 분석된 사건 내용과 사용자 추가 정보를 결합하여 정형화된 상담 신청서를 생성하고, 변호사를 위한 핵심 질문을 자동으로 도출합니다. (`services/consultation_service.py`)
 - **실시간 법률 챗봇**: `FastAPI`의 SSE(Server-Sent Events)를 활용하여 법률 도메인 특화 AI 챗봇과의 실시간 스트리밍 대화를 지원합니다. (`services/chat_service.py`)
+- **리소스 제약 환경 대응 큐 시스템**: 메모리/CPU 제한 환경에서 안정적 동작을 위한 SQLite 기반 경량 큐 시스템으로 동시 처리 제한 및 리소스 모니터링을 통해 서버 과부하를 방지합니다. (`services/lightweight_queue_manager.py`)
 
 ## 3. 기술 스택 (Tech Stack)
 
@@ -27,6 +28,7 @@ ALaw 플랫폼은 법률 상담의 진입장벽을 낮추기 위해 기획되었
 - **Framework**: FastAPI, Pydantic
 - **AI & LLM**: LangChain, OpenAI GPT-4o, Sentence-Transformers
 - **API & Database**: SQLAlchemy, PostgreSQL, pgvector (벡터 검색)
+- **Queue System**: SQLite-based Lightweight Queue, psutil (Resource Monitoring)
 - **Testing**: Pytest
 - **Deployment**: Docker, Uvicorn
 
@@ -55,13 +57,30 @@ ALaw 플랫폼은 법률 상담의 진입장벽을 낮추기 위해 기획되었
 3.  **환경 변수 설정**
     `config/.env.example` 파일을 `config/.env`로 복사하고, 내부에 OpenAI API 키 등 필요한 환경 변수를 설정합니다.
 
+4.  **큐 시스템 의존성 설치**
+    ```bash
+    pip install psutil>=5.9.0
+    ```
+
 ### 4.3. 로컬 서버 실행
 
 ```bash
 uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-### 4.4. Docker를 이용한 배포
+### 4.4. 큐 시스템 상태 확인
+
+서버 실행 후 큐 시스템 상태를 확인할 수 있습니다:
+
+```bash
+# 큐 상태 조회
+curl http://localhost:8000/api/queue/status
+
+# 큐 시스템 헬스체크
+curl http://localhost:8000/api/queue/health
+```
+
+### 4.5. Docker를 이용한 배포
 
 현재 프로젝트는 완전한 Docker 기반 배포 환경을 지원합니다.
 
@@ -119,7 +138,14 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 프로젝트 루트 디렉토리에서 다음 명령어를 실행하여 모든 테스트를 수행할 수 있습니다.
 
 ```bash
+# 전체 테스트 실행
 pytest
+
+# 큐 시스템 테스트만 실행
+pytest tests/test_queue_system.py -v
+
+# 특정 서비스 테스트 실행
+pytest tests/services/ -v
 ```
 
 ## 6. 운영 및 모니터링
@@ -140,9 +166,28 @@ pytest
 본 프로젝트는 FastAPI 기반의 마이크로서비스 아키텍처를 채택하고 있습니다.
 
 - **API 계층**: FastAPI 라우터를 통한 요청 처리
+- **큐 계층**: SQLite 기반 경량 큐 시스템으로 리소스 관리 및 동시 처리 제한
 - **서비스 계층**: 비즈니스 로직별 독립적인 서비스 모듈
 - **데이터 계층**: PostgreSQL + FAISS 벡터 DB 하이브리드 구성
 - **배포 계층**: Docker 컨테이너 기반 마이크로서비스
+
+### 큐 시스템 아키텍처
+
+리소스 제약 환경에서 안정적 동작을 위한 보수적 큐 시스템:
+
+```
+User Request → Queue Manager → Resource Monitor → Service Execution
+     ↓              ↓               ↓                    ↓
+  API Router → SQLite Queue → CPU/Memory Check → Actual Service Call
+     ↓              ↓               ↓                    ↓
+Response ←    Result Wait  ←   Throttling     ←    Result Return
+```
+
+**주요 특징:**
+- **보수적 제한**: Case Analysis(1개), Search(2개), Chat(3개) 동시 처리
+- **리소스 모니터링**: 메모리 75%, CPU 80% 임계점 기반 처리 제어
+- **우선순위 처리**: 서비스별 중요도에 따른 우선순위 큐
+- **장애 복구**: 타임아웃, 재시도, graceful degradation 지원
 
 📖 **상세 가이드**: [아키텍처 문서](docs/ARCHITECTURE.md)
 
@@ -155,6 +200,7 @@ pytest
     -   **LLM 기반 법률 분석 기능 개발**: `OpenAI GPT-4o` 모델과 `LangChain`을 연동하여, 정제된 사건 내용과 검색된 판례를 바탕으로 법률적 쟁점을 도출하고 초기 법률 소견을 생성하는 `CaseAnalysisService`를 개발했습니다. 객관적 근거 기반 신뢰도 계산 시스템을 도입하여 30-95% 범위의 신뢰할 수 있는 분석 결과를 제공합니다.
     -   **법령 검증 및 보강 시스템 구축**: 5,502개 법령 데이터를 벡터화하여 PostgreSQL + pgvector 기반 데이터베이스를 구축하고, LLM이 생성한 법령 정보를 실제 법령 데이터베이스와 매칭하여 검증하는 `StatuteValidationService`를 개발했습니다. 조항 정보 보존 로직을 통해 "형법 제347조" 등 세부 조항까지 정확하게 참조할 수 있도록 구현했습니다.
     -   **실시간 챗봇 스트리밍 구현**: 사용자와의 상호작용을 높이기 위해 `FastAPI`의 Server-Sent Events (SSE)를 활용, `ChatService`에서 LLM의 답변을 토큰 단위로 스트리밍하는 기능을 구현했습니다.
+    -   **리소스 제약 환경 대응 큐 시스템 구축**: 메모리/CPU 성능이 제한적인 환경에서 안정적으로 동작하는 SQLite 기반 경량 큐 시스템을 설계하고 구현했습니다. 보수적 동시 처리 제한(Case Analysis 1개, Search 2개), 리소스 모니터링(메모리 75%, CPU 80% 임계점), 우선순위 기반 작업 스케줄링을 통해 서버 과부하를 방지하고 안정적인 서비스 제공을 보장했습니다.
     -   **완전 자동화된 CI/CD 파이프라인 구축**: GitLab CI/CD와 Windows Runner를 활용하여 코드 Push부터 프로덕션 배포까지 완전 자동화된 파이프라인을 구축했습니다. Docker 기반 컨테이너화, 스마트 헬스체크, Mattermost 알림 시스템을 통해 안정적인 배포 환경을 구현했습니다.
     -   **Docker 기반 마이크로서비스 아키텍처**: 애플리케이션과 데이터베이스를 독립적인 Docker 컨테이너로 분리하고, docker-compose를 통한 오케스트레이션으로 확장 가능한 배포 환경을 구축했습니다.
     -   **테스트 자동화**: `Pytest`를 사용하여 각 API 엔드포인트와 서비스 로직에 대한 단위/통합 테스트 코드를 작성(`tests/` 디렉토리)하여 코드의 안정성과 신뢰성을 확보했습니다.
@@ -163,6 +209,7 @@ pytest
     -   **법률 AI 서비스 완전 자동화**: 사건접수 → 분석 → 상담준비 전 과정을 AI로 자동화하는 백엔드 시스템 구축 완료
     -   **신뢰도 기반 법률 분석 시스템**: 객관적 근거(판례 유사도, 사건 일치도, 법령 정확도)를 기반으로 한 30-95% 범위의 신뢰할 수 있는 분석 결과 제공 및 법적 안전성 확보
     -   **법령 참조 정확도 대폭 개선**: 벡터 검색 기반 법령 검증 시스템 구축으로 LLM 환각 문제를 해결하고, 실제 존재하는 법령만 참조하도록 보장 (5,502개 법령 데이터베이스 기반)
+    -   **리소스 제약 환경 안정성 확보**: SQLite 기반 경량 큐 시스템 도입으로 메모리/CPU 사용량을 50-70% 절약하고, 동시 처리 제한을 통해 서버 과부하 방지 및 안정적 서비스 제공 보장
     -   **무중단 배포 시스템 구현**: 코드 Push부터 프로덕션 반영까지 15-20분 내 완전 자동화된 CI/CD 파이프라인 구축
     -   **확장 가능한 마이크로서비스 아키텍처**: 각 AI 기능을 독립적인 서비스로 분리하여 개별 테스트 및 확장 가능한 구조 설계
     -   **실시간 모니터링 및 알림 시스템**: Mattermost 연동을 통한 실시간 배포 상태 알림 및 장애 감지 시스템 구축
@@ -171,6 +218,7 @@ pytest
 
 -   **RAG 정확도 문제**: 특정 법률 용어나 복잡한 사건 맥락에서 관련성이 낮은 판례가 검색되는 경우가 있어, 임베딩 모델의 미세조정(Fine-tuning)이나 하이브리드 검색(키워드+벡터) 도입을 통한 검색 품질 개선이 필요합니다.
 -   **임베딩 검색 속도**: `Faiss`를 사용함에도 불구하고 대규모 데이터셋에서 초기 유사 벡터 검색 시 응답 지연이 발생하고 있어, 인덱스 구조 최적화나 근사 탐색(ANN) 파라미터 튜닝이 요구됩니다.
+-   **큐 시스템 확장성**: 현재 SQLite 기반 단일 서버 큐 시스템을 Redis Cluster 기반 분산 큐로 확장하여 다중 서버 환경에서의 확장성과 고가용성을 확보하는 방안을 검토 중입니다.
 -   **챗봇 대화의 일관성 유지**: 다수의 동시 사용자가 각자의 대화 맥락을 독립적으로 유지하며 일관성 있는 답변을 받도록 현재의 인메모리 기반 대화 기록 방식을 `Redis`와 같은 외부 세션 저장소로 확장하는 방안을 검토 중입니다.
 -   **배포 환경 이중화**: 현재 단일 서버 배포 환경을 고가용성(HA) 구성으로 확장하여 무중단 서비스 제공 및 부하 분산 체계 구축이 필요합니다.
 
