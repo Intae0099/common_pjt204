@@ -25,7 +25,7 @@
         <div class="meta-grid">
           <div class="meta-item">
             <span class="meta-label">사건번호</span>
-            <span class="meta-value">{{ caseData.caseNumber || '-' }}</span>
+            <span class="meta-value">{{ caseData.caseId || '-' }}</span>
           </div>
           <div class="meta-item">
             <span class="meta-label">사건종류</span>
@@ -156,7 +156,7 @@ onMounted(async () => {
 .title-block{
   position:relative; padding:18px 22px 10px 22px; margin-bottom:12px; border-left:4px solid #6c9bcf;
 }
-.title{ margin-bottom:10px; font-size:24px; line-height:0.40; font-weight:800; color:#333333; }
+.title{ margin-bottom:10px; font-size:24px; line-height:1.5; font-weight:800; color:#333333; word-break: keep-all; }
 
 /* 메타 카드 */
 .meta-card{
