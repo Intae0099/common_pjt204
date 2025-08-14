@@ -92,15 +92,9 @@
       </div>
     </div>
     <div v-else class="empty-state">
-<<<<<<< HEAD
-      <h1>AI 사전 상담</h1>
-      <p>질문만 입력하면 상황을 정리해드리고,<br />
-        유사한 판례까지 AI가 찾아드립니다.</p>
-=======
       <h1 class="title-ko">로우봇</h1>
       <p class="title-en">Law Bot</p>
 
->>>>>>> 4a80cf5 (fix: ai상담 디자인 수정)
       <img class="guide-bot" src="@/assets/ai-consult-bot.png" alt="AI 봇" />
 
       <p class="lead">

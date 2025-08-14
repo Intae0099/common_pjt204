@@ -21,19 +21,19 @@
       <!-- 가운데: 메뉴 목록 (PC) -->
       <ul class="nav gap-4 d-none d-lg-flex">
         <li class="nav-item">
-          <RouterLink to="/ai-consult" class="nav-link">AI사전상담</RouterLink>
+          <RouterLink to="/ai-consult" class="nav-link" @click="refreshData">AI사전상담</RouterLink>
         </li>
         <li class="nav-item">
-          <RouterLink to="/cases/search" class="nav-link" :class="{ active: isActive('/cases/search') }">판례 검색</RouterLink>
+          <RouterLink to="/cases/search" class="nav-link" :class="{ active: isActive('/cases/search') }" @click="refreshData">판례 검색</RouterLink>
         </li>
         <li class="nav-item">
-          <RouterLink to="/lawyers" class="nav-link">변호사 찾기</RouterLink>
+          <RouterLink to="/lawyers" class="nav-link" @click="refreshData">변호사 찾기</RouterLink>
         </li>
         <li class="nav-item">
-          <RouterLink to="/consult-form" class="nav-link" :class="{ active: isActive('/consult-form') }" @click.prevent="goToConsultForm">AI상담신청서</RouterLink>
+          <RouterLink to="/consult-form" class="nav-link" :class="{ active: isActive('/consult-form') }" @click="refreshData" @click.prevent="goToConsultForm">AI상담신청서</RouterLink>
         </li>
         <li class="nav-item">
-          <RouterLink :to="videoCallPath" class="nav-link">화상상담</RouterLink>
+          <RouterLink :to="videoCallPath" class="nav-link" @click="refreshData">화상상담</RouterLink>
         </li>
       </ul>
 
@@ -41,7 +41,7 @@
       <div class="d-none d-lg-block">
         <!-- 로그인 상태일 때 -->
         <template v-if="isLoggedIn">
-          <RouterLink :to="mypagePath" class="me-3 fw-medium text-decoration-none nav-link">
+          <RouterLink :to="mypagePath" class="me-3 fw-medium text-decoration-none nav-link" @click="refreshData">
             마이페이지
           </RouterLink>
           <a href="#" class="fw-medium text-decoration-none nav-link" @click.prevent="logout">
@@ -73,11 +73,11 @@
       <div class="mobile-menu-inner d-flex flex-column h-100">
         <!-- 상단 메뉴 -->
         <ul class="nav flex-column p-3 pt-5 text-start">
-          <li class="nav-item"><RouterLink to="/ai-consult" class="nav-link">AI사전상담</RouterLink></li>
-          <li class="nav-item"><RouterLink to="/cases/search" class="nav-link">판례 검색</RouterLink></li>
-          <li class="nav-item"><RouterLink to="/lawyers" class="nav-link">변호사 조회</RouterLink></li>
-          <li class="nav-item"><RouterLink to="/consult-form" class="nav-link" @click.prevent="handleMobileConsultFormClick">AI상담신청서</RouterLink></li>
-          <li class="nav-item"><RouterLink :to="videoCallPath" class="nav-link">화상상담</RouterLink></li>
+          <li class="nav-item"><RouterLink to="/ai-consult" class="nav-link" @click="refreshData">AI사전상담</RouterLink></li>
+          <li class="nav-item"><RouterLink to="/cases/search" class="nav-link" @click="refreshData">판례 검색</RouterLink></li>
+          <li class="nav-item"><RouterLink to="/lawyers" class="nav-link" @click="refreshData">변호사 조회</RouterLink></li>
+          <li class="nav-item"><RouterLink to="/consult-form" class="nav-link" @click.prevent="handleMobileConsultFormClick" @click="refreshData">AI상담신청서</RouterLink></li>
+          <li class="nav-item"><RouterLink :to="videoCallPath" class="nav-link" @click="refreshData">화상상담</RouterLink></li>
         </ul>
 
         <!-- 하단 마이페이지 / Login, Logout -->
@@ -85,7 +85,7 @@
           <!-- 로그인 상태일 때: 마이페이지 + 로그아웃 -->
           <template v-if="isLoggedIn">
             <li class="nav-item">
-              <RouterLink :to="mypagePath" class="nav-link text-dark fw-medium text-decoration-none">
+              <RouterLink :to="mypagePath" class="nav-link text-dark fw-medium text-decoration-none" @click="refreshData">
                 마이페이지
               </RouterLink>
             </li>
@@ -118,6 +118,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { onMounted, onUnmounted, ref, computed } from 'vue'
 import defaultLogo from '@/assets/logo.png'
 import whiteLogo from '@/assets/logo-white.png'
+import axios from '@/lib/axios';
 
 const isMenuOpen = ref(false)
 const authStore = useAuthStore()
@@ -133,8 +134,6 @@ const videoCallPath = computed(() =>
   authStore.userType === 'LAWYER' ? '/videocall/preview/lawyer' : '/videocall/preview/client'
 )
 
-
-
 const logoSrc = computed(() => {
   const whitePages = ['/cases/search', '/consult-form']
   const isWhitePage = whitePages.includes(route.path)  || route.path.startsWith('/cases/detail');
@@ -148,6 +147,7 @@ const logoSrc = computed(() => {
 
 const logout = () => {
   authStore.clearAuth()
+  localStorage.removeItem('hasRefresh');
   router.push('/login')
 }
 
@@ -186,6 +186,29 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll)
 })
+
+/* access 토큰 갱신 */
+const refreshData = async () => {
+  const hasRefresh = localStorage.getItem('hasRefresh') === 'true';
+
+  if (!hasRefresh) {
+    return; // 리프레시 토큰 없다고 판단
+  }
+  try {
+    const res = await axios.post('/api/auth/refresh', null, { withCredentials: true });
+    const { accessToken } = res.data;
+    if (accessToken) {
+      console.log("refresh 갱신 성공")
+      authStore.accessToken = accessToken;
+      localStorage.setItem('accessToken', accessToken);
+      axios.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
+    }
+  } catch (e) {
+    console.error('토큰 갱신 실패:', e);
+  }
+};
+
+
 </script>
 
 <style scoped>

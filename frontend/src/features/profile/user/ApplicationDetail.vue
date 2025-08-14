@@ -13,23 +13,13 @@
             readonly
             class="readonly-input-title"
           />
-          <!-- 한 줄 요약 -->
-          <div v-if="data.summary" class="form-group">
-            <label>한 줄 요약</label>
-            <input
-              type="text"
-              :value="data.summary"
-              readonly
-              class="readonly-input"
-            />
-          </div>
 
           <!-- 사건 개요 -->
-          <div v-if="data.content" class="form-group scrollable-group">
+          <div v-if="data.summary" class="form-group scrollable-group">
             <label>사건 개요</label>
             <textarea
               class="scrollable-content"
-              :value="data.content"
+              :value="data.summary"
               readonly
             ></textarea>
           </div>
@@ -89,11 +79,13 @@ defineEmits(['close'])
   align-items: center;
   justify-content: center;
   z-index: 1001;
+  font-family: 'Noto Sans KR', sans-serif;
+  color: #333333;
 }
 
 .modal-content {
   position: relative;
-  background: #F7FCFF;
+  background: #f4f7fb;
   border-radius: 12px;
   padding: 3rem 0 3rem 0;
   width: 800px;
@@ -137,7 +129,7 @@ defineEmits(['close'])
 input,
 textarea {
   padding: 0.75rem;
-  border: 1px solid #B9D0DF;
+  border: 1px solid #cfcfcf;
   border-radius: 8px;
   font-size: 1rem;
   resize: none;
@@ -145,14 +137,14 @@ textarea {
 
 .readonly-input {
   background-color: #fff;
-  color: #82A0B3;
+  color: #888;
 }
 .readonly-input-title{
   border: none;
   padding: 0;
   font-size: 1.5rem;
   font-weight: bold;
-  background-color: #F7FCFF;
+  background-color: transparent;
 }
 .scrollable-group {
   display: flex;
@@ -166,8 +158,8 @@ textarea {
   max-height: 150px;
   overflow-y: auto;
   background-color: #fff;
-  border: 1px solid #B9D0DF;
-  color: #82A0B3;
+  border: 1px solid #cfcfcf;
+  color: #888;
   border-radius: 8px;
   padding: 0.75rem;
   font-size: 1rem;
@@ -199,7 +191,7 @@ textarea:focus {
 
 .close-btn:hover .x-icon {
   transform: scale(1.2);
-  color: #7ca0c3;
+  color: #888;
 }
 
 </style>

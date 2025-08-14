@@ -63,6 +63,8 @@ export default {
         authStore.setToken(token);               // ✅ access_token 저장
         authStore.setUserType('LAWYER');         // ✅ userType 저장 (변호사)
 
+        localStorage.setItem('hasRefresh', 'true');
+
         this.$router.push('/lawyer/mypage');     // ✅ 변호사 마이페이지로 이동
       } catch (err) {
         const status = err.response?.status;
