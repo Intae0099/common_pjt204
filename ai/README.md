@@ -17,7 +17,7 @@ ALaw 플랫폼은 법률 상담의 진입장벽을 낮추기 위해 기획되었
     - **유사 판례/법령 검색**: 구조화된 사건을 기반으로 벡터 DB에서 관련성 높은 판례 및 법령을 검색하고, Cross-encoder로 재정렬하여 정확도를 높입니다. (`services/search_service.py`)
     - **객관적 근거 기반 신뢰도 계산**: 판례 유사도, 사건 일치도, 법령 정확도를 종합하여 30-95% 범위의 객관적 신뢰도를 제공합니다. (`utils/confidence_calculator.py`)
     - **근거 기반 법률 분석**: 구체적 판례 인용을 포함한 법률 소견과 추측성 표현이 포함된 예상 판결을 제공하여 법적 안전성을 확보합니다. (`services/case_analysis_service.py`)
-    - **법령 검증 및 보강 시스템**: LLM이 생성한 법령 정보를 실제 법령 데이터베이스(5,502개 법령)와 벡터 검색으로 검증하고, 조항 정보를 보존하여 정확한 법령 참조를 제공합니다. (`services/statute_validation_service.py`)
+    - **법령 검증 및 보강 시스템**: LLM이 생성한 법령 정보를 실제 법령 데이터베이스(5,502개 법령)와 벡터 검색으로 검증하고, 조항 정보를 보존하여 정확한 법령 참조를 제공합니다. (`services/statute_validation_service.py`) 
 - **상담 신청서 생성 AI**: 분석된 사건 내용과 사용자 추가 정보를 결합하여 정형화된 상담 신청서를 생성하고, 변호사를 위한 핵심 질문을 자동으로 도출합니다. (`services/consultation_service.py`)
 - **실시간 법률 챗봇**: `FastAPI`의 SSE(Server-Sent Events)를 활용하여 법률 도메인 특화 AI 챗봇과의 실시간 스트리밍 대화를 지원합니다. (`services/chat_service.py`)
 - **리소스 제약 환경 대응 큐 시스템**: 메모리/CPU 제한 환경에서 안정적 동작을 위한 SQLite 기반 경량 큐 시스템으로 동시 처리 제한 및 리소스 모니터링을 통해 서버 과부하를 방지합니다. (`services/lightweight_queue_manager.py`)
