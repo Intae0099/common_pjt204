@@ -39,7 +39,7 @@ class CaseAnalysisService(LoggerMixin):
     async def analyze_case(
             self,
             user_query: str,
-            top_k_docs: int = 5, # RAG를 위한 top_k 인자 추가
+            top_k_docs: int = 15, # RAG를 위한 top_k 인자 추가
             recommend_lawyers: bool = True # 변호사 추천 옵션
         ) -> dict:
             """

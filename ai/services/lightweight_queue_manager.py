@@ -442,7 +442,7 @@ class LightweightQueueManager:
         request_data = task.request_data
         result = await service.analyze_case(
             user_query=request_data["user_query"],
-            top_k_docs=request_data.get("top_k_docs", 5),
+            top_k_docs=request_data.get("top_k_docs", 15),
             recommend_lawyers=request_data.get("recommend_lawyers", True)
         )
         return result

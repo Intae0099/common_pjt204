@@ -71,7 +71,7 @@ def get_cot_prompt() -> PromptTemplate:
                    "title": "소유권이전등기말소",
                    "decision_date": "1978-01-01",
                    "category": "일반 행정",
-                   "chunk_summary": "핵심요지: 재산적 처분 유발 기망 인정 범위 정리 | 근거문장: \"기망으로 인한 처분행위…\" }},
+                   "chunk_summary": "핵심요지: 재산적 처분 유발 기망 인정 범위 정리 | 근거문장: \"기망으로 인한 처분행위\" }},
                 {{ "id": 12345,
                    "title": "사기",
                    "decision_date": "2021-05-03",

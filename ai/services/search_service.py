@@ -69,7 +69,7 @@ class SearchService:
                 (doc.get("title") if isinstance(doc.get("title"), str) else str(doc.get("title")))
                 for doc in initial_results
             ]
-            logger.debug(f"[search] count={len(initial_results)}, titles={init_titles}")
+            logger.info(f"[search] count={len(initial_results)}, titles={init_titles}")
 
             if use_rerank:
                 logger.info("Applying reranking to search results...")
@@ -80,7 +80,7 @@ class SearchService:
                     (doc.get("title") if isinstance(doc.get("title"), str) else str(doc.get("title")))
                     for doc in reranked
                 ]
-                logger.debug(f"[rerank] count={len(reranked)}, titles={rerank_titles}")
+                logger.info(f"[rerank] count={len(reranked)}, titles={rerank_titles}")
 
                 return reranked, total_count
             else:
@@ -130,20 +130,18 @@ class SearchService:
 
     def _rerank_cases(self, query: str, initial_results: list[dict]) -> list[dict]:
         """
-        Cross-encoder 모델을 사용하여 초기 검색 결과(판례 요약)를 재평가하여 관련도 순으로 재정렬한다.
+        Cross-encoder 모델을 사용하여 초기 검색 결과(청크 텍스트 우선)를 재평가하여 관련도 순으로 재정렬한다.
         """
         if not initial_results:
             return []
 
         documents_to_rerank = []
         for i, doc in enumerate(initial_results):
-            summary = doc.get('summary')
-            if not isinstance(summary, str):
-                logger.warning(
-                    f"Document {i} (Case ID: {doc.get('case_id', 'N/A')}) has non-string summary: Type={type(summary)}, Value={summary}"
-                )
-                summary = str(summary) if summary is not None else ""
-            documents_to_rerank.append(summary)
+            # summary가 None인 경우가 많으므로 chunk_text를 우선 사용하고, 없으면 issue를 사용
+            text_for_rerank = doc.get('chunk_text') or doc.get('issue') or doc.get('summary') or ""
+            if not isinstance(text_for_rerank, str):
+                text_for_rerank = str(text_for_rerank) if text_for_rerank is not None else ""
+            documents_to_rerank.append(text_for_rerank)
 
         scores = self.cross_encoder_model.get_cross_encoder_scores(query, documents_to_rerank)
 
@@ -153,5 +151,8 @@ class SearchService:
             scored_results.append(doc)
 
         reranked_results = sorted(scored_results, key=lambda x: x['score'], reverse=True)
-        logger.info(f"Reranked {len(reranked_results)} cases based on Cross-encoder scores.")
-        return reranked_results
+        
+        # 상위 3개만 반환
+        top_3_results = reranked_results[:3]
+        logger.info(f"Reranked {len(reranked_results)} cases, returning top {len(top_3_results)} based on Cross-encoder scores.")
+        return top_3_results
