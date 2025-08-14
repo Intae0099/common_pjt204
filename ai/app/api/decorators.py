@@ -1,6 +1,8 @@
 """
 API 라우터 공통 데코레이터
 """
+import json
+from datetime import datetime, date
 from functools import wraps
 from typing import Callable, Any, Optional, Type
 from fastapi import HTTPException, status
@@ -9,6 +11,33 @@ from fastapi.responses import JSONResponse
 from app.api.response_models import success_response, error_response
 from utils.exceptions import BaseServiceException
 from utils.logger import get_logger
+
+class DateTimeEncoder(json.JSONEncoder):
+    """Custom JSON encoder for datetime, date and Pydantic objects"""
+    def default(self, obj):
+        if isinstance(obj, datetime):
+            return obj.isoformat()
+        if isinstance(obj, date):
+            return obj.isoformat()
+        # Handle Pydantic models
+        if hasattr(obj, 'model_dump'):
+            return obj.model_dump()
+        # Handle dataclasses
+        if hasattr(obj, '__dataclass_fields__'):
+            return {field.name: getattr(obj, field.name) for field in obj.__dataclass_fields__.values()}
+        return super().default(obj)
+
+class CustomJSONResponse(JSONResponse):
+    """Custom JSONResponse with datetime serialization support"""
+    def render(self, content: Any) -> bytes:
+        return json.dumps(
+            content,
+            cls=DateTimeEncoder,
+            ensure_ascii=False,
+            allow_nan=False,
+            indent=None,
+            separators=(",", ":"),
+        ).encode("utf-8")
 
 logger = get_logger(__name__)
 
@@ -50,7 +79,7 @@ def handle_api_exceptions(
                     message=e.message,
                     error_details=e.details
                 )
-                return JSONResponse(
+                return CustomJSONResponse(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     content=error_resp.model_dump()
                 )
@@ -63,7 +92,7 @@ def handle_api_exceptions(
                     message="서버 내부 오류가 발생했습니다.",
                     error_details={"detail": str(e)}
                 )
-                return JSONResponse(
+                return CustomJSONResponse(
                     status_code=error_status_code,
                     content=error_resp.model_dump()
                 )
@@ -93,7 +122,7 @@ def handle_api_exceptions(
                     message=e.message,
                     error_details=e.details
                 )
-                return JSONResponse(
+                return CustomJSONResponse(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     content=error_resp.model_dump()
                 )
@@ -106,7 +135,7 @@ def handle_api_exceptions(
                     message="서버 내부 오류가 발생했습니다.",
                     error_details={"detail": str(e)}
                 )
-                return JSONResponse(
+                return CustomJSONResponse(
                     status_code=error_status_code,
                     content=error_resp.model_dump()
                 )
