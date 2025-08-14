@@ -5,10 +5,14 @@ import com.B204.ALaw.user.admin.repository.AdminRepository;
 import com.B204.ALaw.user.client.repository.ClientRepository;
 import com.B204.ALaw.user.lawyer.repository.LawyerRepository;
 import io.jsonwebtoken.Claims;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -21,6 +25,7 @@ import org.springframework.web.server.ResponseStatusException;
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
+@Slf4j
 public class AuthController {
   private final JwtUtil jwtUtil;
   private final LawyerRepository lawyerRepository;
@@ -29,8 +34,16 @@ public class AuthController {
 
   @PostMapping("/refresh")
   public ResponseEntity<Map<String,String>> refresh(
-      @CookieValue(value = "refresh_token", required = false) String refreshToken
+      @CookieValue(value = "refresh_token", required = false) String refreshToken,
+      HttpServletRequest request
   ) {
+    Cookie[] cookies = request.getCookies();
+    if (cookies != null) {
+      for (Cookie c : cookies) {
+        System.out.println("쿠키 이름: " + c.getName() + ", 값: " + c.getValue());
+      }
+    }
+
     if (refreshToken == null) {
       throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Refresh token missing");
     }

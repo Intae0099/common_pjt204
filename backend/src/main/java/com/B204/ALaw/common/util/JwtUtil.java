@@ -30,12 +30,13 @@ public class JwtUtil {
         .signWith(key).compact();
   }
 
-  public String generateRefreshToken(String subject){
+  public String generateRefreshToken(String subject, String userType){
     Date now = new Date();
     Date exp = new Date(now.getTime() + refreshTokenValidMs);
 
     return Jwts.builder()
         .setSubject(subject)
+        .claim("userType", userType)
         .setIssuedAt(now)
         .setExpiration(exp)
         .signWith(key)
