@@ -14,8 +14,9 @@
 
       <!-- 제출 버튼 (아이콘 대체 가능) -->
       <button
+        v-if="!disabled"
         @click="submit"
-        :disabled="!text.trim() || disabled"
+        :disabled="!text.trim()"
         class="submit-button"
       >
         <ArrowRightIcon class="arrow-icon"/>
@@ -34,7 +35,7 @@ import { ArrowRightIcon } from '@heroicons/vue/24/solid'
 const { placeholder, disabled} = defineProps({
   placeholder: {
     type: String,
-    default: '질문을 입력해주세요...'
+    default: '질문을 입력해주세요(50자 이상)'
   },
   disabled: {
     type: Boolean,
@@ -65,7 +66,6 @@ const submit = () => {
 
   showWarning.value = false
   emit('submit', text.value.trim())
-  text.value = ''
 
   if (textareaRef.value) {
     textareaRef.value.style.height = '120px' // 기존 CSS에 설정된 min-height 값
@@ -119,8 +119,8 @@ const submit = () => {
   color: #d1dee8;
 }
 .textarea:disabled {
-  background-color: #f5f5f5;
-  color: #aaa;
+  background-color: #fff;
+  color: #6c9bcf;
 }
 /* Webkit 브라우저(크롬, 사파리 등)용 스크롤바 숨기기 */
 .textarea::-webkit-scrollbar {

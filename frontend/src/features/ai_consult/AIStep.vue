@@ -6,6 +6,7 @@
 
           <AiBox
             ref="aiBoxRef"
+            :messages="messages"
             :isLoading="isLoading"
             :isFindingVerdict="isFindingVerdict"
             :response="aiResponse"
@@ -18,7 +19,7 @@
 
           <!-- 사용자 입력창 -->
           <ChatInputBox
-            :disabled="isLoading || isFindingVerdict"
+            :disabled="isInputLocked"
             @submit="handleUserInput"
           />
 
@@ -48,9 +49,8 @@
         />
 
         <div v-if="verdictResult && canShowRecommendBtn && !showRecommendList" class="recommend-button-wrapper">
-          <button class="recommend-button" @click="showLawyers">
+          <button class="action-button" @click="showLawyers">
             변호사 추천받기
-            <span class="arrow">→</span>
           </button>
         </div>
         <!-- 변호사 추천 리스트 -->
@@ -61,7 +61,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 
 import ChatInputBox from './components/ChatInputBox.vue'
@@ -80,7 +80,9 @@ const showSaveModal = ref(false)
 
 const userInput = ref('')
 const aiResponse = ref(null)
+const messages = ref([])
 const isLoading = ref(false)
+const isInputLocked = ref(false)
 const showModal = ref(false)
 const isFindingVerdict = ref(false)
 const verdictResult = ref(null)            // 판례 예측 결과
@@ -89,10 +91,17 @@ const lawyers = ref([])                    // 추천 변호사 목록
 const showRecommendList = ref(false)       // 변호사 추천 리스트 보여줄지 여부
 
 
+const pushAndScroll = async (msg) => {
+  messages.value.push(msg)
+  await nextTick()
+  aiBoxRef.value?.scrollToBottom?.()
+}
+
 const handleUserInput = async (text) => {
   userInput.value = text
   aiResponse.value = null
   verdictResult.value = null
+  isInputLocked.value = true
   isLoading.value = true
 
   try {
@@ -102,6 +111,7 @@ const handleUserInput = async (text) => {
 
     if (data.success) {
       aiResponse.value = data.data.case // aiResponse에는 case 객체가 할당됩니다.
+      await pushAndScroll({ role: 'assistant', type: 'summary', payload: { case: data.data.case } })
     } else {
       console.error('API 응답 오류:', data.error.message)
       alert(data.error.message)
@@ -174,6 +184,7 @@ const handlePredictVerdict = async () => {
       // --- 로직 종료 ---
 
       canShowRecommendBtn.value = true
+      await pushAndScroll({ role: 'assistant', type: 'verdict', payload: { verdict: data.data.report } })
     } else {
       console.error('판례 분석 API 오류:', data.error.message)
       alert(data.error.message)
@@ -237,7 +248,6 @@ const handleModalRoute = (target) => {
   max-width: 920px;
   width: 100%;
   margin: 0 auto;
-  padding-top: 20px;
 }
 .loading-dots-wrapper {
   position: static;         /* ⬅︎ absolute → static */
@@ -255,27 +265,23 @@ const handleModalRoute = (target) => {
 .recommend-button-wrapper {
   display: flex;
   justify-content: center;
-  margin-top: 100px;
+  margin-top: 50px;
 }
 
-.recommend-button {
-  background-color: #F7FCFF;
-  color: #82A0B3;
-  font-weight: 500;
-  border: 1.8px solid #e4ebf0;
-  border-radius: 12px;
-  padding: 10px 20px;
-  font-size: 0.95rem;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  transition: all 0.2s ease-in-out;
-  box-shadow: 0px 2px 4px rgba(77, 130, 200, 0.081);
-}
-
-.recommend-button:hover {
-  background-color: #f3f9fd;
+.action-button {
+  background-color: #0F2C59;
+  color: white;
+  font-size: 14px;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-weight: medium;
   cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.action-button:hover {
+  background-color: #1c3d78;
 }
 
 .arrow {
