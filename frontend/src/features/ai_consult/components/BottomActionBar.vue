@@ -23,7 +23,7 @@ defineEmits(['predict', 'quick-consult'])
   flex-direction: column;
   align-items: center;
   gap: 8px;
-  margin-top: 100px;
+  margin-top: 50px;
 }
 
 .action-button {
