@@ -74,6 +74,7 @@ const handleApplicationSelect = (id) => {
 
 const handleFormSubmit = async (formData) => {
   isLoading.value = true
+  window.scrollTo(0, 0);
   if (formData.recommendedQuestions) {
     userInput.value = {
       ...userInput.value, // 기존 사용자 입력(불러오기 ID 등) 유지

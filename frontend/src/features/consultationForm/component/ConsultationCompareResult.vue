@@ -27,7 +27,7 @@
           </div>
           <div class="form-group scrollable-group">
             <label>사건 개요</label>
-            <p class="scrollable-content">{{ aiData.fullText }}</p>
+            <p class="scrollable-content">{{ aiData.summary }}</p>
           </div>
           <div class="form-group scrollable-group">
             <label>원하는 결과</label>
@@ -48,7 +48,7 @@
               <div class="tooltip-container">
                 <InformationCircleIcon class="info-icon" />
                 <div class="tooltip-text">
-                  AI가 추천하는 질문 목록입니다.<br />버튼을 눌러 위 질문 목록에 추가할 수 있습니다.
+                  AI가 추천하는 질문 목록입니다.<br />오른쪽 버튼을 눌러 위 질문 목록에 추가할 수 있습니다.
                 </div>
               </div>
             </label>
@@ -58,14 +58,25 @@
                 @click="copyAiQuestions"
                 :disabled="isAiQuestionsCopied"
               >
-                {{ isAiQuestionsCopied ? '추가 완료' : '궁금한 점에 추가하기' }}
+                {{ isAiQuestionsCopied ? '추가 완료' : '궁금한 점에 추가하기 ↑' }}
               </button>
           </div>
           <ul class="scrollable-content">
-              <li v-for="(q, idx) in aiData.recommendedQuestions" :key="idx">{{ q }}</li>
-            </ul>
-          <div>
-            <button type="button" @click="handleRegenerate">AI로 다시 수정하기</button>
+            <li v-for="(q, idx) in aiData.recommendedQuestions" :key="idx">{{ q }}</li>
+          </ul>
+          <div class="regenerate-area">
+            <button
+              type="button"
+              class="icon-btn"
+              :title="isRegenerating ? '업데이트 중…' : 'AI 추천질문 재생성'"
+              :disabled="isRegenerating"
+              @click="handleRegenerate"
+              aria-label="AI 추천질문 재생성"
+            >
+              <ArrowPathIcon :class="['icon', { spinning: isRegenerating }]" />
+            </button>
+            <!-- (선택) 텍스트를 작게 보조로 두고 싶다면 ↓ -->
+            <span class="hint" v-if="!isRegenerating">AI 추천질문 재생성</span>
           </div>
         </form>
       </div>
@@ -80,7 +91,9 @@
 
 <script setup>
 import { ref } from 'vue'
-import { InformationCircleIcon } from '@heroicons/vue/24/outline'
+import { InformationCircleIcon, ArrowPathIcon } from '@heroicons/vue/24/outline'
+
+const isRegenerating = ref(false)
 
 const props = defineProps({
   userData: Object,
@@ -148,28 +161,34 @@ const handleRegenerate = () => {
   };
 
   // 3. 'regenerate' 이벤트를 발생시킵니다.
+  isRegenerating.value = true
   emit('regenerate', payload);
+
+  setTimeout(() => { isRegenerating.value = false }, 1200)
 };
 </script>
 
 <style scoped>
 .editable-textarea {
+  font-family: 'Noto Sans KR', sans-serif;
   color: #333; /* 수정 가능하므로 사용자 입력처럼 보이게 색상 변경 */
   background-color: #fff;
 }
 .label-with-button {
   display: flex;
-  justify-content: space-between;
+  /* justify-content: space-between; */
   align-items: center;
+  gap: 0.5rem;
 }
 .text-copy-btn {
   background: none;
-  border: 1px solid #B9D0DF;
-  color: #82A0B3;
+  border: 1px solid #888;
+  color: #888;
   padding: 0.25rem 0.5rem;
   font-size: 0.8rem;
   border-radius: 6px;
   cursor: pointer;
+  text-align: start;
 }
 .text-copy-btn:hover {
   background-color: #f0f6fa;
@@ -207,18 +226,19 @@ const handleRegenerate = () => {
   width: 100%;
   max-width: 900px;
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 1rem;
 }
 
 .ai-result-box {
   flex: 1;
   width: 100%;
   max-width: 900px;
-  border: 1px solid #B9D0DF;
+  border: 1px solid #6c9bcf;
   border-radius: 12px;
   padding: 2rem 1rem;
-  background-color: #F7FCFF;
+  background-color: #f4f7fb ;
 }
 
 .ai-form {
@@ -232,10 +252,19 @@ const handleRegenerate = () => {
   flex-direction: column;
   gap: 0.5rem;
 }
+.form-group p {
+  color: #333333;
+  background-color: #f6f6f6;
+  cursor: block;
+}
+.form-group textarea {
+  color: #333333;
+}
+
 
 label {
   font-weight: medium;
-  color: #000;
+  color: #333333;
 }
 
 p,
@@ -261,7 +290,7 @@ ul {
 
 .scrollable-content {
   min-height: 100px;
-  max-height: 150px;
+  max-height: 20cqb;
   overflow-y: auto;
   background-color: #fff;
   border: 1px solid #ccc;
@@ -270,13 +299,14 @@ ul {
   font-size: 1rem;
   line-height: 1.5;
   resize: none;
+  list-style-type: none;
 }
 
 .refresh-btn {
   background-color: #fff;
-  color: #82A0B3;
+  color: #cfcfcf;
   width: 80%;
-  border: 1px solid #B9D0DF;
+  border: 1px solid #cfcfcf;
   border-radius: 8px;
   padding: 0.5rem;
 }
@@ -292,16 +322,63 @@ ul {
   cursor: pointer;
   border: none;
 }
+.submit-btn:hover {
+  background-color: #6c9bcf;
+}
 
 .copy-btn {
-  font-size: 0.8rem;
+  /* font-size: 0.8rem; */
+  padding: 0.5rem 1.2rem;
   background-color: #fff;
-  color: #B9D0DF;
+  color: #1d2b50;
+  border: 1px solid #1d2b50;;
 }
 
 .copy-btn:hover {
-  color: #82A0B3;
+  color: #6c9bcf;
+  border-color: #6c9bcf;
 }
+
+.regenerate-area {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+}
+
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid #6c9bcf;
+  background: #fff;
+  cursor: pointer;
+  transition: background-color .15s ease, border-color .15s ease, transform .05s ease;
+}
+.icon-btn:hover { background-color: #f4f9fc; border-color: #82A0B3; }
+.icon-btn:active { transform: scale(0.98); }
+.icon-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+.icon {
+  width: 20px;
+  height: 20px;
+  color: #6c9bcf;
+}
+.spinning { animation: spin 0.9s linear infinite; }
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* (선택) 보조 텍스트 */
+.hint {
+  font-size: .85rem;
+  color: #6c9bcf;
+}
+
 
 .submit-btn {
   background: #072D45;
@@ -332,8 +409,8 @@ ul {
 .info-icon {
   width: 20px;
   height: 20px;
-  color: #a0aec0;
-  cursor: pointer;
+  color: #888;
+  /* cursor: pointer; */
 }
 
 .tooltip-text {

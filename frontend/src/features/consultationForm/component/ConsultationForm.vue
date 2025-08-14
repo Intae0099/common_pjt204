@@ -28,7 +28,7 @@
        <label for="content">사건 개요</label>
        <textarea
          id="content"
-         v-model="form.content"
+         v-model="form.summary"
          class="scrollable-content"
          placeholder="사건 개요를 입력해주세요"
          required
