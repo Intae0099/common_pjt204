@@ -74,7 +74,15 @@ const handleApplicationSelect = (id) => {
 
 const handleFormSubmit = async (formData) => {
   isLoading.value = true
-  userInput.value = formData
+  if (formData.recommendedQuestions) {
+    userInput.value = {
+      ...userInput.value, // 기존 사용자 입력(불러오기 ID 등) 유지
+      ...formData, // AI 수정 화면에서 넘어온 데이터(제목, 개요, 질문 등)
+    };
+  } else {
+    // 처음 'AI 상담서 작성하기'를 눌렀을 때의 로직은 그대로 유지
+    userInput.value = formData;
+  }
 
   try {
     const contentForApi = formData.content || formData.fullText;
@@ -115,7 +123,7 @@ const handleFormSubmit = async (formData) => {
     isLoading.value = false
   }
 }
-const handleFinalSubmit = async () => {
+const handleFinalSubmit = async (finalQuestions) => {
   window.scrollTo(0, 0);
   const tagNamesFromAI = aiResult.value.tags || [];
 
@@ -139,9 +147,9 @@ const handleFinalSubmit = async () => {
     outcome: aiResult.value.outcome,
     disadvantage: aiResult.value.disadvantage,
     recommendedQuestion: {
-      question1: aiResult.value.recommendedQuestions[0] || '',
-      question2: aiResult.value.recommendedQuestions[1] || '',
-      question3: aiResult.value.recommendedQuestions[2] || '',
+      question1: finalQuestions[0] || '',
+      question2: finalQuestions[1] || '',
+      question3: finalQuestions[2] || '',
     },
     tags: tagIds,
   };

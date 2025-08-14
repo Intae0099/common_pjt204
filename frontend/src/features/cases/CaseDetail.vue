@@ -177,7 +177,7 @@ onMounted(async () => {
   border:1px solid #cfcfcf; border-radius:16px; background:#fff; padding:20px 22px; margin-bottom:16px;
 }
 .section-title{
-  margin:0 0 10px 0; font-size:16px; font-weight:700; color:#333333; position:relative;
+  margin:0 16px 10px 0; font-size:16px; font-weight:700; color:#333333; position:relative;
 }
 .section-title::after{
   content:''; display:block; width:28px; height:3px; border-radius:2px; background:#6c9bcf; margin-top:6px;
@@ -185,7 +185,7 @@ onMounted(async () => {
 
 /* 본문 리치텍스트 가독성 */
 .richtext{
-  color:#333333; font-size:15px; line-height:1.85;
+  color:#333333; font-size:15px; line-height:1.85;white-space: pre-line;
 }
 .richtext :is(p, li){ margin: 8px 0; }
 .richtext br{ content:''; display:block; margin-bottom:6px; }
