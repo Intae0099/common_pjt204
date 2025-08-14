@@ -160,6 +160,8 @@ const handleRegenerate = () => {
     recommendedQuestions: currentQuestions,
   };
 
+  isAiQuestionsCopied.value = false;
+
   // 3. 'regenerate' 이벤트를 발생시킵니다.
   isRegenerating.value = true
   emit('regenerate', payload);
