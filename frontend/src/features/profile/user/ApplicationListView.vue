@@ -33,20 +33,11 @@
 
         <div v-if="expandedItemId === item.applicationId" class="card-detail">
           <form class="consult-form">
-            <div v-if="item.summary" class="form-group">
-              <label>한 줄 요약</label>
-              <input
-                type="text"
-                :value="item.summary"
-                readonly
-                class="readonly-input"
-              />
-            </div>
-            <div v-if="item.content" class="form-group scrollable-group">
+            <div v-if="item.summary" class="form-group scrollable-group">
               <label>사건 개요</label>
               <textarea
                 class="scrollable-content"
-                :value="item.content"
+                :value="item.summary"
                 readonly
               ></textarea>
             </div>
@@ -100,7 +91,7 @@ const transformApiData = (apiList) => {
 
 onMounted(async () => {
   try {
-    const res = await axios.get('/api/applications/me')
+    const res = await axios.get('/api/applications/me', { params: { isCompleted: true } })
     if (res.data.success) {
       const apiList = res.data.data.applicationList;
       items.value = transformApiData(apiList);
@@ -135,112 +126,119 @@ const formatDateTime = (dateStr) => {
 </script>
 
 <style scoped>
-/* ✅ 전체 페이지 스타일 */
-.page-container, .wide-container {
-  font-family: 'Noto Sans KR', sans-serif;
-}
+/* ===== 공통 레이아웃 / 타이포 ===== */
 .page-container {
-  padding: 100px 20px;
+  max-width: 700px;         /* 두 번째 페이지와 동일한 폭 */
+  margin: 0 auto;           /* 가운데 정렬 */
+  padding: 20px 20px;       /* 동일 여백 */
+  font-family: 'Noto Sans KR', sans-serif;
+  color: #333333;
+}
+
+.loading-container {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   min-height: 50vh;
+  color: #888;
+  font-size: 1rem;
 }
-.wide-container {
-  padding-top: 100px;
-}
-.loading-container {
-  flex-direction: column;
-  color: #555;
-  font-size: 1.2rem;
-}
-.back-btn {
-  margin-top: 1rem;
-  padding: 0.5rem 1rem;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  cursor: pointer;
-  background-color: white;
-}
-.history-container {
-  margin: 0 10rem;
-  width: 100%;
-}
+
+/* ===== 헤더 영역 ===== */
 .back-button {
-  margin-top: 10px;
-  margin-bottom: 25px;
+  margin-top: 100px;        /* 동일 위치감 */
+  margin-bottom: 20px;
   margin-left: -10px;
   font-size: 1rem;
-  color: #B9D0DF;
+  color: #6c9bcf;           /* 포인트 컬러 통일 */
   cursor: pointer;
   display: flex;
   align-items: center;
   gap: 0.3rem;
   width: 80px;
+  transition: color 0.2s ease-in-out;
 }
-.chevron-icon {
-  width: 20px;
-  height: 20px;
-}
+.back-button:hover { color: #cfcfcf; }
+
+.chevron-icon { width: 20px; height: 20px; }
+
 .header-row {
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;   /* 세로 정렬 (제목 중앙) */
   align-items: center;
   padding-bottom: 1rem;
-  border-bottom: 2px solid #B9D0DF;
-  color: #072D45;
-  margin-bottom: 2rem;
-}
-
-/* ✅ 상담 신청서 카드 스타일 */
-.history-card {
-  border: 1px solid #e0e0e0;
-  background: #f9f9f9;
-  border-radius: 10px;
+  border-bottom: 1px solid #888; /* 상담내역 페이지와 동일한 구분선 */
   margin-bottom: 1rem;
 }
+.header-row h2 {
+  text-align: center;
+  margin: 15px 0 10px;
+  font-size: 24px;
+  font-weight: 700;
+  color: #333333;
+}
+
+/* ===== 리스트/빈 상태 ===== */
+.history-container { width: 100%; }
+
+.empty,
+.page-container.loading-container p {
+  margin-top: 10px;
+  color: #cfcfcf;
+  text-align: center;
+}
+
+/* ===== 카드 리스트 ===== */
+.history-card {
+  border: 1px solid #cfcfcf;     /* 동일 테두리 */
+  border-radius: 8px;            /* 동일 라운드 */
+  background: #fff;
+  padding: 0;                    /* 헤더/디테일에서 패딩 관리 */
+  margin-bottom: 16px;
+  transition: background-color 0.15s ease;
+}
+.history-card:hover { background-color: #fafafa; }
+
 .card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem;
+  padding: 1.5rem;               /* 상담내역 카드 패딩 값 */
   cursor: pointer;
-}
-.card-header:hover {
-  background-color: #f0f0f0;
 }
 .card-left {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
 }
 .datetime {
-  font-weight: bold;
   font-size: 0.8rem;
-  color: #B9D0DF;
+  color: #B9D0DF;                /* 날짜 색 통일 */
+  font-weight: 500;
 }
 .title-text {
-  font-size: 1.1rem;
-  font-weight: bold;
-  color: #072D45;
+  font-size: 1.05rem;
+  color: #333333;                /* 제목 색 통일 */
+  font-weight: 700;
+  line-height: 1.3;
 }
 .expand-icon {
-  width: 24px;
-  height: 24px;
-  color: #B9D0DF;
+  width: 20px;
+  height: 20px;
+  color: #6c9bcf;                /* 포인트 컬러 통일 */
   transition: transform 0.2s ease;
 }
 
-/* ✅ 카드 상세 내용 스타일 */
+/* ===== 카드 디테일 (폼) ===== */
 .card-detail {
   padding: 1.5rem;
-  border-top: 1px solid #e0e0e0;
+  border-top: 1px solid #eaeaea;
   background-color: #fff;
-  border-bottom-left-radius: 10px;
-  border-bottom-right-radius: 10px;
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
 }
 
-/* 폼 스타일 재사용 */
 .consult-form {
   display: flex;
   flex-direction: column;
@@ -251,54 +249,58 @@ const formatDateTime = (dateStr) => {
   flex-direction: column;
   gap: 0.5rem;
 }
-input, textarea {
+label {
+  font-size: 0.9rem;
+  color: #666;
+}
+input,
+textarea {
   padding: 0.75rem;
-  border: 1px solid #B9D0DF;
+  border: 1px solid #cfcfcf;     /* 테두리 색 통일 */
   border-radius: 8px;
   font-size: 1rem;
-  resize: none;
-  background-color: #f7fcff;
-  color: #555;
+  background-color: #fff;        /* 기본 흰색 (상담내역과 톤 맞춤) */
+  color: #333;
 }
-.readonly-input {
-  background-color: #fff;
-  color: #82A0B3;
-}
-.readonly-input-title{
-  border: none;
-  padding: 0;
-  font-size: 1.5rem;
-  font-weight: bold;
-  background-color: transparent;
-}
-.scrollable-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
+.readonly-input { color: #666; }
+.scrollable-group {}
 .scrollable-content {
   min-height: 100px;
   max-height: 150px;
   overflow-y: auto;
-  background-color: #fff;
-  border: 1px solid #B9D0DF;
-  color: #82A0B3;
+  border: 1px solid #cfcfcf;
   border-radius: 8px;
   padding: 0.75rem;
-  font-size: 1rem;
   line-height: 1.5;
+  color: #333;
 }
-.scroll-area::-webkit-scrollbar,
-.scrollable-content::-webkit-scrollbar {
-  width: 6px;
-}
-.scroll-area::-webkit-scrollbar-thumb,
+
+/* 스크롤바 톤 맞춤 */
+.scrollable-content::-webkit-scrollbar { width: 6px; }
 .scrollable-content::-webkit-scrollbar-thumb {
-  background-color: #d4e1ed;
+  background-color: #e0e0e0;
   border-radius: 3px;
 }
-.scroll-area::-webkit-scrollbar-track,
-.scrollable-content::-webkit-scrollbar-track {
-  background-color: transparent;
+.scrollable-content::-webkit-scrollbar-track { background-color: transparent; }
+
+/* ===== 버튼(빈 상태의 돌아가기 등) ===== */
+.back-btn {
+  margin-top: 1rem;
+  padding: 8px 12px;
+  border: 1px solid #cfcfcf;
+  border-radius: 8px;
+  background-color: #fff;
+  color: #6c9bcf;
+  cursor: pointer;
+  transition: background-color 0.2s;
 }
+.back-btn:hover { background-color: #eee; }
+
+/* ===== 반응형 ===== */
+@media (max-width: 640px) {
+  .page-container { padding: 16px; }
+  .card-header, .card-detail { padding: 1.1rem; }
+  .title-text { font-size: 1rem; }
+}
+
 </style>

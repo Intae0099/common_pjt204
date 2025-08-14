@@ -278,6 +278,7 @@ h1{
   border: 1px solid #cfcfcf;
   border-radius: 8px;
   padding: 1.5rem;
+
 }
 .card-left {
   display: flex;
@@ -300,6 +301,8 @@ h1{
 .empty {
   margin-top: 10px;
   color: #cfcfcf;
+  text-align: center;
+
 }
 .back-button {
   margin-top: 100px;
