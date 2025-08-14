@@ -41,7 +41,7 @@ class SearchService:
                 offset = (page - 1) * size
                 cur.execute(
                     """
-                    SELECT lc.case_id, lc.title, lc.decision_date, lc.category, lc.issue, lc.summary, lc.full_text, lch.chunk_text
+                    SELECT lc.case_id, lc.title, lc.decision_date, lc.category, lc.issue, lc.summary, lc.full_text, lch.chunk_text, lc.statutes
                     FROM legal_chunks lch
                     JOIN legal_cases lc ON lch.case_id = lc.case_id
                     ORDER BY lch.embedding <-> %s::vector
@@ -58,9 +58,10 @@ class SearchService:
                         "issue": issue,
                         "summary": summary,
                         "full_text": full_text,
-                        "chunk_text": chunk_text
+                        "chunk_text": chunk_text,
+                        "statutes": statutes
                     }
-                    for cid, title, decision_date, category, issue, summary, full_text, chunk_text in cur.fetchall()
+                    for cid, title, decision_date, category, issue, summary, full_text, chunk_text, statutes in cur.fetchall()
                 ]
 
             # 🔧 DEBUG: 초기 검색 결과 → 제목 + 개수만 표시

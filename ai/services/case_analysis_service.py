@@ -60,7 +60,8 @@ class CaseAnalysisService(LoggerMixin):
                 formatted_case_docs.append({
                     "id": doc.get("case_id", ""),
                     "issue": doc.get("issue", ""),
-                    "text": doc.get("chunk_text", "")  # chunk_text 필드를 직접 사용
+                    "chunk_text": doc.get("chunk_text", ""),  # chunk_text 필드를 직접 사용
+                    "related_statutes": doc.get("statutes", "")
                 })
 
             # case_docs를 JSON 문자열로 직렬화
@@ -73,13 +74,10 @@ class CaseAnalysisService(LoggerMixin):
             # SPECIALTY_TAGS를 쉼표로 구분된 문자열로 변환
             tag_list_str = ", ".join(SPECIALTY_TAGS)
             
-            # 관련 법령 정보 추출 (RAG 문서에서 statutes 메타데이터 수집)
-            related_statutes = self._extract_related_statutes(retrieved_docs)
 
             invoked = self.chain.invoke({
                 "user_query": user_query,
                 "case_docs": docs_json,
-                "related_statutes": related_statutes,
                 "tag_list": tag_list_str,
             })
             # RunnableSequence.invoke()는 마지막 LLM의 출력(보통 string 또는 {"text":…} 형태)을 그대로 돌려줍니다.
@@ -144,46 +142,7 @@ class CaseAnalysisService(LoggerMixin):
             return {
                 "case_analysis": case_analysis_result,
             }
-    
-    def _extract_related_statutes(self, retrieved_docs: List[Dict]) -> str:
-        """RAG에서 검색된 문서들에서 관련 법령 정보를 추출하여 문자열로 반환"""
-        statutes_set = set()
-        
-        for doc in retrieved_docs:
-            # legal_cases 테이블의 statutes 필드에서 추출 (필드가 있는 경우)
-            if 'statutes' in doc and doc['statutes']:
-                # 쉼표, 세미콜론으로 분리된 법령들을 파싱
-                statute_items = re.split(r'[,;]\s*', doc['statutes'].strip())
-                for item in statute_items:
-                    item = item.strip()
-                    if item:
-                        statutes_set.add(item)
-        
-        # 중복 제거된 법령 목록을 문자열로 변환
-        if statutes_set:
-            related_statutes = "관련 법령: " + ", ".join(sorted(statutes_set))
-            self.logger.debug(f"추출된 관련 법령: {related_statutes}")
-            
-            # 토큰 제한 (1000자로 제한)
-            if len(related_statutes) > 1000:
-                # 법령 목록을 줄여서 토큰 제한 준수
-                statute_list = list(sorted(statutes_set))
-                truncated_list = []
-                current_length = len("관련 법령: ")
-                
-                for statute in statute_list:
-                    if current_length + len(statute) + 2 <= 1000:  # ", " 고려
-                        truncated_list.append(statute)
-                        current_length += len(statute) + 2
-                    else:
-                        break
-                
-                related_statutes = "관련 법령: " + ", ".join(truncated_list)
-                self.logger.warning(f"법령 목록이 토큰 제한으로 인해 {len(truncated_list)}개로 축소됨")
-            
-            return related_statutes
-        else:
-            return "관련 법령: 없음"
+
     
     def _validate_and_enhance_statutes(self, case_analysis_result):
         """법령 검증 및 보강 파이프라인"""

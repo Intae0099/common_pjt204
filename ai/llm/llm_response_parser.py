@@ -33,13 +33,44 @@ def parse_case_analysis_output(raw: str) -> CaseAnalysisResult:
         payload = json.loads(raw)
         report  = payload.get("data", {}).get("report", {})
 
+        # Process statutes to handle 'article' (singular) to 'articles' (plural) conversion
+        processed_statutes = []
+        raw_statutes_from_llm = payload.get("statutes", [])
+        for s_data in raw_statutes_from_llm:
+            if isinstance(s_data, dict):
+                code = s_data.get("code", "")
+                articles = s_data.get("articles", [])
+                if not isinstance(articles, list):
+                    articles = [articles] if articles is not None else []
+                
+                # If 'articles' is empty, but 'article' (singular) exists, use it
+                if not articles and s_data.get("article"):
+                    article_singular = s_data.get("article")
+                    if isinstance(article_singular, str):
+                        articles = [article_singular]
+                    elif isinstance(article_singular, list): # Defensive: if LLM sends list for singular
+                        articles = article_singular
+                
+                processed_statutes.append({"code": code, "articles": articles})
+            # Handle cases where LLM might return a string directly (less likely with new prompt)
+            elif isinstance(s_data, str):
+                # Attempt to parse simple string like "형법 347조"
+                match = re.match(r"(.+?)\s*(\d+조.*)", s_data)
+                if match:
+                    code = match.group(1).strip()
+                    articles = [match.group(2).strip()]
+                else:
+                    code = s_data.strip()
+                    articles = []
+                processed_statutes.append({"code": code, "articles": articles})
+
         return CaseAnalysisResult(
             issues             = report.get("issues", []),
             opinion            = report.get("opinion", ""),
             expected_sentence  = report.get("sentencePrediction", ""),
             confidence         = report.get("confidence", 0.0),
             references         = report.get("references", {}),
-            statutes           = payload.get("statutes", []),  # 추가된 statutes 필드
+            statutes           = processed_statutes, # Use the processed list
             tags               = payload.get("tags", []),
             recommendedLawyers = payload.get("recommendedLawyers", [])
         )
