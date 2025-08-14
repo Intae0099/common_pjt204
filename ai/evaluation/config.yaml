@@ -1,6 +1,6 @@
 # RAG 평가 설정
 api:
-  base_url: "http://122.38.210.80:8998/"
+  base_url: "http://122.38.210.80:8999/"
   timeout_seconds: 30
   
 evaluation:

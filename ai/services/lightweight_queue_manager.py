@@ -54,48 +54,51 @@ class ResourceExhaustionError(Exception):
     """리소스 부족으로 처리할 수 없는 경우 발생하는 예외"""
     pass
 
-# 매우 보수적인 리소스 제한 설정
-CONSERVATIVE_LIMITS = {
+# 경량화 최적화 적용으로 확장된 리소스 제한 설정
+ENHANCED_LIMITS = {
     "case_analysis": {
-        "max_concurrent": 1,        # 가장 리소스 집약적
-        "max_queue_size": 5,        # 큐 크기도 작게
+        "max_concurrent": 2,        # 1→2 (경량화로 메모리 절약)
+        "max_queue_size": 10,       # 5→10 (큐 확장)
         "timeout": 180,             # 3분 타임아웃
         "priority": 1               # 높은 우선순위
     },
     "search": {
-        "max_concurrent": 2,        # 검색은 상대적으로 가벼움
-        "max_queue_size": 10,
+        "max_concurrent": 4,        # 2→4 (배치 최적화 효과)
+        "max_queue_size": 20,       # 10→20 (큐 확장)
         "timeout": 60,              # 1분 타임아웃
         "priority": 2
     },
     "consultation": {
-        "max_concurrent": 1,        # LLM 다중 호출로 리소스 집약적
-        "max_queue_size": 5,
+        "max_concurrent": 2,        # 1→2 (양자화 효과)
+        "max_queue_size": 10,       # 5→10 (큐 확장)
         "timeout": 120,             # 2분 타임아웃
         "priority": 3
     },
     "structuring": {
-        "max_concurrent": 2,        # 비교적 가벼움
-        "max_queue_size": 8,
+        "max_concurrent": 3,        # 2→3 (경량화 효과)
+        "max_queue_size": 15,       # 8→15 (큐 확장)
         "timeout": 90,
         "priority": 4
     },
     "chat": {
-        "max_concurrent": 3,        # 스트리밍, 상대적으로 가벼움
-        "max_queue_size": 15,
+        "max_concurrent": 5,        # 3→5 (배치 최적화)
+        "max_queue_size": 25,       # 15→25 (큐 확장)
         "timeout": 30,
         "priority": 5               # 낮은 우선순위
     }
 }
 
+# 하위 호환성을 위한 별칭 (기존 코드와 호환)
+CONSERVATIVE_LIMITS = ENHANCED_LIMITS
+
 class SimpleResourceMonitor:
     """간단한 리소스 모니터링 (CPU 부하 최소화)"""
     
     def __init__(self):
-        self.memory_threshold = 95    # 95% 메모리 사용 시 제한 (완화)
-        self.cpu_threshold = 95       # 95% CPU 사용 시 제한 (완화)
+        self.memory_threshold = 90    # 90% 메모리 사용 시 제한 (경량화로 완화)
+        self.cpu_threshold = 90       # 90% CPU 사용 시 제한 (배치 최적화로 완화)
         self.last_check = 0
-        self.check_interval = 5       # 5초마다만 체크
+        self.check_interval = 3       # 3초마다 체크 (더 반응적)
         self.cached_status = True
     
     async def should_process_request(self, service_type: str = None) -> bool:
