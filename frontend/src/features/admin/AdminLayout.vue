@@ -40,7 +40,7 @@
   width: 240px;
   background-color: #2c3e50;
   color: white;
-  padding: 20px;
+  padding: 60px 20px 20px 20px;
 }
 .admin-sidebar h2 {
   margin-top: 0;

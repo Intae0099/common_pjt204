@@ -29,16 +29,31 @@ export const useCasesStore = defineStore('cases', {
     // API 결과가 있는지 여부 (전체 목록 기준)
     hasResults: (state) => state._allCaseList.length > 0,
 
+    sortedCaseList: (state) => {
+      // '최신 순' 옵션이 선택된 경우
+      if (state.sortOption === 'recent') {
+        // state를 직접 변경하지 않기 위해 배열을 복사([...])한 후 정렬합니다.
+        // decisionDate(YYYY-MM-DD)는 문자열 비교로 최신순(내림차순) 정렬이 가능합니다.
+        return [...state._allCaseList].sort((a, b) =>
+          b.decisionDate.localeCompare(a.decisionDate)
+        );
+      }
+      // '정확도 순' (기본값)은 API에서 받은 순서 그대로 반환합니다.
+      return state._allCaseList;
+    },
+
     // ✨ [핵심] 현재 페이지에 보여줄 5개의 아이템만 잘라서 반환하는 getter
-    paginatedCaseList: (state) => {
-      const start = (state.currentPage - 1) * state.itemsPerPage;
-      const end = start + state.itemsPerPage;
-      return state._allCaseList.slice(start, end);
+    paginatedCaseList() {
+      const list = this.sortedCaseList; // 정렬된 목록을 가져옵니다.
+      const start = (this.currentPage - 1) * this.itemsPerPage;
+      const end = start + this.itemsPerPage;
+      return list.slice(start, end);
     },
 
     // 전체 페이지 수를 계산하는 getter
-    totalPages: (state) => {
-      return Math.ceil(state._allCaseList.length / state.itemsPerPage);
+    totalPages() {
+      if (!this.sortedCaseList) return 0;
+      return Math.ceil(this.sortedCaseList.length / this.itemsPerPage);
     }
   },
 
@@ -117,6 +132,8 @@ export const useCasesStore = defineStore('cases', {
     setPage(pageNumber) {
       if (pageNumber > 0 && pageNumber <= this.totalPages) {
         this.currentPage = pageNumber;
+        // ✨ 페이지 변경 시 화면을 맨 위로 스크롤합니다.
+        window.scrollTo(0, 0);
       }
     },
 

@@ -1,10 +1,11 @@
 <template>
   <div class="profile-edit-container">
     <!-- ⬅️ 뒤로가기 버튼 + 제목 -->
-    <div class="header-row">
-      <button class="back-btn" @click="goBack">← 마이페이지</button>
-
+    <div class="back-button" @click="goBack">
+      <ChevronLeftIcon class="chevron-icon" />
+      <span>마이페이지</span>
     </div>
+
     <h2>프로필 수정</h2>
 
     <!-- 프로필 사진 및 업로드 -->
@@ -64,7 +65,7 @@
 
     <!-- 저장 버튼 -->
     <div class="footer">
-      <button @click="saveChanges">변경사항 확인</button>
+      <button @click="saveChanges">변경사항 저장</button>
     </div>
   </div>
 </template>
@@ -77,6 +78,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from '@/lib/axios'
 import { TAG_MAP } from '@/constants/lawyerTags'
+import { ChevronLeftIcon } from '@heroicons/vue/24/solid'
 
 const router = useRouter()
 
@@ -160,11 +162,13 @@ onMounted(async () => {
 .upload-section {
   display: flex;
   flex-direction: column;
-  gap: 8px; /* 버튼과 에러 메시지 사이 간격 */
+  align-items: flex-start;
+  gap: 8px;
+  margin-left: 14px;
 }
 
 .error-message {
-  color: #d9534f; /* 에러를 나타내는 빨간색 */
+  color: #d32f2f; /* 에러를 나타내는 빨간색 */
   font-size: 12px;
   font-weight: 500;
 }
@@ -195,15 +199,37 @@ onMounted(async () => {
   padding: 40px;
   background-color: #ffffff;
   border-radius: 12px;
-  font-family: 'Pretendard', sans-serif;
-  color: #2B2F38;
+  font-family: 'Noto Sans KR', sans-serif;
+  color: #333333;
 }
+.back-button {
+  margin-top: 10px;
+  margin-bottom: 20px;
+  margin-left: -10px;
+  font-size: 1rem;
+  color: #6c9bcf;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  width: 100px;
+  transition: color 0.2s ease-in-out;
+}
+
+.back-button:hover {
+  color: #cfcfcf;
+}
+.chevron-icon {
+  width: 20px;
+  height: 20px;
+}
+
 
 .profile-edit-container h2 {
   font-size: 24px;
   font-weight: 700;
   margin-bottom: 32px;
-  color: #2B2F38;
+  text-align: center;
 }
 
 .section {
@@ -214,38 +240,40 @@ onMounted(async () => {
   font-size: 16px;
   font-weight: 600;
   margin-bottom: 8px;
-  color: #2B2F38;
+  color: #333333;
 }
 
 input[type="text"],
 textarea {
   width: 100%;
   padding: 12px;
-  border: 1px solid #D5DAE0;
+  border: 1px solid #cfcfcf;
   border-radius: 8px;
   font-size: 14px;
   resize: none;
   background-color: #ffffff;
-  color: #2B2F38;
+  color: #333333;
 }
 
 textarea::placeholder {
-  color: #8590A6;
+  color: #888;
 }
 
 /* 프로필 사진 업로드 */
 .profile-photo-wrapper {
   display: flex;
-  align-items: center;
-  gap: 20px;
+  flex-direction: column;   /* ⬅️ 핵심: 세로 배치 */
+  align-items: flex-start;      /* ⬅️ 이미지 기준 중앙 정렬 (왼쪽 정렬 원하면 flex-start) */
+  gap: 12px;                /* 이미지와 버튼 간격 */
+  width: 100%;
 }
 
 .profile-img {
-  width: 120px;
-  height: 120px;
+  width: 180px;
+  height: 200px;
   border-radius: 8px;
   object-fit: cover;
-  border: 1px solid #D5DAE0;
+  border: 1px solid #f1f1f1;
 }
 
 .upload-label {
@@ -277,13 +305,13 @@ input[type="file"] {
 }
 
 .tag-button {
-  padding: 6px 12px;
-  border: 1px solid #D5DAE0;
-  border-radius: 20px;
-  background-color: #F0F3F8;
+  padding: 4px 8px;
+  border: 1px solid #f1f1f1;
+  border-radius: 12px;
+  background-color: #f1f1f1;
   font-size: 13px;
   cursor: pointer;
-  color: #2B2F38;
+  color: #333;
   transition: all 0.2s;
 }
 
@@ -311,7 +339,7 @@ input[type="file"] {
 }
 
 .footer button:hover {
-  background-color: #1A2F8F;
+  background-color: #6c9bcf;
 }
 
 </style>

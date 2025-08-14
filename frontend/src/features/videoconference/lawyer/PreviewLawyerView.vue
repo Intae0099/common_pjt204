@@ -182,9 +182,9 @@ const enterMeeting = async (appointmentId) => {
 onMounted(async () => {
   try {
     // API 호출 시 params를 추가하여 승인된('CONFIRMED') 상담만 가져오도록 변경
-    const { data: allAppointments } = await axios.get('/api/appointments/me', {
-      params: { status: 'CONFIRMED' },
-    });
+    // const { data: allAppointments } = await axios.get('/api/appointments/me', {
+    //   params: { status: 'CONFIRMED' },
+    // });
     /* 실제코드. 추후 주석 해제
     // 오늘 날짜의, 아직 끝나지 않은 예약만 필터링합니다.
     const now = new Date();
@@ -207,6 +207,24 @@ onMounted(async () => {
     );
     appointments.value = todaysAppointments;
     */
+    // 1. 'CONFIRMED' 상태와 'IN_PROGRESS' 상태에 대한 API 요청을 각각 생성합니다.
+    const confirmedPromise = axios.get('/api/appointments/me', {
+      params: { status: 'CONFIRMED' },
+    });
+    const inProgressPromise = axios.get('/api/appointments/me', {
+      params: { status: 'IN_PROGRESS' }, // '진행중' 상태명이 다르다면 수정 필요
+    });
+
+    // 2. Promise.all을 사용해 두 요청을 동시에 보냅니다.
+    const [confirmedResponse, inProgressResponse] = await Promise.all([
+      confirmedPromise,
+      inProgressPromise,
+    ]);
+
+    // 3. 각 응답에서 데이터 배열을 추출합니다. (데이터가 없을 경우 빈 배열로 처리)
+    const confirmedAppointments = confirmedResponse.data || [];
+    const inProgressAppointments = inProgressResponse.data || [];
+    const allAppointments = [...confirmedAppointments, ...inProgressAppointments];
 
     // [개발용. 추후 삭제예정] 모든 확정된 상담 목록을 불러옵니다.
     appointments.value = allAppointments;

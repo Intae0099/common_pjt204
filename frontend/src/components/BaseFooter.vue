@@ -18,11 +18,11 @@
         <div class="col-6 col-md-6">
           <h6 class="section-title">바로가기</h6>
           <ul class="nav flex-row gap-3 flex-wrap">
-            <li class="nav-item"><RouterLink to="/ai-consult" class="footer-link">AI 사전상담</RouterLink></li>
-            <li class="nav-item"><RouterLink to="/cases/search" class="footer-link">판례 검색</RouterLink></li>
-            <li class="nav-item"><RouterLink to="/lawyers" class="footer-link">변호사 조회</RouterLink></li>
+            <li class="nav-item"><RouterLink to="/ai-consult" class="footer-link">AI사전상담</RouterLink></li>
+            <li class="nav-item"><RouterLink to="/cases/search" class="footer-link">판례검색</RouterLink></li>
+            <li class="nav-item"><RouterLink to="/lawyers" class="footer-link">변호사찾기</RouterLink></li>
             <li class="nav-item">
-              <a href="#" class="footer-link" @click.prevent="goToConsultForm">AI 상담신청서</a>
+              <a href="#" class="footer-link" @click.prevent="goToConsultForm">AI상담신청서</a>
             </li>
             <li class="nav-item"><RouterLink :to="videoCallPath" class="footer-link">화상상담</RouterLink></li>
           </ul>
@@ -73,6 +73,7 @@ const year = new Date().getFullYear()
 
 <style scoped>
 .base-footer {
+  font-family: 'Noto Sans KR', sans-serif;
   background: #1d2b50; /* 네이비 */
   color: #f4f7fb; /* 거의 흰색 */
 }

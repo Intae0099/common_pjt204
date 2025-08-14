@@ -1,8 +1,9 @@
 <template>
   <div class="profile-edit-container">
     <!-- ⬅️ 뒤로가기 -->
-    <div class="header-row">
-      <button class="back-btn" @click="goBack">← 마이페이지</button>
+    <div class="back-button" @click="goBack">
+      <ChevronLeftIcon class="chevron-icon" />
+      <span>마이페이지</span>
     </div>
 
     <h2>프로필 수정</h2>
@@ -30,6 +31,8 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from '@/lib/axios'
+import { ChevronLeftIcon } from '@heroicons/vue/24/solid'
+
 
 const router = useRouter()
 const name = ref('')
@@ -76,9 +79,31 @@ onMounted(async () => {
   padding: 40px;
   background-color: #ffffff;
   border-radius: 12px;
-  font-family: 'Pretendard', sans-serif;
-  color: #2B2F38;
+  font-family: 'Noto Sans KR', sans-serif;
+  color: #333333;
 }
+.back-button {
+  margin-top: 10px;
+  margin-bottom: 20px;
+  margin-left: -10px;
+  font-size: 1rem;
+  color: #6c9bcf;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  width: 100px;
+  transition: color 0.2s ease-in-out;
+}
+
+.back-button:hover {
+  color: #cfcfcf;
+}
+.chevron-icon {
+  width: 20px;
+  height: 20px;
+}
+
 
 .header-row {
   display: flex;
@@ -102,7 +127,8 @@ h2 {
   font-size: 24px;
   font-weight: 700;
   margin-bottom: 32px;
-  color: #2B2F38;
+  color: #333333;
+  text-align: center ;
 }
 
 .section {
@@ -113,7 +139,7 @@ h2 {
   font-size: 16px;
   font-weight: 600;
   margin-bottom: 8px;
-  color: #2B2F38;
+  color: #333333;
 }
 
 input[type="text"] {
@@ -123,11 +149,11 @@ input[type="text"] {
   border-radius: 8px;
   font-size: 14px;
   background-color: #ffffff;
-  color: #2B2F38;
+  color: #333333;
 }
 
 input::placeholder {
-  color: #8590A6;
+  color: #888;
 }
 
 .footer {
@@ -147,6 +173,6 @@ input::placeholder {
 }
 
 .footer button:hover {
-  background-color: #1A2F8F;
+  background-color: #6c9bcf;
 }
 </style>

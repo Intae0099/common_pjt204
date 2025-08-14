@@ -3,15 +3,6 @@
     <div class="container">
       <div>
         <div class="wrapper">
-          <!-- 왼쪽: 사용자 입력창 -->
-          <ChatInputBox
-            :disabled="isLoading || isFindingVerdict"
-            @submit="handleUserInput"
-          />
-
-          <div v-if="isLoading || isFindingVerdict" class="loading-dots-wrapper">
-            <LoadingDots />
-          </div>
 
           <AiBox
             ref="aiBoxRef"
@@ -24,6 +15,16 @@
             @open-modal="handleOpenSaveModal"
             @predict="handlePredictVerdict"
           />
+
+          <!-- 사용자 입력창 -->
+          <ChatInputBox
+            :disabled="isLoading || isFindingVerdict"
+            @submit="handleUserInput"
+          />
+
+          <div v-if="isLoading || isFindingVerdict" class="loading-dots-wrapper">
+            <LoadingDots />
+          </div>
         </div>
 
         <!-- 하단 버튼 영역 -->
@@ -72,6 +73,7 @@ import LawyerRecommendList from './components/LawyerRecommendList.vue'
 // import axios from 'axios'
 import { fastapiApiClient } from '@/lib/axios';
 import LoadingDots from './components/LoadingDots.vue'
+import { TAG_MAP } from '@/constants/lawyerTags'
 
 const aiBoxRef = ref(null)
 const showSaveModal = ref(false)
@@ -143,13 +145,34 @@ const handlePredictVerdict = async () => {
   isFindingVerdict.value = true
   try {
     const { data } = await fastapiApiClient.post('/analysis', {
-      case: aiResponse.value // 첫 번째 API의 결과를 요청 본문에 담아 보냄
+      case: aiResponse.value
     })
 
     if (data.success) {
-      // API 응답에 맞춰 state 업데이트
       verdictResult.value = data.data.report
-      lawyers.value = data.data.report.recommendedLawyers
+
+      // --- 2. 태그 ID를 이름으로 변환하는 로직 ---
+      // 성능 향상을 위해 TAG_MAP을 Map 객체로 변환 (ID로 이름을 바로 찾기 위함)
+      const tagIdToNameMap = new Map(TAG_MAP.map(tag => [tag.id, tag.name]));
+
+      // 추천 변호사 목록을 순회하며 태그를 변환
+      const processedLawyers = data.data.report.recommendedLawyers.map(lawyer => {
+        // 각 변호사의 tags 배열(ID 목록)을 이름 목록으로 변환
+        const tagNames = lawyer.tags
+          .map(tagId => tagIdToNameMap.get(tagId)) // Map에서 ID에 해당하는 이름을 찾음
+          .filter(Boolean); // 혹시 모를 null이나 undefined 값을 제거
+
+        // 기존 변호사 정보에 변환된 태그(이름 배열)를 포함하여 새로운 객체 반환
+        return {
+          ...lawyer,
+          tags: tagNames
+        };
+      });
+
+      // 변환된 변호사 목록을 state에 저장
+      lawyers.value = processedLawyers;
+      // --- 로직 종료 ---
+
       canShowRecommendBtn.value = true
     } else {
       console.error('판례 분석 API 오류:', data.error.message)
@@ -203,28 +226,24 @@ const handleModalRoute = (target) => {
   padding: 100px 16px;
   display: flex;
   justify-content: center;
-  align-items: flex-start;
+  align-items: center;
   min-height: 100vh; /* 화면 전체 가운데 정렬을 위한 높이 */
 }
 .wrapper {
-  position: relative;
   display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  gap: 50px;
-  max-width: 1200px;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+  max-width: 920px;
   width: 100%;
   margin: 0 auto;
-  padding-top: 40px;
+  padding-top: 20px;
 }
 .loading-dots-wrapper {
-  position: absolute;
-  /* 상단에서부터의 위치. 필요시 px 값을 조정하세요. */
-  top: 150px;
-  /* 수평 중앙 정렬 */
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 10; /* 다른 요소들 위에 오도록 설정 */
+  position: static;         /* ⬅︎ absolute → static */
+  margin-top: -6px;        /* ⬅︎ 살짝 붙여줌(취향) */
+  display: flex;
+  justify-content: center;
 }
 /* 화면이 768px보다 좁아질 때 세로로 배치되도록 수정합니다. */
 @media (max-width: 768px) {

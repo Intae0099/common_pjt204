@@ -1,18 +1,18 @@
 <template>
   <div class="compare-container">
     <!-- 왼쪽: 사용자 입력 폼 -->
-    <div class="left-box">
+    <!-- <div class="left-box">
       <ConsultationForm
         :form="localUserData"
         :questions-input="questionsInput"
         @submitted="handleSubmit"
         :hide-submit-button="true"
       />
-      <div class="left-button">
+      <div class="left-button"> -->
         <!-- <button class="refresh-btn" @click="emit('regenerate')">AI로 정보 수정하기</button> -->
-        <button class="refresh-btn" @click="handleRegenerate">AI로 정보 수정하기</button>
+        <!-- <button class="refresh-btn" @click="handleRegenerate">AI로 정보 수정하기</button>
       </div>
-    </div>
+    </div> -->
 
     <div class="right-box">
       <div class="character-wrapper">
@@ -25,10 +25,6 @@
             <label>사건 제목</label>
             <p>{{ aiData.title }}</p>
           </div>
-          <div class="form-group">
-            <label>사건 한 줄 요약</label>
-            <p>{{ aiData.summary }}</p>
-          </div>
           <div class="form-group scrollable-group">
             <label>사건 개요</label>
             <p class="scrollable-content">{{ aiData.fullText }}</p>
@@ -39,6 +35,10 @@
           </div>
           <div class="form-group scrollable-group">
             <label>사건에서 불리한 점</label>
+            <p class="scrollable-content">{{ aiData.disadvantage }}</p>
+          </div>
+          <div class="form-group scrollable-group">
+            <label>변호사에게 궁금한점</label>
             <p class="scrollable-content">{{ aiData.disadvantage }}</p>
           </div>
           <div class="form-group scrollable-group">
@@ -55,11 +55,14 @@
               <li v-for="(q, idx) in aiData.recommendedQuestions" :key="idx">{{ q }}</li>
             </ul>
           </div>
+          <div>
+            <button type="button" @click="emit('regenerate', aiData)">AI로 다시 수정하기</button>
+          </div>
         </form>
       </div>
       <div class="right-buttons">
-        <button class="copy-btn" @click="copyToUserForm">복사해서 수정하기</button>
-        <button class="submit-btn" @click="emit('submit', localUserData)">상담신청서 저장하기</button>
+        <button class="copy-btn" @click="emit('back')">신청서 다시 작성하기</button>
+        <button class="submit-btn" @click="emit('submit')">상담신청서 저장하기</button>
       </div>
     </div>
   </div>
@@ -78,7 +81,7 @@ const props = defineProps({
 })
 
 const localUserData = ref({ ...props.userData })
-const emit = defineEmits(['submit', 'back'])
+const emit = defineEmits(['submit', 'back', 'regenerate'])
 const questionsInput = ref(props.userData.recommendedQuestions?.join(', ') || '')
 
 const handleRegenerate = () => {

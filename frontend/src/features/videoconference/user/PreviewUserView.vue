@@ -268,9 +268,28 @@ onMounted(async () => {
   console.log('[PreviewUserView] Mounted: 컴포넌트가 생성되었습니다.');
   try {
     // API 호출 시 params를 추가하여 승인된 상담만 가져오도록
-    const { data: appointmentData } = await axios.get('/api/appointments/me', {
+    // const { data: appointmentData } = await axios.get('/api/appointments/me', {
+    //   params: { status: 'CONFIRMED' },
+    // });
+
+    const confirmedPromise = axios.get('/api/appointments/me', {
       params: { status: 'CONFIRMED' },
     });
+    const inProgressPromise = axios.get('/api/appointments/me', {
+      params: { status: 'IN_PROGRESS' },
+    });
+
+    // 2. 두 요청을 동시에 보내고 결과를 기다림
+    const [confirmedResponse, inProgressResponse] = await Promise.all([
+      confirmedPromise,
+      inProgressPromise,
+    ]);
+
+    // 3. 각 응답에서 데이터를 추출하고 하나의 배열로 합침
+    const confirmedData = confirmedResponse.data || [];
+    const inProgressData = inProgressResponse.data || [];
+    const appointmentData = [...confirmedData, ...inProgressData];
+
     const appointmentsWithLawyerInfo = await Promise.all(
       appointmentData.map(async (appointment) => {
         try {

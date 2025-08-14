@@ -14,7 +14,7 @@
         />
         <button @click="performSearch">→</button>
       </div>
-      <select v-model="sortOption" @change="performSearch" class="sort-select">
+      <select v-model="sortOption" @change="handleSortChange" class="sort-select">
         <option value="accuracy">정확도 순</option>
         <option value="recent">최신 순</option>
       </select>
@@ -111,6 +111,12 @@ const { searchCases, setPage } = casesStore;
 
 const performSearch = () => {
   searchCases();
+};
+
+const handleSortChange = () => {
+  // `v-model`이 이미 `sortOption` 상태를 변경했습니다.
+  // 우리는 페이지만 1로 리셋하여 사용자 경험을 향상시킵니다.
+  setPage(1);
 };
 </script>
 

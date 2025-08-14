@@ -27,6 +27,7 @@
         <div class="cta-wrap">
           <div
             class="pill-track"
+            @mousedown="startDrag"
             @mousemove="doDrag"
             @mouseup="stopDrag"
             @mouseleave="stopDrag"
@@ -37,9 +38,9 @@
               :style="{ transform: `translateX(${dragOffset}px)` }"
             >
               <RouterLink to="/ai-consult" class="btn-primary">
-                바로 시작하기
+                밀어서  시작하기
               </RouterLink>
-              <div class="pill-round" @mousedown.prevent="startDrag">
+              <div class="pill-round">
                 <span class="chev">››</span>
               </div>
             </div>

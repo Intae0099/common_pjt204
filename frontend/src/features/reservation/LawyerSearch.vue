@@ -77,7 +77,7 @@
             <div class="lawyer-bottom">
               <p class="lawyer-name">{{ lawyer.name }} 변호사
                 <span class="badge-wrapper">
-                  <img :src="checkbadge" alt="인증 배지" class="check-badge-icon" /> <span class="tooltip">에이로에서 인증받은 변호사에요!</span>
+                   <span class="tooltip">에이로에서 인증받은 변호사에요!</span><img :src="checkbadge" alt="인증 배지" class="check-badge-icon" />
                 </span>
               </p>
               <div class="lawyer-tags">
@@ -464,6 +464,7 @@ const goToReservation = lawyer => {
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 30px;
   margin-top: 20px;
+  align-items: start;
 }
 .lawyer-card {
   background-color: white;
@@ -476,8 +477,9 @@ const goToReservation = lawyer => {
   transition: box-shadow 0.2s ease, transform 0.2s ease;
   display: flex;
   flex-direction: column;
-  height: 100%;
+  /* height: 100%;  신규 삭제*/
   min-height: 260px;
+  align-self: start; /* 신규 추가 */
 }
 .lawyer-card:hover {
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12),
@@ -490,6 +492,7 @@ const goToReservation = lawyer => {
   height: 250px;
   object-fit: cover;
   margin: 0 auto 7px;
+  border-radius: 12px;
 
   /* 경계 흐림 효과 */
   box-shadow: 0 4px 12px rgba(0,0,0,0.1);
@@ -522,25 +525,27 @@ const goToReservation = lawyer => {
 }
 
 /* 기존 .tooltip 유지 + 보정 */
-.tooltip{
+.tooltip {
   font-family: 'Noto Sans KR', sans-serif;
-  visibility: hidden;
-  opacity: 0;
+  visibility: hidden; /* 툴팁을 숨김 */
+  opacity: 0;        /* 투명도 0으로 설정 */
   position: absolute;
-  bottom: 130%;              /* 배지 위쪽으로 */
+  bottom: 130%;
   left: 50%;
   transform: translateX(-50%);
-  background-color: #f4f7fb;
-  color: #888;
-  border: 1px solid #6c9bcf;
-  padding: 6px 10px;
-  border-radius: 6px;
-  font-size: 13px;
+  background-color: #fff;
+  color: #072D45;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
   white-space: nowrap;
-  transition: opacity .2s ease;
-  z-index: 10;               /* 겹침 방지 */
-  pointer-events: none;      /* 마우스 올려도 깜빡임 방지 */
+  font-size: 0.85rem;
+  z-index: 10;
+  line-height: 1.4;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  transition: visibility 0.3s, opacity 0.3s; /* 애니메이션 효과를 위해 유지 */
 }
+
 
 .tooltip::after{
   content:'';
@@ -549,13 +554,13 @@ const goToReservation = lawyer => {
   left:50%; margin-left:-5px;
   border-width:5px;
   border-style:solid ;
-  border-color:#6c9bcf transparent transparent transparent;
+  border-color: transparent transparent transparent transparent;
 }
 
 /* ✅ hover 타깃을 래퍼로 변경 */
 .badge-wrapper:hover .tooltip{
   visibility: visible;
-  opacity: 1;
+  opacity: 0.8;
 }
 
 .lawyer-tags {
@@ -593,7 +598,7 @@ const goToReservation = lawyer => {
   transition: background-color 0.2s ease;
 }
 .reserve-btn:hover {
-  background-color: #394b85;
+  background-color: #6c9bcf;
 }
 
 /* ── Responsive Layout (Mobile) ─────────────────── */

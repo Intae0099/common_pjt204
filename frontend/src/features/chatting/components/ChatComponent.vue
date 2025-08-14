@@ -5,11 +5,12 @@
         v-for="message in messages"
         :key="message.id"
         class="message-bubble-container"
-        :class="message.sender === 'me' ? 'my-message-container' : 'other-message-container'"
+        :class="[
+          message.sender === 'me' ? 'my-message-container' : 'other-message-container',
+          message.name === 'AI 챗봇' ? 'ai-bot' : ''
+        ]"
       >
-        <!-- [수정됨] 발신자 이름 표시 -->
         <div class="sender-name">{{ message.name }}</div>
-
         <div class="message-bubble">
           {{ message.text }}
         </div>
@@ -140,6 +141,12 @@ watch(
   background-color: #5A5A5A;
   color: #C5C5C5;
 }
+/* AI 챗봇의 말풍선만 파란색으로 */
+.other-message-container.ai-bot .message-bubble {
+  background-color: #4da3ff; /* 파란색 */
+  color: #fff;
+}
+
 .input-area {
   display: flex;
   padding: 10px;
@@ -156,7 +163,7 @@ watch(
 }
 .input-area input:focus {
   outline: none;
-  border-color: #4A90E2;
+  border-color: #6c9bcf ;
 }
 .input-area button {
   padding: 10px 20px;

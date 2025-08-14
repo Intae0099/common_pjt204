@@ -42,7 +42,8 @@
             <div v-if="verdictResult.references?.cases?.length" class="precedent-section">
               <h4>유사 판례</h4>
               <div class="case-list">
-                <div v-for="(caseItem, index) in verdictResult.references.cases" :key="`case-${index}`" class="case-item">
+                <div v-for="(caseItem, index) in verdictResult.references.cases" :key="`case-${index}`"
+                  class="case-item">
                   <div class="case-row">
                     <span class="case-label">사건</span>
                     <span class="case-value">{{ caseItem.title }} ({{ caseItem.id }})</span>
@@ -62,11 +63,27 @@
                 </div>
               </div>
             </div>
-            <div v-if="verdictResult.references?.statutes?.length" style="margin-top: 1rem;">
+            <div v-if="verdictResult.statutes?.length" style="margin-top: 1.5rem;">
               <h4>관련 법령</h4>
-              <ul>
-                <li v-for="(statute, index) in verdictResult.references.statutes" :key="`statute-${index}`">
-                  <p>{{ statute.code }} 제{{ statute.article }}</p>
+              <ul style="list-style-type: none; padding-left: 0; margin-top: 0.5rem;">
+                <!-- 1. statutes 배열을 순회합니다. (예: 형법, 민법) -->
+                <li v-for="(statute, index) in verdictResult.statutes" :key="`statute-${index}`"
+                  style="margin-bottom: 0.5rem;">
+                  <a :href="`http://law.go.kr/법령/${encodeURIComponent(statute.code)}`" target="_blank"
+                    rel="noopener noreferrer">
+                    <strong>{{ statute.code }}</strong>
+                  </a>
+                  <!-- 2. articles 배열이 존재하고, 비어있지 않은 경우에만 내부 목록을 표시합니다. -->
+                  <ul v-if="statute.articles && statute.articles.length > 0"
+                    style="padding-left: 20px; margin-top: 5px; list-style-type: disc;">
+                    <!-- 3. articles 배열을 순회하며 각 조항을 표시합니다. -->
+                    <li v-for="article in statute.articles" :key="article" style="font-size: 0.9rem;">
+                      <a :href="`http://law.go.kr/법령/${encodeURIComponent(statute.code)}/${article}`" target="_blank"
+                        rel="noopener noreferrer">
+                        제{{ article }}조
+                      </a>
+                    </li>
+                  </ul>
                 </li>
               </ul>
             </div>
@@ -74,12 +91,18 @@
         </template>
       </div>
     </div>
-
     <div v-else class="empty-state">
-      <h1>AI 사전 상담</h1>
-      <p>질문만 입력하면 상황을 정리해드리고,<br/>
-        유사한 판례까지 AI가 찾아드립니다.</p>
+      <h1 class="title-ko">로우봇</h1>
+      <p class="title-en">Law Bot</p>
+
       <img class="guide-bot" src="@/assets/ai-consult-bot.png" alt="AI 봇" />
+
+      <p class="lead">
+        궁금한 내용을 질문으로 입력하시면, AI가 해당 상황을 분석하여 핵심을 정리해드립니다.
+      </p>
+      <p class="lead">
+        또한 유사 판례를 함께 찾아 제공해드려 보다 깊이 있고 신뢰할 수 있는 정보를 확인하실 수 있습니다.
+      </p>
     </div>
   </div>
 </template>
@@ -161,9 +184,8 @@ watch(() => props.response, (newResponse) => {
 
 <style scoped>
 .ai-box-wrapper {
-  flex: 1;
-  max-width: 500px;
-  min-width: 350px;
+  width: 100%;
+  max-width: 920px;
 }
 *{
   font-family: 'Noto Sans KR', sans-serif;
@@ -264,24 +286,38 @@ h6{
   text-align: center;
 }
 
-.empty-state h1 {
-  margin-top: 10px;
-  font-size: 2.5rem;
-  font-weight: bold;
-  margin-bottom: 1rem;
-  color: #072D45;
-}
 
 .empty-state p {
   font-size: 1rem;
   font-weight: medium;
-  color: #82A0B3;
-  line-height: 1.5;
+  color: #86A3B7;
+  line-height: 1.2;
+}
+/* 타이틀 */
+.title-ko {
+  margin-top: 8px;
+  margin-bottom: 2px;
+  font-size: 2.0rem;
+  font-weight: 800;
+  color: #072D45;
+}
+.title-en {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #86A3B7;
 }
 
 .guide-bot {
-  width: 250px;
-  margin-top: 15px;
+  width: 220px;
+  margin: 10px 0 14px;
+}
+
+.lead {
+  margin: 6px 0;
+  font-size: 0.98rem;
+  line-height: 1.8;
+  color: #82A0B3;
 }
 .loading-container.initial-loading {
   display: flex;
@@ -291,7 +327,7 @@ h6{
   width: 100%;
   min-height: 120px;
   color: #82A0B3;
-  margin-top: 100px;
+  margin-top: 10px;
 }
 
 /* 판례 검색 로딩 컨테이너 스타일 추가 */

@@ -6,11 +6,10 @@
         <span>이전</span>
       </div>
       <div class="header-row">
-        <h2>상담내역</h2>
+        <h1>상담내역</h1>
         <div class="filter-sort-group">
           <div class="sort-wrapper" @click="toggleFilterOpen">
             <span>{{ filterText(selectedStatus) }}</span>
-            <component :is="isFilterOpen ? ChevronUpIcon : ChevronDownIcon" class="sort-icon" />
             <select v-model="selectedStatus" @change="filterAndSortAppointments" class="native-select">
               <option value="all">전체</option>
               <option value="PENDING">대기중</option>
@@ -22,7 +21,6 @@
           </div>
           <div class="sort-wrapper" @click="toggleSortOpen">
             <span>{{ sortOrder === 'desc' ? '최신순' : '오래된순' }}</span>
-            <component :is="isSortOpen ? ChevronUpIcon : ChevronDownIcon" class="sort-icon" />
             <select v-model="sortOrder" @change="filterAndSortAppointments" class="native-select">
               <option value="desc">최신순</option>
               <option value="asc">오래된순</option>
@@ -45,9 +43,9 @@
               </div>
               <div class="client">
                 <span class="client-name">{{ appt.counterpartName }}</span> 의뢰인
-              </div>
-              <div :class="statusClass(appt.appointmentStatus)">
-                {{ filterText(appt.appointmentStatus) }}
+                <div :class="statusClass(appt.appointmentStatus)">
+                  {{ filterText(appt.appointmentStatus) }}
+                </div>
               </div>
             </div>
             <button class="view-btn" @click="goToApplication(appt.applicationId)">상담신청서 확인하기</button>
@@ -96,7 +94,7 @@ import { useRouter } from 'vue-router'
 import axios from '@/lib/axios'
 // ✅ 모달 및 아이콘 컴포넌트 임포트
 import ApplicationDetail from '@/features/profile/user/ApplicationDetail.vue'
-import { ChevronLeftIcon, ChevronDownIcon, ChevronUpIcon } from '@heroicons/vue/24/solid'
+import { ChevronLeftIcon } from '@heroicons/vue/24/solid'
 
 const appointments = ref([])
 const router = useRouter()
@@ -245,27 +243,40 @@ onMounted(() => {
 
 <style scoped>
 /* UserConsultHistory.vue와 동일한 스타일 적용 */
-*{
+.container{
   font-family: 'Noto Sans KR', sans-serif;
   white-space: nowrap;
+  color: #333333;
 }
+
+h1{
+  text-align: center;
+  margin-top: 15px;
+  margin-bottom: 5px;
+  font-size: 24px;
+  margin-bottom: 10px;
+  font-weight: bold;
+}
+
 .history-container{
-  margin: 0 10rem;
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 20px 20px;
 }
 .header-row {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column; /* 세로 배치 */
+  align-items: center; /* h1 가운데 정렬 */
   padding-bottom: 1rem;
-  border-bottom: 2px solid #B9D0DF;
-  color: #072D45;
+  border-bottom: 1px solid #888;
 }
 .history-card {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid #eee;
-  padding: 1.5rem 0;
+  border: 1px solid #cfcfcf;
+  border-radius: 8px;
+  padding: 1.5rem;
 }
 .card-left {
   display: flex;
@@ -274,31 +285,37 @@ onMounted(() => {
   height: 55px;
 }
 .datetime {
-  font-weight: bold;
   font-size: 0.8rem;
   color: #B9D0DF;
 }
 .client {
   font-size: 1.2rem;
-  color: #072D45;
+  color: #333333;
 }
 .client-name{
   font-weight: bold;
 }
 .empty {
-  color: #aaa;
+  margin-top: 10px;
+  color: #cfcfcf;
+  text-align: center;
 }
 .back-button {
   margin-top: 100px;
-  margin-bottom: 50px;
+  margin-bottom: 20px;
   margin-left: -10px;
   font-size: 1rem;
-  color: #B9D0DF;
+  color: #6c9bcf;
   cursor: pointer;
   display: flex;
   align-items: center;
   gap: 0.3rem;
   width: 80px;
+  transition: color 0.2s ease-in-out;
+}
+
+.back-button:hover {
+  color: #cfcfcf;
 }
 .chevron-icon {
   width: 20px;
@@ -306,36 +323,41 @@ onMounted(() => {
 }
 .view-btn {
   background: none;
-  color: #B9D0DF;
+  color: #6c9bcf;
   cursor: pointer;
   font-size: 0.9rem;
   border: none;
   align-self: flex-end;
 }
+.view-btn:hover {
+  color: #cfcfcf;
+}
 .filter-sort-group {
-    display: flex;
-    gap: 1rem;
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.5rem;
+  align-self: flex-end; /* 오른쪽 정렬 */
 }
 .sort-wrapper {
   position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border: 1px solid #B9D0DF;
+  border: 1px solid #cfcfcf;
   border-radius: 15px;
-  height: 30px;
+  height: 25px;
   padding: 0 1rem;
   font-size: 12px;
-  color: #072D45;
+  color: #888;
   cursor: pointer;
-  width: 110px;
+  width: 100px;
   background-color: white;
+  background-image: url("data:image/svg+xml,%3Csvg fill='gray' height='16' viewBox='0 0 24 24' width='16' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  background-size: 12px;
 }
-.sort-icon {
-  width: 16px;
-  height: 16px;
-  margin-left: 8px;
-}
+
 .native-select {
   position: absolute;
   top: 0;
@@ -344,27 +366,39 @@ onMounted(() => {
   height: 100%;
   opacity: 0;
   cursor: pointer;
+  color:#888;
 }
 /* 상태별 스타일 */
+.status-confirmed,
+.status-pending,
+.status-rejected,
+.status-cancelled,
+.status-ended {
+  padding: 2px 10px;
+  border-radius: 15px;
+  font-size: 0.8rem;
+  display: inline-block;
+}
+
 .status-confirmed {
-  color: #3478ff;
-  font-weight: bold;
+  background: #6c9bcf;
+  color: white;
 }
 .status-pending {
-  color: #f5a623;
-  font-weight: bold;
+  background: #FFBF66;
+  color: white;
 }
 .status-rejected {
-  color: #f44336;
-  font-weight: bold;
+  background: #B3261E;
+  color: white;
 }
 .status-cancelled {
-  color: #f44336;
-  font-weight: bold;
+  background: #B3261E;
+  color: white;
 }
 .status-ended {
-  color: #888;
-  font-weight: bold;
+  background: #888;
+  color: white;
 }
 
 /* ✅ 페이지네이션 스타일 */
@@ -377,24 +411,26 @@ onMounted(() => {
 }
 
 .page-btn {
+  border: none;
+  background-color: #fff;
+  color: #6c9bcf;
   padding: 8px 12px;
-  border: 1px solid #B9D0DF;
-  background-color: white;
-  border-radius: 4px;
+  border-radius: 8px;
   cursor: pointer;
-  font-size: 1rem;
-  color: #072D45;
+  transition: background-color 0.2s;
 }
-
-.page-btn:disabled {
-  color: #ccc;
-  cursor: not-allowed;
+.page-btn:hover:not(:disabled) {
+  background-color: #eee;
 }
-
 .page-btn.active {
-  background-color: #072D45;
+  background-color: #6c9bcf;
   color: white;
-  border-color: #072D45;
+  border-color: #6c9bcf;
+  cursor: default;
+}
+.page-btn:disabled {
+  color: #cfcfcf;
+  cursor: not-allowed;
 }
 /* ✅ 월별 헤더 스타일 */
 .month-header {

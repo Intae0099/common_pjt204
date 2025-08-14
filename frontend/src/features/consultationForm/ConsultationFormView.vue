@@ -26,7 +26,7 @@
         :userData="userInput"
         :aiData="aiResult"
         @submit="handleFinalSubmit"
-        @back="() => (showCompareView.value = false)"
+        @back="showCompareView = false"
         @regenerate="handleFormSubmit"
       />
     </LayoutDefault>
@@ -77,11 +77,12 @@ const handleFormSubmit = async (formData) => {
   userInput.value = formData
 
   try {
+    const contentForApi = formData.content || formData.fullText;
     const res = await fastapiApiClient.post('/consult', {
       case: {
         title: formData.title,
         summary: formData.summary || '',
-        fullText: formData.content,
+        fullText: contentForApi,
       },
       desiredOutcome: formData.outcome,
       weakPoints: formData.disadvantage,
@@ -114,7 +115,7 @@ const handleFormSubmit = async (formData) => {
     isLoading.value = false
   }
 }
-const handleFinalSubmit = async (formData) => {
+const handleFinalSubmit = async () => {
   const hasPreviousApplication = applicationId.value !== null;
   const tagNamesFromAI = aiResult.value.tags || [];
 
@@ -128,18 +129,21 @@ const handleFinalSubmit = async (formData) => {
     .map(foundTag => foundTag.id); // 찾아낸 객체에서 id 값만 추출하여 새로운 배열을 만듭니다.
                                     // 결과: [7, 9]
   // 서버로 보낼 데이터를 payload 변수로 먼저 만듭니다.
+
+  const summaryForPayload = aiResult.value.summary || aiResult.value.fullText.substring(0, 100);
+
    const payload = {
-    title: formData.title,
-    summary: formData.summary || '',
-    content: formData.content,
-    outcome: formData.outcome,
-    disadvantage: formData.disadvantage,
+    title: aiResult.value.title,
+    summary: summaryForPayload,
+    content: aiResult.value.fullText, // Spring Boot에서 content를 받으므로 aiResult의 fullText를 매핑
+    outcome: aiResult.value.outcome,
+    disadvantage: aiResult.value.disadvantage,
     recommendedQuestion: {
-      additionalProp1: formData.recommendedQuestions[0] || '',
-      additionalProp2: formData.recommendedQuestions[1] || '',
-      additionalProp3: formData.recommendedQuestions[2] || '',
+      question1: aiResult.value.recommendedQuestions[0] || '',
+      question2: aiResult.value.recommendedQuestions[1] || '',
+      question3: aiResult.value.recommendedQuestions[2] || '',
     },
-    tags: tagIds, // 변환된 숫자 ID 배열을 payload에 담습니다.
+    tags: tagIds,
   };
 
   // ★ 디버깅 팁: 데이터를 보내기 전에 콘솔에서 확인해보세요!
@@ -147,21 +151,25 @@ const handleFinalSubmit = async (formData) => {
   console.log('Final payload being sent:', JSON.stringify(payload, null, 2));
 
   try {
-    if (hasPreviousApplication) {
-      // hasPreviousApplication 로직에서는 PUT 또는 PATCH를 사용하는 것이 일반적이지만,
-      // 현재 로직에 따라 POST를 유지합니다. API 주소에 ID를 포함해야 할 수 있습니다.
-      await axios.patch(`api/applications/${applicationId.value}`, payload); // 예시: ID를 URL에 포함
+    if (applicationId.value) {
+      // ID가 있으면 기존 상담서를 수정(PATCH)합니다.
+      console.log(`Attempting to PATCH application with ID: ${applicationId.value}`);
+      await axios.patch(`api/applications/${applicationId.value}`, payload);
     } else {
+      // ID가 없으면 새로운 상담서를 생성(POST)합니다.
+      console.log('Attempting to POST a new application.');
       const res = await axios.post('api/applications?isCompleted=true', payload);
+      // 새로 생성된 ID를 저장하여 다음 저장 시에는 PATCH를 사용하도록 합니다.
       applicationId.value = res.data.applicationId;
+      console.log(`New application created with ID: ${applicationId.value}`);
     }
 
     showSaveModal.value = true;
   } catch (err) {
     console.error('상담서 저장 실패:', err);
-    // 서버에서 오는 에러 메시지가 있다면 보여주는 것이 더 좋습니다.
-    const errorMessage = err.response?.data?.message || '저장에 실패했습니다.';
-    alert(errorMessage);
+    console.error('Error response:', err.response?.data); // 서버 응답을 자세히 로깅
+    const serverErrorMessage = err.response?.data?.message || err.response?.data?.error || '저장에 실패했습니다.';
+    alert(serverErrorMessage);
   }
 };
 /*
@@ -221,17 +229,17 @@ const handleFinalSubmit = async (formData) => {
   font-size: 1.8rem;
   font-weight: bold;
   margin-bottom: 1rem;
-  color: #072D45;
+  color: #333333;
 }
 
 .subtitle {
   font-size: 1rem;
-  color: #82A0B3;
+  color: #888;
   line-height: 1.6;
 }
 .form-divider {
   border: none;
-  border-top: 1px solid #cfdfe9;
+  border-top: 1px solid #cfcfcf;
   max-width: 800px;
   margin: 2rem auto;
 }
