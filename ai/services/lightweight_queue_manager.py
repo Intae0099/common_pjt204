@@ -132,7 +132,7 @@ class SimpleResourceMonitor:
 class SQLiteQueue:
     """SQLite 기반 경량 큐 (메모리 절약)"""
     
-    def __init__(self, db_path: str = "queue.db"):
+    def __init__(self, db_path: str = "db/queue.db"):
         self.db_path = db_path
         self.lock = asyncio.Lock()
         self._init_db()
@@ -288,7 +288,7 @@ class SQLiteQueue:
 class LightweightQueueManager:
     """경량화 큐 관리자"""
     
-    def __init__(self, db_path: str = "queue.db"):
+    def __init__(self, db_path: str = "db/queue.db"):
         self.queue = SQLiteQueue(db_path)
         self.monitor = SimpleResourceMonitor()
         self.workers = {}  # service_type별 워커
@@ -580,6 +580,10 @@ class LightweightQueueManager:
         memory_percent = psutil.virtual_memory().percent
         cpu_percent = psutil.cpu_percent(interval=0.1)
         
+        # 현재 시간 추가
+        from datetime import datetime
+        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        
         return {
             "queue_stats": stats,
             "processing_count": dict(self.processing_count),
@@ -590,7 +594,8 @@ class LightweightQueueManager:
                 "cpu_threshold": self.monitor.cpu_threshold
             },
             "limits": CONSERVATIVE_LIMITS,
-            "is_running": self.is_running
+            "is_running": self.is_running,
+            "timestamp": current_time
         }
 
 # 싱글톤 인스턴스
