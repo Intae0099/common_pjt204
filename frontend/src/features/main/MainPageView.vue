@@ -24,36 +24,63 @@
           간편한 사전상담부터 1:1 화상상담까지 한 번에 해결하세요
         </p>
 
-        <div class="cta-wrap">
-          <div
-            class="pill-track"
-            @mousedown="startDrag"
-            @mousemove="doDrag"
-            @mouseup="stopDrag"
-            @mouseleave="stopDrag"
-            :class="{ dragging: isDragging }"
-          >
-            <div
-              class="drag-container"
-              :style="{ transform: `translateX(${dragOffset}px)` }"
-            >
-              <RouterLink to="/ai-consult" class="btn-primary">
-                밀어서  시작하기
-              </RouterLink>
-              <div class="pill-round">
-                <span class="chev">››</span>
-              </div>
-            </div>
-          </div>
-        </div>
+      <div class="cta-wrap">
+        <RouterLink to="/ai-consult" class="ai-cta">바로 시작하기</RouterLink>
+      </div>
+
       </section>
 
-      <!-- 그대로, visual에 absolute 배치용 클래스 추가 -->
+      <!-- 로봇 비주얼 -->
       <figure class="visual floating-robot">
         <img :src="bot" alt="법률 도우미 로봇" class="bot-img" />
       </figure>
-
     </div>
+
+    <div class="scroll-hint" @click="scrollToOverview">
+      <span class="label">아래로 스크롤</span>
+      <ChevronsDown class="chevrons" aria-hidden="true" />
+    </div>
+
+    <!-- =========================
+         2섹션: AI 사건 분석/판례 찾기
+         (1섹션 배경 위에 바로 올림)
+    ========================== -->
+    <section class="ai-overview">
+      <div class="ai-container">
+        <p class="ai-eyebrow"><strong>첫번째,</strong> AI에게 물어보기</p>
+
+        <h2 class="ai-title">
+          법률 상담을 위한<br />
+          <strong>AI 기반 사건 분석 · 관련 판례 찾기</strong>
+        </h2>
+
+        <ul class="ai-cards">
+          <li class="ai-card">
+            <img class="ai-icon" src="@/assets/section2-1.png" alt="사건요약 아이콘" />
+            <h3>사건요약</h3>
+            <span class="ai-divider" aria-hidden="true"></span>
+            <p>복잡한 사건 내용을 핵심만 간결하게 AI가 정리해드립니다.</p>
+          </li>
+
+          <li class="ai-card">
+            <img class="ai-icon" src="@/assets/section2-2.png" alt="쟁점 및 AI 소견 아이콘" />
+            <h3>쟁점 및 AI 소견</h3>
+            <span class="ai-divider" aria-hidden="true"></span>
+            <p>주요 쟁점을 분석하고, 전략적 시각에서 의견을 제시합니다.</p>
+          </li>
+
+          <li class="ai-card">
+            <img class="ai-icon" src="@/assets/section2-3.png" alt="유사판례 아이콘" />
+            <h3>유사판례</h3>
+            <span class="ai-divider" aria-hidden="true"></span>
+            <p>관련성이 높은 판례를 찾아 근거 기반의 판단을 돕습니다.</p>
+          </li>
+        </ul>
+
+
+        <router-link to="/ai-consult" class="ai-cta">바로가기</router-link>
+      </div>
+    </section>
 
     <!-- 오른쪽 라운드 배경 패널 -->
     <div
@@ -61,23 +88,22 @@
       class="right-image-area"
       :style="{'--clipOffset': clipOffset + '%'}"
     ></div>
-    <div style="height:1000px;"></div>
 
   </div>
+  <SectionThird/>
+  <SectionFourth/>
+  <SectionFifth/>
 </template>
+
 
 <script setup>
 import BaseNavbar from '@/components/BaseNavbar.vue'
 import bot from '@/assets/main-bot.png'
 import { onMounted, onUnmounted, ref } from 'vue';
-import { useRouter } from 'vue-router';
-
-const router = useRouter()
-const isDragging = ref(false)
-const startX = ref(0)
-const dragOffset = ref(0)
-const threshold = 130 // 드래그 완료 임계값 (pill-track 너비에 맞게 조정)
-const pillTrackWidth = 360 // .pill-track의 최대 너비
+import SectionThird from './component/SectionThird.vue';
+import SectionFourth from './component/SectionFourth.vue';
+import SectionFifth from './component/SectionFifth.vue';
+import { ChevronsDown } from 'lucide-vue-next'
 const clipOffset = ref(60);           // 첫 화면: 오른쪽 40%만 보이게
 const rightImageEl = ref(null);
 const leftImageOffset = ref(0); // translateX(0)에서 시작
@@ -88,11 +114,9 @@ const handleScroll = () => {
   clipOffset.value = Math.max(newOffset, 0);
   rightImageEl.value?.style.setProperty('--clipOffset', clipOffset.value + '%');
 
-  // left-image-area 스크롤 로직 추가
-  // 스크롤 Y 값에 비례하여 왼쪽으로 이동 (사라지게)
+  // left-image-area 스크롤 로직: 스크롤 Y에 비례하여 왼쪽으로 이동
   const leftOffset = window.scrollY * 0.2; // 사라지는 속도 조절
   leftImageOffset.value = Math.min(leftOffset, 100); // 최대 100%까지 이동
-
 };
 
 onMounted(() => {
@@ -105,52 +129,29 @@ onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll);
 });
 
-const startDrag = (e) => {
-  isDragging.value = true
-  startX.value = e.clientX
-}
-
-const doDrag = (e) => {
-  if (!isDragging.value) return
-
-  e.preventDefault()
-  const currentX = e.clientX
-  const newOffset = currentX - startX.value
-
-  // 드래그 거리가 0 이상이고, 최대 드래그 가능한 거리(pillTrackWidth - 버튼 너비)를 넘지 않도록 제한
-  const maxOffset = pillTrackWidth - e.currentTarget.querySelector('.btn-primary').offsetWidth;
-  if (newOffset > 0 && newOffset < maxOffset) {
-    dragOffset.value = newOffset
-  }
-}
-
-const stopDrag = () => {
-  if (!isDragging.value) return
-  isDragging.value = false
-
-  // 드래그 거리가 임계값을 넘으면 페이지 이동
-  if (dragOffset.value > threshold) {
-    router.push('/ai-consult')
-  }
-
-  // 드래그 상태 초기화 (원래 위치로 부드럽게 복귀)
-  dragOffset.value = 0
-}
 </script>
 
+
 <style scoped>
+/* ===== 공통 토큰 ===== */
+:root {
+  --navy: #1d2b50;
+  --text-sub: #5a6b84;
+  --text-mute: #6b7a90;
+  --shadow-card: 0 6px 24px rgba(20,40,80,.06);
+}
+
 /* ===== 기본 레이아웃 ===== */
 .main-background-container {
-  --nav-h: 72px;
+  --nav-h: 80px;
   font-family: 'Noto Sans KR', sans-serif;
   background: #fff;
-  width: 100vw;
-  height: auto; /* 높이를 자동으로 변경 */
-  min-height: calc(100vh - var(--nav-h)); /* 최소 높이 지정 */
+  height: auto;
+  min-height: calc(100vh - var(--nav-h));
   margin-top: var(--nav-h);
   position: relative;
   overflow: clip;
-  color: #1d2b50;
+  color: var(--navy);
 }
 
 /* ===== 배경 패널 ===== */
@@ -161,17 +162,16 @@ const stopDrag = () => {
   background: url('@/assets/main-right.png') center / cover no-repeat;
 
   /* 펼쳐지는 효과 */
-  clip-path: inset(0 0 0 var(--clipOffset, 60%));  /* 처음엔 오른쪽 40%만 보임 */
+  clip-path: inset(0 0 0 var(--clipOffset, 60%));
   transition: clip-path .3s ease-out;
   will-change: clip-path;
+  z-index: 0;
 }
-
 
 /* 완전히 펼쳐졌을 땐 경계선만 사라지게(선택) */
 .right-image-area.fully-opened::after{
   opacity:0;
 }
-
 
 .left-image-area {
   background-image: url('@/assets/main-right.png');
@@ -186,21 +186,21 @@ const stopDrag = () => {
   border-top-right-radius: clamp(18px, 3vw, 40px);
   border-bottom-right-radius: clamp(18px, 3vw, 40px);
   z-index: 1;
-  mask-image:j linear-gradient(to left, transparent, black 10%, black 100%);
-  transition: transform 0.3s ease-out; /* 부드러운 애니메이션 효과 추가 */
+  mask-image: linear-gradient(to left, transparent, black 10%, black 100%);
+  transition: transform 0.3s ease-out;
 }
 
-/* ===== 히어로 그리드 (웹사이트 기본) ===== */
+/* ===== 히어로 그리드 ===== */
 .hero {
   position: relative;
   z-index: 2;
   height: 100%;
   max-width: min(92vw, 1440px);
   margin: 0 auto;
-  margin-left: 100px;
-  padding: clamp(8px, 2.2vw, 28px);
+  padding: 80px 100px;
   display: grid;
   grid-template-columns: 1.05fr 0.95fr;
+  grid-template-areas: "copy visual";
   align-items: center;
   gap: clamp(20px, 3vw, 40px);
 }
@@ -209,41 +209,34 @@ const stopDrag = () => {
 .glass-card {
   position: absolute;
   z-index: 0;
-  margin-left: -20px;
   left: clamp(0px, 1vw, 12px);
   right: clamp(4px, 1vw, 7px);
-  top: clamp(42vh, 46vh, 52vh);
+  top: 50%;                   /* ⬅️ vh 대신 percentage */
   transform: translateY(-50%);
-  height: clamp(460px, 58vh, 660px);
+  height: 450px;
   width: 70%;
   border-radius: clamp(22px, 3.4vw, 38px);
-  background: rgba(255, 255, 255, 0.86);
-  backdrop-filter: blur(40px) brightness(1.02);
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(26px) brightness(1.02);
-  box-shadow: 0 20px 40px rgba(146, 147, 150, 0.08), 0 6px 18px rgba(165, 167, 171, 0.06) inset;
+  box-shadow: 0 15px 50px rgba(203, 213, 240, 0.5);
 }
 
-
-/* ===== 텍스트 카피 ===== */
+/* 텍스트 카피 */
 .copy {
+  grid-area: copy;
   align-self: center;
-  padding-left: clamp(4px, 1.6vw, 28px);
-  margin-top: clamp(0px, -2vh, -20px);
-  position: relative;
-  z-index: 2;
+  z-index: 5;
 }
 
 .headline {
-  margin: 0 0 clamp(8px, 1.4vw, 16px);
-  line-height: 1.04;
+  margin: 0 0 20px;
+  line-height: 1.2;
   letter-spacing: -0.6px;
   font-weight: 800;
   font-size: clamp(38px, 6vw, 72px);
 }
-.headline .thin {
-  font-weight: 700;
-  color: #2d3a55;
-}
+.headline .thin { font-weight: 700; color: #2d3a55; }
 .headline .brand {
   background: linear-gradient(135deg, #8fb0ff 0%, #adc6ff 55%, #6f83b5 100%);
   -webkit-background-clip: text;
@@ -255,93 +248,205 @@ const stopDrag = () => {
   margin-top: clamp(10px, 1.4vw, 16px);
   color: #2a3650;
   font-size: clamp(15px, 1.55vw, 20px);
-  line-height: clamp(24px, 3.1vw, 34px);
+  line-height: clamp(20px, 3vw, 34px);
   opacity: .92;
   max-width: clamp(440px, 46vw, 640px);
 }
-
-/* ===== CTA 버튼 ===== */
+.copy .ai-cta {
+  margin: 12px 0 0 -5px;
+}
+/* CTA 버튼 (히어로) */
 .cta-wrap {
-  margin-top: clamp(18px, 1.9vw, 26px);
+  margin-top: clamp(18px, 2vw, 26px);
   display: flex;
   gap: clamp(8px, 1.1vw, 14px);
   align-items: center;
 }
 
-.pill-track {
-  position: relative;
-  width: clamp(200px, 28vw, 360px);
-  height: clamp(40px, 5.2vh, 46px);
-  border-radius: 999px;
-  background: linear-gradient(90deg, rgba(202, 212, 254, 0.9) 20%, rgba(255,255,255,1) 100%);
-  cursor: grab;
-}
-
-/* 드래그할 버튼과 화살표를 감싸는 컨테이너 */
-.drag-container {
-  display: flex;
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  transition: transform .3s ease-out; /* 드래그 후 복귀 애니메이션 */
-  /* background-color: rgba(240, 243, 255, 0.8); */
-  /* mask-image: linear-gradient(to left, transparent, black 10%, black 110%); */
-}
-.pill-track.dragging .drag-container {
-  transition: none; /* 드래그 중에는 애니메이션 제거 */
-}
-
-.btn-primary {
-  width: clamp(180px, 18vw, 220px);
-  height: clamp(40px, 5.2vh, 46px);
-  border-radius: 999px;
-  background:#1d2b50;
-  color:#fff;
-  font-weight:700;
-  font-size: clamp(14px,1.3vw,16px);
-  padding: 0 18px;
-  box-shadow: 0 10px 28px rgba(29,43,80,.18);
-  display: grid;
-  place-items: center;
-  pointer-events: none; /* 드래그 대상이 아니므로 이벤트 방해 방지 */
-  text-decoration: none;
-}
-
-/* ===== 새롭게 추가된 클래스 ===== */
-.pill-round {
-  position: relative; /* pill-track 내부에서 상대적 위치 */
-  width: clamp(40px, 5.2vh, 46px);
-  height: clamp(40px, 5.2vh, 46px);
-  border-radius: 50%;
-  border: 1.5px solid #1d2b50;
-  background: #fff;
-  display: grid;
-  place-items: center;
-  margin-left: -35px; /* 버튼과 겹치도록 음수 마진 사용 */
-}
-.chev {
-  font-size: clamp(18px,2.2vw,22px);
-  color:#1d2b50;
-}
-
-
-/* ===== 로봇 이미지 (웹사이트 기본) ===== */
+/* 로봇 이미지 */
 .visual {
+  z-index: 2;
+  grid-area: visual;
+  justify-self: end;
+  align-self: center;
+  width: clamp(360px, 30vw, 900px);
+  transform: none;
+    /* ⬇️ 위치/크기 조정용 변수 */
+  --robot-x: -450px;           /* 오른쪽(+) 왼쪽(-)으로 이동 */
+  --robot-y: -110px;           /* 아래(+) 위(-)로 이동 */
+  --robot-scale: 1;         /* 크기 */
+
+  transform: translate(var(--robot-x), var(--robot-y)) scale(var(--robot-scale));
+  transition: transform .25s ease; /* 미세 조정 시 부드럽게 */
+}
+.bot-img { width: 100%; height: auto; pointer-events: none; }
+
+
+/* 히어로 아래 스크롤 힌트 */
+.scroll-hint {
   position: relative;
   z-index: 3;
-  width: clamp(360px, 40vw, 900px);
-  filter: drop-shadow(0 20px 40px rgba(29, 43, 80, .18));
-  transform: translate(-16vw, -10vh);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin: -50px 0 28px;      /* 히어로와 2섹션 사이 간격 */
+  color: #6b7a90;          /* --text-mute 톤 */
+  cursor: pointer;
+  user-select: none;
+  opacity: .85;
+  transition: opacity .2s ease, transform .2s ease;
 }
-.bot-img {
-  width: 100%;
-  height: auto;
-  pointer-events: none;
+.scroll-hint:hover { opacity: 1; transform: translateY(-2px); }
+
+.scroll-hint .label {
+  font-size: 14px;
+  letter-spacing: .2px;
+}
+
+.scroll-hint .chevrons {
+  width: 26px;
+  height: 26px;
+  animation: hint-bounce 1.4s infinite ease-in-out;
+}
+
+/* 아래로 살짝 점프하는 느낌 */
+@keyframes hint-bounce {
+  0%, 100% { transform: translateY(0); opacity: .9; }
+  50%      { transform: translateY(6px); opacity: 1; }
+}
+
+/* 모션 최소화 환경 */
+@media (prefers-reduced-motion: reduce) {
+  .scroll-hint .chevrons { animation: none; }
 }
 
 
+/* =========================
+   2섹션 스타일 (AI Overview)
+   ========================= */
+.ai-overview {
 
+  padding: 110px 0 84px;
+  position: relative;
+  z-index: 2;
+}
+
+.ai-container {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.ai-eyebrow {
+  text-align: center;
+  font-size: 20px;
+  color: var(--text-mute);
+  margin-bottom: 15px;
+}
+
+.ai-title {
+  text-align: center;
+  font-weight: 400;
+  font-size: 50px;
+  line-height: 1.25;
+  color: var(--navy);
+  margin: 0 0 90px;
+}
+
+.ai-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+  margin: 0 0 100px;
+  list-style: none;
+  padding-left: 0;
+}
+/* 큰 화면에서 로봇만 살짝 키우고 오른쪽으로 밀기 */
+@media (min-width: 1600px) {
+  .visual { width: clamp(600px, 36vw, 920px); margin-right: clamp(0px, 1vw, 24px); }
+}
+/* 태블릿 이하에선 단일 컬럼로 안전하게 */
+@media (max-width: 1024px) {
+  .hero {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "copy"
+      "visual";
+  }
+  .visual { justify-self: center; margin-right: 0; }
+}
+@media (max-width: 960px) {
+  .ai-cards { grid-template-columns: 1fr; }
+}
+
+/* 2섹션 카드 그리드: 아이콘 좌, 텍스트 컬럼 우 */
+.ai-card {
+  background: #ffffffa9;
+  border-radius: 18px;
+  padding: 30px;
+  box-shadow: var(--shadow-card);
+  list-style: none;
+  display: grid;
+  grid-template-columns: auto 1fr; /* 아이콘 + 텍스트 한 줄 */
+  grid-template-rows: auto auto auto; /* h3 | divider | p */
+  column-gap: 12px;
+  align-items: center;
+  box-shadow: 0px 0px 5px #E0F2FF;
+}
+
+.ai-card::marker { content: ""; } /* 혹시 남는 브라우저 마커 제거 */
+
+.ai-icon {
+  width: 40px;
+  height: 40px;
+  grid-column: 1;
+  grid-row: 1; /* 제목과 같은 줄 */
+}
+
+.ai-card h3 {
+  grid-column: 2;
+  grid-row: 1;
+  margin: 0;
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--navy);
+}
+
+/* ⬇️ 제목 아래 얇은 구분선 */
+.ai-divider {
+  grid-column: 1 / -1; /* 카드 전체 너비 차지 */
+  grid-row: 2;
+  height: 1px;
+  background: #cfd8e6;
+  border-radius: 1px;
+  margin: 8px 0;
+}
+
+.ai-card p {
+  grid-column: 1 / -1; /* 전체 너비 */
+  grid-row: 3;
+  margin: 0;
+  color: var(--text-sub);
+  line-height: 1.6;
+}
+
+
+/* 중앙 정렬 + 색상 + 그림자 제거는 유지 */
+.ai-cta {
+  display: block;
+  width: max-content;
+  margin: 16px auto 0;
+  padding: 12px 22px;
+  min-width: 200px;
+  text-decoration: none;
+  border-radius: 999px;
+  background: #1d2b50;
+  color: #fff;
+  font-weight: 500;
+  box-shadow: none;
+  text-align: center;
+}
 
 </style>
+

@@ -228,7 +228,7 @@ const refreshData = async () => {
 ::v-deep(a.nav-link) {
   color: #6c9bcf;
   transition: color 0.2s ease;
-  padding: 6px 0;
+  padding: 10px 0;
   text-decoration: none;
   display: inline-block;
 }
