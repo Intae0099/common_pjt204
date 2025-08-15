@@ -1,7 +1,7 @@
 <template>
   <div class="container">
     <h1>관리자 - 클라이언트 목록</h1>
-    <button @click="fetchClients" :disabled="loading">
+    <button class="reset-btn" @click="fetchClients" :disabled="loading">
       {{ loading ? '불러오는 중...' : '클라이언트 목록 새로고침' }}
     </button>
     <p v-if="error" class="error-message">
@@ -62,22 +62,55 @@ onMounted(fetchClients)
 
 <style scoped>
 .container {
+  font-family: 'Noto Sans KR', sans-serif;
   padding: 20px;
+}
+h1 {
+  font-size: 1.8rem;
+  margin-bottom: 16px;
+  font-weight: bold;
+}
+.reset-btn {
+  background-color: #f4f7fb;
+  color: #333333;
+  padding: 4px 8px;
+  border: 1px solid #6c9bcf;
+  border-radius: 15px;
+  cursor: pointer;
+  margin-bottom: 20px;
+  font-size: 0.8rem;
 }
 .error-message {
   color: red;
 }
 table {
   width: 100%;
-  border-collapse: collapse;
+  border : 1px solid #888;
   margin-top: 20px;
+  color:#333333;
+  font-size: 0.8rem;
+
+}
+tr {
+  font-style: bold;
+  background-color: #f4f7fb;
 }
 th, td {
   border: 1px solid #ddd;
-  padding: 8px;
-  text-align: left;
+  padding: 6px;
+  text-align: center;
 }
 th {
   background-color: #f2f2f2;
+}
+
+table th:nth-child(2),
+table td:nth-child(2) {
+  white-space: nowrap; /* 줄바꿈 방지 */
+}
+
+table th:nth-child(5),
+table td:nth-child(5) {
+  white-space: nowrap; /* 줄바꿈 방지 */
 }
 </style>

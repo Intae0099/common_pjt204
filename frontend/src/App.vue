@@ -15,8 +15,11 @@ const route = useRoute()
 
 // 배너가 있는 페이지 경로
 const noLayoutNames = ['Main','CasesSearch', 'CaseDetail','ConsultForm','MeetingRoom']
+
+const isAdminRoute = computed(() => route.path.startsWith('/admin'))
+
 const layoutComponent = computed(() => {
-  return noLayoutNames.includes(route.name) ? 'div' : LayoutDefault
+  return (noLayoutNames.includes(route.name) || isAdminRoute.value) ? 'div' : LayoutDefault
 })
 
 // 푸터 숨김 여부

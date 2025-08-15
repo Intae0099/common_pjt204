@@ -10,11 +10,12 @@
       <router-link to="/login/lawyer">
         <button class="lawyer-login">변호사로 로그인</button>
       </router-link>
+      <div class="footer-links">
+        <router-link :to="{ name: 'SignUpFirst' }" class="main_link">변호사 회원가입하기</router-link>
+      </div>
     </div>
 
-    <div class="footer-links">
-      <router-link :to="{ name: 'SignUpFirst' }">변호사 회원가입하기</router-link>
-    </div>
+
   </div>
 </template>
 
@@ -123,5 +124,15 @@ const login = async () => {
   font-size: 13px;
   color: #777;
   display: flex;
+  justify-content: center;
 }
+.main_link {
+  color: #1d2b50;;
+  font-style: none;
+  text-decoration: none;
+}
+.main_link:hover {
+  color: #6c9bcf;
+}
+
 </style>

@@ -25,7 +25,7 @@
         <div class="meta-grid">
           <div class="meta-item">
             <span class="meta-label">사건번호</span>
-            <span class="meta-value">{{ caseData.caseNumber || '-' }}</span>
+            <span class="meta-value">{{ caseData.caseId || '-' }}</span>
           </div>
           <div class="meta-item">
             <span class="meta-label">사건종류</span>
@@ -156,7 +156,7 @@ onMounted(async () => {
 .title-block{
   position:relative; padding:18px 22px 10px 22px; margin-bottom:12px; border-left:4px solid #6c9bcf;
 }
-.title{ margin-bottom:10px; font-size:24px; line-height:0.40; font-weight:800; color:#333333; }
+.title{ margin-bottom:10px; font-size:24px; line-height:1.5; font-weight:800; color:#333333; word-break: keep-all; }
 
 /* 메타 카드 */
 .meta-card{
@@ -177,7 +177,7 @@ onMounted(async () => {
   border:1px solid #cfcfcf; border-radius:16px; background:#fff; padding:20px 22px; margin-bottom:16px;
 }
 .section-title{
-  margin:0 0 10px 0; font-size:16px; font-weight:700; color:#333333; position:relative;
+  margin:0 16px 10px 0; font-size:16px; font-weight:700; color:#333333; position:relative;
 }
 .section-title::after{
   content:''; display:block; width:28px; height:3px; border-radius:2px; background:#6c9bcf; margin-top:6px;
@@ -185,7 +185,7 @@ onMounted(async () => {
 
 /* 본문 리치텍스트 가독성 */
 .richtext{
-  color:#333333; font-size:15px; line-height:1.85;
+  color:#333333; font-size:15px; line-height:1.85;white-space: pre-line;
 }
 .richtext :is(p, li){ margin: 8px 0; }
 .richtext br{ content:''; display:block; margin-bottom:6px; }
