@@ -22,10 +22,6 @@
             :disabled="isInputLocked"
             @submit="handleUserInput"
           />
-
-          <div v-if="isLoading || isFindingVerdict" class="loading-dots-wrapper">
-            <LoadingDots />
-          </div>
         </div>
 
         <!-- 하단 버튼 영역 -->
@@ -72,7 +68,6 @@ import SaveModal from './components/SaveModal.vue'
 import LawyerRecommendList from './components/LawyerRecommendList.vue'
 // import axios from 'axios'
 import { fastapiApiClient } from '@/lib/axios';
-import LoadingDots from './components/LoadingDots.vue'
 import { TAG_MAP } from '@/constants/lawyerTags'
 
 const aiBoxRef = ref(null)
