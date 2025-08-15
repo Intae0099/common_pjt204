@@ -147,8 +147,7 @@ public class SecurityConfig {
 
       /*
       redirectUrl를 도메인 프론트로 설정
-       */
-/*      String frontBase = resolveFrontRedirectBase(req);
+      String frontBase = resolveFrontRedirectBase(req);
 
       String redirectUrl = UriComponentsBuilder
           .fromUriString(frontBase + "/oauth2/callback/kakao")
@@ -156,17 +155,23 @@ public class SecurityConfig {
           .build().toUriString();
 
       System.out.println("frontBase={" +  frontBase + "} redirectUrl={"  +  redirectUrl + "}");
-*/
+      */
 
+      String redirectUrl = UriComponentsBuilder
+          .fromUriString("https://i13b204.p.ssafy.io/oauth2/callback/kakao")
+          .queryParam("accessToken", accessToken)
+          .build().toUriString();
 
       /*
        redirectUrl을 로컬 프론트로 설정
        */
+      /*
       String redirectUrl = UriComponentsBuilder
           .fromUriString("http://localhost:5173/oauth2/callback/kakao")
           .queryParam("accessToken", accessToken)
           .build().toUriString();
 
+       */
 
       res.sendRedirect(redirectUrl);
     }
@@ -195,7 +200,7 @@ public class SecurityConfig {
         return "http://localhost:5173";
       }
       if ("i13b204.p.ssafy.io".equalsIgnoreCase(serverName)) {
-        return "https://i13b204.p.ssafy.io/api";
+        return "";
       }
 
       // 마지막 안전 폴백
