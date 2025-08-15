@@ -106,6 +106,7 @@
 
       <!-- 판례 찾는 중 표시(스택 맨 아래) -->
       <div v-if="isFindingVerdict" class="finding-verdict-container">
+        <LoadingDots />
         <p class="loading-text">AI가 실제 판례를 찾고 있습니다...</p>
         <img src="@/assets/ai-writing3.png" alt="AI 작성 중" class="loading-image" />
       </div>
@@ -114,6 +115,7 @@
     <!-- B) 메시지 스택이 없을 때: 기존 분기 그대로 -->
     <template v-else>
       <div v-if="isLoading" class="loading-container initial-loading">
+        <LoadingDots />
         <p class="loading-text">AI가 답변을 생성 중입니다...</p>
         <img src="@/assets/ai-writing3.png" alt="AI 작성 중" class="loading-image" />
       </div>
@@ -121,6 +123,7 @@
       <div v-else-if="response" class="result-box">
         <div class="ai-message-box">
           <div v-if="isFindingVerdict" class="finding-verdict-container">
+            <LoadingDots />
             <p class="loading-text">AI가 실제 판례를 찾고 있습니다...</p>
             <img src="@/assets/ai-writing3.png" alt="AI 작성 중" class="loading-image" />
           </div>
@@ -236,6 +239,7 @@
 import { ref, watch, nextTick, computed } from 'vue'
 import { defineProps, defineEmits, defineExpose } from 'vue'
 import instance from '@/lib/axios'
+import LoadingDots from './LoadingDots.vue'
 const props = defineProps({
   isLoading: Boolean,
   isFindingVerdict: Boolean, // 판례 검색 로딩 상태를 위한 prop 추가
