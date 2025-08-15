@@ -87,10 +87,11 @@ const handleFormSubmit = async (formData) => {
 
   try {
     const contentForApi = formData.content || formData.fullText;
+    const summaryForApi = formData.summary || contentForApi;
     const res = await fastapiApiClient.post('/consult', {
       case: {
         title: formData.title,
-        summary: formData.summary || '',
+        summary: summaryForApi,
         fullText: contentForApi,
       },
       desiredOutcome: formData.outcome,

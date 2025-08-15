@@ -119,7 +119,7 @@ const confirm = () => {
   text-align: center;
   border: 1px solid #f1f1f1;
   position: relative;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .modal-title {
@@ -140,6 +140,7 @@ const confirm = () => {
   position: relative; /* 자식 요소인 custom-options의 기준점이 됨 */
   width: 100%;
   margin-bottom: 1rem;
+  z-index: 10;
 }
 
 .custom-select {
