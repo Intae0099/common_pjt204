@@ -157,6 +157,189 @@ class SearchService:
             if conn:
                 conn.close()
 
+    async def high_precision_search(self, query: str, top_k: int = 3) -> list[dict]:
+        """
+        AI 사전 상담용 고정밀도 검색
+        3단계 필터링으로 최고 품질의 상위 k개 결과만 반환
+        """
+        conn = None
+        try:
+            conn = get_psycopg2_connection()
+            register_vector(conn)
+
+            with conn.cursor() as cur:
+                # 1단계: 대량 후보 수집 (키워드 + 벡터)
+                logger.info(f"[high_precision] 1단계: 대량 후보 수집 시작 (query: {query})")
+                
+                # 1-1. 키워드 검색 (40개)
+                keyword_candidates = []
+                cur.execute("""
+                    SELECT DISTINCT lc.case_id, lc.title, lc.decision_date, lc.category, 
+                           lc.issue, lc.summary, lc.full_text, lc.statutes,
+                           CASE 
+                               WHEN lc.title ILIKE %s THEN 5
+                               WHEN lc.category ILIKE %s THEN 4
+                               WHEN lc.issue ILIKE %s THEN 3
+                               WHEN lc.summary ILIKE %s THEN 2
+                               ELSE 1
+                           END as keyword_score
+                    FROM legal_cases lc
+                    WHERE lc.title ILIKE %s OR lc.category ILIKE %s OR lc.issue ILIKE %s 
+                       OR lc.summary ILIKE %s OR lc.full_text ILIKE %s
+                    ORDER BY keyword_score DESC, lc.decision_date DESC
+                    LIMIT 40
+                    """, tuple([f'%{query}%'] * 9))
+                
+                for row in cur.fetchall():
+                    keyword_candidates.append({
+                        "case_id": row[0],
+                        "title": row[1],
+                        "decision_date": row[2],
+                        "category": row[3],
+                        "issue": row[4],
+                        "summary": row[5],
+                        "full_text": row[6],
+                        "statutes": row[7],
+                        "chunk_text": "",
+                        "_source": "keyword",
+                        "_score": row[8]
+                    })
+                
+                # 1-2. 벡터 검색 (20개, 키워드 결과 제외)
+                keyword_case_ids = [c["case_id"] for c in keyword_candidates]
+                vector_candidates = []
+                
+                if len(keyword_case_ids) < 50:  # 키워드 결과가 충분하지 않으면 벡터로 보완
+                    query_embedding = self.embedding_model.get_embedding(query)
+                    
+                    exclude_clause = ""
+                    exclude_params = []
+                    if keyword_case_ids:
+                        placeholders = ",".join(["%s"] * len(keyword_case_ids))
+                        exclude_clause = f"AND lc.case_id NOT IN ({placeholders})"
+                        exclude_params = keyword_case_ids
+                    
+                    vector_query = f"""
+                        SELECT lc.case_id, lc.title, lc.decision_date, lc.category, 
+                               lc.issue, lc.summary, lc.full_text, lch.chunk_text, lc.statutes,
+                               lch.embedding <-> %s::vector as distance
+                        FROM legal_chunks lch
+                        JOIN legal_cases lc ON lch.case_id = lc.case_id
+                        WHERE 1=1 {exclude_clause}
+                        ORDER BY lch.embedding <-> %s::vector
+                        LIMIT 20
+                    """
+                    
+                    cur.execute(vector_query, exclude_params + [query_embedding, query_embedding])
+                    
+                    for row in cur.fetchall():
+                        vector_candidates.append({
+                            "case_id": row[0],
+                            "title": row[1],
+                            "decision_date": row[2],
+                            "category": row[3],
+                            "issue": row[4],
+                            "summary": row[5],
+                            "full_text": row[6],
+                            "chunk_text": row[7],
+                            "statutes": row[8],
+                            "_source": "vector",
+                            "_score": 1.0 / (1.0 + row[9])  # distance -> similarity 변환
+                        })
+
+                # 2단계: 정확도 필터링
+                all_candidates = keyword_candidates + vector_candidates
+                logger.info(f"[high_precision] 1단계 완료: {len(all_candidates)}개 후보 (keyword: {len(keyword_candidates)}, vector: {len(vector_candidates)})")
+                
+                if not all_candidates:
+                    logger.warning("[high_precision] 후보가 없어 빈 결과 반환")
+                    return []
+                
+                # 2단계: 관련성 점수 재계산 및 필터링
+                logger.info("[high_precision] 2단계: 정확도 필터링 시작")
+                
+                filtered_candidates = []
+                query_lower = query.lower()
+                
+                for candidate in all_candidates:
+                    title = (candidate.get("title") or "").lower()
+                    category = (candidate.get("category") or "").lower()
+                    
+                    # 관련성 점수 계산
+                    relevance_score = 0.0
+                    
+                    # 직접 키워드 매칭
+                    if query_lower in title:
+                        relevance_score += 3.0
+                    if query_lower in category:
+                        relevance_score += 2.0
+                    
+                    # 법률 용어 특별 매칭
+                    legal_term_map = {
+                        "횡령": ["횡령", "배임", "특정경제범죄"],
+                        "사기": ["사기", "편취", "기망"],
+                        "교통사고": ["교통사고", "교통", "자동차"],
+                        "손해배상": ["손해배상", "배상", "피해"],
+                        "계약": ["계약", "약정", "합의"],
+                        "이혼": ["이혼", "혼인", "가사"],
+                        "상속": ["상속", "유산", "유언"]
+                    }
+                    
+                    for main_term, related_terms in legal_term_map.items():
+                        if main_term in query_lower:
+                            for term in related_terms:
+                                if term in title:
+                                    relevance_score += 2.0
+                                    break
+                    
+                    # 기본 점수 추가
+                    relevance_score += candidate.get("_score", 0.0)
+                    
+                    # 최소 관련성 임계값 적용
+                    if relevance_score >= 1.0:  # 최소 관련성 보장
+                        candidate["_relevance"] = relevance_score
+                        filtered_candidates.append(candidate)
+                
+                # 관련성 순으로 정렬
+                filtered_candidates.sort(key=lambda x: x["_relevance"], reverse=True)
+                
+                # 상위 15개만 유지
+                filtered_candidates = filtered_candidates[:15]
+                logger.info(f"[high_precision] 2단계 완료: {len(filtered_candidates)}개 필터링됨")
+                
+                if not filtered_candidates:
+                    logger.warning("[high_precision] 필터링 후 결과 없음")
+                    return []
+                
+                # 3단계: Cross-encoder 최종 선별
+                logger.info(f"[high_precision] 3단계: 최종 {top_k}개 선별")
+                
+                if len(filtered_candidates) <= top_k:
+                    final_results = filtered_candidates
+                else:
+                    # Cross-encoder로 최종 순위 결정
+                    final_results = self._rerank_cases(query, filtered_candidates, requested_size=top_k)
+                
+                logger.info(f"[high_precision] 완료: {len(final_results)}개 반환")
+                
+                # 디버그 로그
+                if final_results:
+                    top_title = final_results[0].get("title", "N/A")
+                    top_source = final_results[0].get("_source", "N/A")
+                    top_relevance = final_results[0].get("_relevance", 0)
+                    logger.info(f"[high_precision] Top result: '{top_title}' (source: {top_source}, relevance: {top_relevance:.2f})")
+                
+                return final_results
+
+        except Exception as e:
+            logger.error(f"고정밀도 검색 오류: {e}")
+            import traceback
+            traceback.print_exc()
+            return []
+        finally:
+            if conn:
+                conn.close()
+
     async def get_case_by_id(self, prec_id: str) -> dict | None:
         """
         판례 ID로 판례의 상세 정보를 조회합니다.

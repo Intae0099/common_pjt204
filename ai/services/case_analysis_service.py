@@ -49,9 +49,9 @@ class CaseAnalysisService(LoggerMixin):
                 recommend_lawyers: 변호사 추천 포함 여부
             """
             self.logger.info(f"Starting case analysis for query: {user_query[:100]}...")
-            # 1. 관련 판례 검색 (RAG)
-            # Call vector_search method of SearchService
-            retrieved_docs, _ = await self.search_service.vector_search(user_query, size=top_k_docs)
+            # 1. 관련 판례 검색 (RAG) - 고정밀도 검색 사용
+            # AI 사전 상담용 3단계 필터링으로 최고 품질 결과만 선별
+            retrieved_docs = await self.search_service.high_precision_search(user_query, top_k=top_k_docs)
 
             # 2. 검색된 판례 청크를 LLM 입력 형식에 맞게 변환
             # 이제 search_service는 chunk_text를 포함하여 반환합니다.
