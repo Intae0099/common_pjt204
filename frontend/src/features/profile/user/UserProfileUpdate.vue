@@ -1,6 +1,5 @@
 <template>
   <div class="profile-edit-container">
-    <!-- ⬅️ 뒤로가기 -->
     <div class="back-button" @click="goBack">
       <ChevronLeftIcon class="chevron-icon" />
       <span>마이페이지</span>
@@ -8,19 +7,16 @@
 
     <h2>프로필 수정</h2>
 
-    <!-- 이름 입력 -->
     <div class="section">
       <h3>이름</h3>
       <input type="text" v-model="name" placeholder="이름을 입력하세요" />
     </div>
 
-    <!-- 이메일 입력 -->
     <div class="section">
       <h3>이메일 (선택사항)</h3>
       <input type="text" v-model="email" placeholder="이메일을 입력하세요" />
     </div>
 
-    <!-- 저장 버튼 -->
     <div class="footer">
       <button @click="saveChanges">변경사항 저장</button>
     </div>

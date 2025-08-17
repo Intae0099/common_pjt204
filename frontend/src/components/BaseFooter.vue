@@ -1,9 +1,7 @@
 <template>
   <footer class="base-footer">
     <div class="container py-5">
-      <!-- 윗줄: 브랜드 / 메뉴 -->
       <div class="row gy-4">
-        <!-- 브랜드 -->
         <div class="col-12 col-md-6">
           <div class="d-flex align-items-center gap-2 mb-2">
             <strong class="footer-title">ALaw</strong>
@@ -13,8 +11,6 @@
             <strong>팀장</strong> 김태인 &nbsp; <strong>팀원</strong> 권자은, 방승철, 윤규성, 이정연, 전해지
           </p>
         </div>
-
-        <!-- 주요 메뉴 -->
         <div class="col-6 col-md-6">
           <h6 class="section-title">바로가기</h6>
           <ul class="nav flex-row gap-3 flex-wrap">
@@ -31,7 +27,6 @@
 
       <hr class="my-4 hr-light" />
 
-      <!-- 아랫줄: 저작권 / 로그인·마이페이지 -->
       <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2">
         <p class="small text-muted-light mb-0">© {{ year }} ALaw. All rights reserved.</p>
 

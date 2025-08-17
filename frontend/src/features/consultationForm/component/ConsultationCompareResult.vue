@@ -1,24 +1,9 @@
 <template>
   <div class="compare-container">
-    <!-- 왼쪽: 사용자 입력 폼 -->
-    <!-- <div class="left-box">
-      <ConsultationForm
-        :form="localUserData"
-        :questions-input="questionsInput"
-        @submitted="handleSubmit"
-        :hide-submit-button="true"
-      />
-      <div class="left-button"> -->
-    <!-- <button class="refresh-btn" @click="emit('regenerate')">AI로 정보 수정하기</button> -->
-    <!-- <button class="refresh-btn" @click="handleRegenerate">AI로 정보 수정하기</button>
-      </div>
-    </div> -->
-
     <div class="right-box">
       <div class="character-wrapper">
         <img src="@/assets/ai-writing2.png" alt="AI 캐릭터" class="character-image" />
       </div>
-      <!-- 오른쪽: AI 결과 -->
       <div class="ai-result-box">
         <form class="ai-form">
           <div class="form-group">
@@ -75,7 +60,6 @@
             >
               <ArrowPathIcon :class="['icon', { spinning: isRegenerating }]" />
             </button>
-            <!-- (선택) 텍스트를 작게 보조로 두고 싶다면 ↓ -->
             <span class="hint" v-if="!isRegenerating">AI 추천질문 재생성</span>
           </div>
         </form>

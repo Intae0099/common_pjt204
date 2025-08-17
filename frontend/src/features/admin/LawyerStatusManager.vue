@@ -3,7 +3,6 @@
     <h1>관리자 - 변호사 자격 처리</h1>
     <p>주로 '대기중(PENDING)' 상태의 변호사를 조회하고 처리합니다.</p>
 
-    <!-- 변호사 목록 조회 -->
     <div class="search-section">
       <button class="reset-btn" @click="fetchPendingLawyers" :disabled="loading">
         {{ loading ? '조회 중...' : '대기중인 변호사 목록 조회' }}
@@ -11,7 +10,6 @@
       <p v-if="error" class="error-message">{{ error }}</p>
     </div>
 
-    <!-- 변호사 목록 및 처리 버튼 -->
     <table v-if="lawyers.length > 0">
       <thead>
         <tr>

@@ -8,7 +8,6 @@
       'chat-closed': !isChatOpen
     }"
   >
-    <!-- 왼쪽: 변호사/의뢰인 비디오 (한 세트만 유지) -->
     <div class="video-box" id="lawyer-video">
       <p class="role-label">상대방</p>
     </div>
@@ -17,13 +16,11 @@
       <p class="role-label">나</p>
     </div>
 
-    <!-- 가운데: 공유화면 (평소엔 숨김만) -->
     <div class="video-box shared-screen" id="client-video"
          :style="{ display: isAnyScreenSharing ? 'flex' : 'none' }">
       <canvas id="draw-canvas" class="drawing-canvas"></canvas>
     </div>
 
-    <!-- 오른쪽: 채팅 -->
     <div class="chat-area" v-show="isChatOpen">
       <div class="chat-content">
         <RealtimeChatView
@@ -38,34 +35,26 @@
 </div>
 
 
-<!-- 하단 푸터 -->
 <div class="meeting-footer">
-  <!-- 왼쪽 툴 모음 -->
   <div class="footer-left">
 
-    <!-- ⋮ 버튼 (모바일 전용) -->
     <button class="footer-btn ellipsis-btn" @click="isMenuOpen = !isMenuOpen">
       <EllipsisVertical class="footer-icon" />
     </button>
 
-    <!-- ▼ ① 툴그룹: “화면공유”를 빼고 나머지만 넣기 -->
     <div class="tool-group" :class="{ show: isMenuOpen }">
-      <!-- 전체 지우기 (선택 상태 없음 / 공유 중에만 활성) -->
       <button class="footer-btn" @click="clearCanvas" :disabled="!isAnyScreenSharing" title="전체 지우기">
         <RefreshCcw class="footer-icon" />
       </button>
-      <!-- 펜 / 지우개 / 포인터 -->
       <button class="footer-btn" @click="setTool('pen')"     :disabled="!isAnyScreenSharing" :class="{ active: currentTool==='pen' }"><Pencil class="footer-icon" /></button>
       <button class="footer-btn" @click="setTool('eraser')"  :disabled="!isAnyScreenSharing" :class="{ active: currentTool==='eraser' }"><Eraser class="footer-icon" /></button>
       <button class="footer-btn" @click="setTool('pointer')" :class="{ active: currentTool==='pointer' }"><MousePointer2 class="footer-icon" /></button>
 
 
-      <!-- 카메라 / 마이크 -->
       <button class="footer-btn" @click="toggleCamera"><component :is="isCameraOn ? Video : VideoOff" class="footer-icon" /></button>
       <button class="footer-btn" @click="toggleMic"><component :is="isMicOn ? Mic : MicOff" class="footer-icon" /></button>
     </div>
 
-    <!-- ▼ ② “화면공유” 버튼은 메뉴 밖, 항상 노출 -->
     <button
       class="footer-btn only-share"
       :disabled="isAnyScreenSharing && !isMyScreenSharing"
@@ -76,7 +65,6 @@
     </button>
   </div>
 
-  <!-- 오른쪽: 채팅·챗봇·나가기 (기존 그대로) -->
   <div class="footer-right">
     <div class="chat-btn-wrapper">
       <button class="footer-btn" @click="toggleChat('realtime')" :aria-pressed="activeChat==='realtime'">

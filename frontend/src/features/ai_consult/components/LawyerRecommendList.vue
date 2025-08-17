@@ -1,4 +1,3 @@
-<!-- src/features/aiConsult/LawyerRecommendList.vue -->
 <template>
   <section class="recommend-section">
     <h2 class="title">AI추천 변호사</h2>
@@ -34,7 +33,6 @@
               class="tag"
             >#{{ tag }}</span>
 
-            <!-- 카드가 좁을 때만 토글 아이콘 노출 -->
             <button
               v-if="!isWide(lawyer.lawyerId) && hasMoreTags(lawyer)"
               class="more-tags-btn"

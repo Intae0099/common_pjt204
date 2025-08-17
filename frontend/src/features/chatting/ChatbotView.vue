@@ -1,4 +1,3 @@
-<!-- ChatbotView.vue -->
 <template>
   <div>
     <ChatComponent

@@ -1,12 +1,10 @@
 <template>
   <div class="signup-wrapper">
-    <!-- 상단 제목 -->
     <div class="signup-header">
       <h2 class="signup-title">변호사 회원가입</h2>
       <p class="signup-subtitle">회원정보를 입력해주세요</p>
     </div>
 
-    <!-- 페이지 단계 표시 -->
     <div class="step-indicator">
       <span class="step" @click="goToFirstStep">1</span>
       <span class="dot"></span>
@@ -15,15 +13,12 @@
       <span class="step active">3</span>
     </div>
 
-    <!-- 회원가입 폼 -->
     <div class="signup-box">
       <form @submit.prevent="handleSubmit" class="form-area">
-        <!-- 프로필 사진 -->
         <div class="form-group">
-          <label>프로필 사진 (필수, 1MB 미만)</label> <!-- 안내 문구 수정 -->
+          <label>프로필 사진 (필수, 1MB 미만)</label>
           <input type="file" accept="image/*" class="file-choice" @change="handleImageUpload" />
 
-          <!-- [수정 1] 파일 크기 에러 메시지를 표시할 부분 -->
           <p v-if="imageError" class="error-message">{{ imageError }}</p>
 
           <div v-if="form.photoPreview">
@@ -31,7 +26,6 @@
           </div>
         </div>
 
-        <!-- 소개글 -->
         <div class="form-group">
           <label>소개글 (필수)</label>
           <textarea
@@ -42,7 +36,6 @@
           ></textarea>
         </div>
 
-        <!-- 태그 선택 -->
         <div class="form-group">
           <label>태그 선택 (1개 이상 필수 선택)</label>
           <div class="tag-list">
@@ -63,7 +56,6 @@
       </form>
     </div>
 
-    <!-- 완료 모달 -->
     <BaseModal
       :visible="showModal"
       message="인증까지 2~3일이 소요됩니다."

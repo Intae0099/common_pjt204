@@ -16,7 +16,6 @@
         </div>
       </div>
       <div v-if="isLoading" class="other-message-container">
-        <!-- [수정됨] 로딩 버블에도 이름 표시 (옵션) -->
         <div class="sender-name">Chatbot</div>
         <div class="message-bubble loading-bubble">
           <span>.</span><span>.</span><span>.</span>

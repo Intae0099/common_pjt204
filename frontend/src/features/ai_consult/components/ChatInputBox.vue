@@ -1,6 +1,5 @@
 <template>
   <div class="chat-input-box">
-    <!-- 입력창 -->
     <div class="input-area">
       <textarea
         ref="textareaRef" v-model="text"
@@ -12,7 +11,6 @@
       ></textarea>
 
 
-      <!-- 제출 버튼 (아이콘 대체 가능) -->
       <button
         v-if="!disabled"
         @click="submit"

@@ -1,6 +1,5 @@
 <template>
   <form @submit.prevent="submit" class="consult-form">
-    <!-- 사건 제목 -->
     <div class="form-group">
       <div class="label-row">
         <label for="title">사건 제목</label>
@@ -23,7 +22,6 @@
       />
     </div>
 
-    <!-- 사건 개요 -->
      <div class="form-group scrollable-group">
        <label for="content">사건 개요</label>
        <textarea
@@ -35,7 +33,6 @@
        />
      </div>
 
-    <!-- 원하는 결과 -->
     <div class="form-group scrollable-group">
       <label for="outcome">원하는 결과</label>
       <textarea
@@ -46,7 +43,6 @@
       />
     </div>
 
-    <!-- 불리한 점 -->
     <div class="form-group scrollable-group">
       <label for="disadvantage">사건에서 불리한 점</label>
       <textarea
@@ -57,7 +53,6 @@
       />
     </div>
 
-    <!-- 변호사에게 궁금한 점 -->
     <div class="form-group scrollable-group">
       <label for="questions">변호사에게 궁금한 점 (쉼표로 구분)</label>
       <textarea
@@ -67,8 +62,6 @@
         placeholder="예: 무죄 가능할까요?, 운전자 바꿔치기 괜찮을까요?"
       />
     </div>
-
-    <!-- 제출 버튼 -->
     <button v-if="!props.hideSubmitButton" type="submit">AI 상담서 작성하기</button>
   </form>
   <IncidentSelect v-if="showModal" @select="handleSelect" @close="showModal = false" />

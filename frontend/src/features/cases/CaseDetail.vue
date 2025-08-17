@@ -1,26 +1,20 @@
-<!-- src/pages/case/CaseDetail.vue -->
 <template>
   <CaseLayout>
     <LayoutDefault>
-    <!-- 상단 바 -->
     <div class="back-button" @click="goBack">
         <ChevronLeftIcon class="chevron-icon" />
         <span>이전</span>
     </div>
 
 
-    <!-- 상태 -->
     <div v-if="isLoading" class="status-message"><p>판례 정보를 불러오는 중입니다...</p></div>
     <div v-else-if="error" class="status-message error"><p>{{ error }}</p></div>
 
-    <!-- 본문 -->
     <section v-else-if="caseData" class="detail-container">
-      <!-- 제목 -->
       <header class="title-block">
         <h1 class="title">{{ caseData.title }}</h1>
       </header>
 
-      <!-- 메타 정보 -->
       <section class="meta-card">
         <div class="meta-grid">
           <div class="meta-item">
@@ -38,25 +32,21 @@
         </div>
       </section>
 
-      <!-- 참조 법령 -->
       <section class="content-card" v-if="caseData.statutes">
         <h2 class="section-title">참조 법령 · 조문</h2>
         <div class="richtext" v-html="caseData.statutes"></div>
       </section>
 
-      <!-- 판시사항 -->
       <section class="content-card" v-if="caseData.issue">
         <h2 class="section-title">판시사항</h2>
         <div class="richtext" v-html="caseData.issue"></div>
       </section>
 
-      <!-- 판결요지 -->
       <section class="content-card" v-if="caseData.summary">
         <h2 class="section-title">판결요지</h2>
         <div class="richtext" v-html="caseData.summary"></div>
       </section>
 
-      <!-- 판례전문 -->
       <section class="content-card" v-if="caseData.fullText">
         <h2 class="section-title">판례전문</h2>
         <div class="richtext" v-html="caseData.fullText"></div>

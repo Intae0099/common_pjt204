@@ -2,14 +2,12 @@
   <base-navbar />
 
   <div class="main-background-container">
-    <!-- 왼쪽 장식 패널 -->
     <div
       ref="leftImageEl"
       class="left-image-area"
       :style="{ transform: `translateX(calc(-100% + 40px - ${leftImageOffset}px))` }"
     ></div>
 
-    <!-- 중앙 히어로 -->
     <div class="hero">
       <div class="glass-card"></div>
 
@@ -29,8 +27,6 @@
       </div>
 
       </section>
-
-      <!-- 로봇 비주얼 -->
       <figure class="visual floating-robot">
         <img :src="bot" alt="법률 도우미 로봇" class="bot-img" />
       </figure>
@@ -40,11 +36,6 @@
       <span class="label">아래로 스크롤</span>
       <ChevronsDown class="chevrons" aria-hidden="true" />
     </div>
-
-    <!-- =========================
-         2섹션: AI 사건 분석/판례 찾기
-         (1섹션 배경 위에 바로 올림)
-    ========================== -->
     <section class="ai-overview">
       <div class="ai-container">
         <p class="ai-eyebrow"><strong>첫번째,</strong> AI에게 물어보기</p>
@@ -82,7 +73,6 @@
       </div>
     </section>
 
-    <!-- 오른쪽 라운드 배경 패널 -->
     <div
       ref="rightImageEl"
       class="right-image-area"

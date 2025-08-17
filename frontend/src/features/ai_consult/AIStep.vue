@@ -17,21 +17,18 @@
             @predict="handlePredictVerdict"
           />
 
-          <!-- 사용자 입력창 -->
           <ChatInputBox
             :disabled="isInputLocked"
             @submit="handleUserInput"
           />
         </div>
 
-        <!-- 하단 버튼 영역 -->
         <BottomActionBar
           v-if="aiResponse && !isFindingVerdict && !verdictResult && !showRecommendList"
           @predict="handlePredictVerdict"
           @quick-consult="showModal = true"
         />
 
-        <!-- '바로 상담하기' 모달 -->
         <SuggestModal
           v-if="showModal"
           @close="showModal = false"
@@ -49,7 +46,6 @@
             변호사 추천받기
           </button>
         </div>
-        <!-- 변호사 추천 리스트 -->
         <LawyerRecommendList v-if="showRecommendList" :lawyers="lawyers" />
       </div>
     </div>

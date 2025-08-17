@@ -1,6 +1,5 @@
 <template>
   <div class="ai-box-wrapper">
-    <!-- A) 메시지 스택이 있을 때: 상단 스크롤 박스에 AI 답변들이 차곡차곡 -->
     <div v-if="showBot" class="ai-sticky-header">
       <img class="bot" src="@/assets/ai-bot.png" alt="AI 봇" />
     </div>
@@ -8,7 +7,6 @@
     <div v-if="messages && messages.length" class="ai-scroll" :class="{ 'with-bot': showBot }" ref="scrollEl">
       <div v-for="(m, idx) in messages" :key="idx" class="result-box">
         <div class="ai-message-box">
-          <!-- 요약 카드 -->
           <template v-if="m.type === 'summary'">
             <h4 style="margin-bottom: 1.2rem;">{{ m.payload.case.title }}</h4>
             <hr style=" margin-bottom: 1.5rem;">
@@ -19,7 +17,6 @@
             <hr style="border: none; border-top: 1px solid #dbe6ee; margin: 1rem 0;" />
           </template>
 
-          <!-- 판례/리포트 카드 -->
           <template v-else-if="m.type === 'verdict'">
             <h4>쟁점 및 AI 소견</h4>
             <ul v-if="m.payload.verdict.issues?.length">
@@ -97,14 +94,12 @@
             </div>
           </template>
 
-          <!-- 일반 텍스트(에러/안내 등) -->
           <template v-else>
             <p style="white-space: pre-wrap;">{{ m.payload?.text }}</p>
           </template>
         </div>
       </div>
 
-      <!-- 판례 찾는 중 표시(스택 맨 아래) -->
       <div v-if="isFindingVerdict" class="finding-verdict-container">
         <LoadingDots />
         <p class="loading-text">AI가 실제 판례를 찾고 있습니다...</p>
@@ -112,7 +107,6 @@
       </div>
     </div>
 
-    <!-- B) 메시지 스택이 없을 때: 기존 분기 그대로 -->
     <template v-else>
       <div v-if="isLoading" class="loading-container initial-loading">
         <LoadingDots />

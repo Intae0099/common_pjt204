@@ -13,12 +13,10 @@
         </p>
       </div>
 
-      <!-- 노트북: 태그 위로 겹치도록 (레이아웃은 그대로) -->
       <div class="visual" aria-hidden="true">
         <img class="laptop" src="@/assets/section4-laptop.png" alt="" />
       </div>
 
-      <!-- ▼▼ 문구 바로 아래 무한 태그 스크롤 (변경 없음) ▼▼ -->
       <div class="tag-marquees">
         <div class="marquee to-right" aria-hidden="true">
           <div class="track">
@@ -60,7 +58,6 @@
           </div>
         </div>
       </div>
-      <!-- ▲▲ 끝 ▲▲ -->
 
       <RouterLink to="/lawyers" class="cta">바로가기</RouterLink>
     </div>

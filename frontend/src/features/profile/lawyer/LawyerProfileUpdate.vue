@@ -1,6 +1,5 @@
 <template>
   <div class="profile-edit-container">
-    <!-- ⬅️ 뒤로가기 버튼 + 제목 -->
     <div class="back-button" @click="goBack">
       <ChevronLeftIcon class="chevron-icon" />
       <span>마이페이지</span>
@@ -8,7 +7,6 @@
 
     <h2>프로필 수정</h2>
 
-    <!-- 프로필 사진 및 업로드 -->
     <div class="profile-photo-wrapper">
       <img
         v-if="photo"
@@ -27,18 +25,15 @@
           사진 변경 (1MB 미만)
           <input type="file" accept="image/*" @change="onFileChange" />
         </label>
-        <!-- [수정 2] 파일 크기 에러 메시지를 표시할 부분 -->
         <p v-if="imageError" class="error-message">{{ imageError }}</p>
       </div>
     </div>
 
-    <!-- 이름 입력 -->
     <div class="section">
       <h3>이름</h3>
       <input type="text" v-model="name" placeholder="이름을 입력하세요" />
     </div>
 
-    <!-- 소개글 입력 -->
     <div class="section">
       <h3>소개글</h3>
       <textarea
@@ -48,7 +43,6 @@
       />
     </div>
 
-    <!-- 태그 선택 -->
     <div class="section">
       <h3>태그 선택</h3>
       <div class="tag-container">
@@ -63,7 +57,6 @@
       </div>
     </div>
 
-    <!-- 저장 버튼 -->
     <div class="footer">
       <button @click="saveChanges">변경사항 저장</button>
     </div>

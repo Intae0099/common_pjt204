@@ -6,7 +6,6 @@
       <nav>
         <ul>
           <li>
-            <!-- name을 사용한 라우터 링크 -->
             <router-link :to="{ name: 'admin-lawyer-management' }">변호사 인증 관리</router-link>
           </li>
           <li>
@@ -22,14 +21,12 @@
       </nav>
     </aside>
     <main class="admin-content">
-      <!-- 자식 라우트의 컴포넌트가 이 자리에 렌더링됩니다. -->
       <router-view />
     </main>
   </div>
 </template>
 
 <script setup>
-// 이 컴포넌트는 레이아웃 역할만 하므로 스크립트는 비워둬도 됩니다.
 </script>
 
 <style scoped>
