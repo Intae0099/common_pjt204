@@ -168,7 +168,12 @@ const getTagName = (id) => {
 };
 
 const formatSelectedDate = (dateObj) => {
-  return dateObj.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' });
+  const year = dateObj.getFullYear();
+  const month = dateObj.getMonth() + 1;
+  const day = dateObj.getDate();
+  const dayOfWeek = ['일', '월', '화', '수', '목', '금', '토'][dateObj.getDay()];
+
+  return `${year}년 ${month}월 ${day}일 (${dayOfWeek})`;
 };
 
 const formatTime = (datetime) => {
