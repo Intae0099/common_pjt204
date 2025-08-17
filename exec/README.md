@@ -53,7 +53,7 @@
 Jenkins 또는 로컬에서 프로젝트 빌드 시 필요한 환경 변수 목록입니다.
 
 - **Spring Boot (Backend)**
-    - `src/main/resources/application.yml` 또는 `application.properties` 파일에 정의된 환경 변수들을 기재합니다.
+    - `src/main/resources/application.properties` 파일에 정의된 환경 변수들을 기재합니다.
     - **DB 연결 정보**
         - `SPRING_DATASOURCE_URL`: `jdbc:mysql://my-mysql:3306/alawdb?serverTimezone=Asia/Seoul&useSSL=false`
         - `SPRING_DATASOURCE_USERNAME`: `admin`
@@ -96,7 +96,7 @@ Jenkins 또는 로컬에서 프로젝트 빌드 시 필요한 환경 변수 목�
 
 | 파일 경로 | 주요 내용 |
 | --- | --- |
-| `backend/src/main/resources/application.yml` | DB 접속 정보, JWT 시크릿, OAuth2 클라이언트 ID/Secret 등 백엔드의 모든 설정 |
+| `backend/src/main/resources/application.properties` | DB 접속 정보, JWT 시크릿, OAuth2 클라이언트 ID/Secret 등 백엔드의 모든 설정 |
 | `frontend/.env` | 프론트엔드에서 사용하는 백엔드 API 서버 주소 등 환경별 설정 |
 | `Jenkinsfile` | Jenkins CI/CD 파이프라인 스크립트 (빌드, 이미지 푸시, 배포) |
 | `/home/ubuntu/app/docker-compose.yml` | 각 서비스의 Docker 컨테이너 실행 및 네트워크 구성 정의 |
@@ -124,10 +124,6 @@ Jenkins 또는 로컬에서 프로젝트 빌드 시 필요한 환경 변수 목�
 | **AWS EC2** | 서버 호스팅 | i13b204.p.ssafy.io | - | - | `I13B204T.pem` |
 <br>  
 <br>  
-<br>  
----
-<br>  
-<br>  
 <br>
  
 ### 3. DB 덤프 파일 최신본
@@ -150,9 +146,9 @@ Jenkins 또는 로컬에서 프로젝트 빌드 시 필요한 환경 변수 목�
 | **상담 예약** | 예약 폼을 작성하고 변호사 목록에서 원하는 변호사를 선택하여 상담 예약 완료. | `ConsultationFormView.vue`, `LawyerSearch.vue` |
 | **실시간 채팅** | 예약이 완료된 변호사와 텍스트 기반으로 실시간 상담 진행. | `RealtimeChatView.vue` |
 | **화상 회의** | 필요 시, 변호사와 영상 및 음성을 통해 화상으로 상담 진행. | `MeetingRoom.vue` |
-| **마이페이지** | 자신의 상담 내역과 프로필 정보를 확인하고 수정. | `LawyerConsultHistory.vue` (및 기타 마이페이지 관련 컴포넌트) |
+| **마이페이지** | 자신의 상담 내역과 프로필 정보를 확인하고 수정. | `LawyerMyPage.vue`, `UserMyPage.vue` (및 기타 마이페이지 관련 컴포넌트) |
 | **관리자 기능** | 관리자 전용 페이지(`/admin`)에서 회원, 사건, 변호사 인증 등 사이트 전반을 관리. | `AdminLayout.vue` (및 기타 관리자 페이지 관련 컴포넌트) |
-| **공통/레이아웃** | 특정 페이지(관리자, 메인, 사건 상세 등)에서는 푸터를 숨기고, 그 외 페이지에서는 노출. | `BaseFooter.vue` (노출/비노출 로직은 `App.vue` 또는 라우터에서 제어) |
+| **공통/레이아웃** | 특정 페이지(관리자, 메인, 사건 상세 등)에서는 푸터를 숨기고, 그 외 페이지에서는 노출. | `BaseFooter.vue`, `BaseNavbar.vue` (노출/비노출 로직은 `App.vue` 또는 라우터에서 제어) |
 
 <br>
 <br>
