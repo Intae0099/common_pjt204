@@ -47,7 +47,6 @@ const fetchClients = async () => {
   try {
     const response = await instance.get('/api/admin/clients')
     clients.value = response.data
-    console.log('클라이언트 목록:', response.data)
   } catch (err) {
     console.error('클라이언트 목록 조회 실패:', err)
     error.value = '데이터를 불러오는 데 실패했습니다. 권한을 확인해주세요 (403 Forbidden).'

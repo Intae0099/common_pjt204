@@ -198,7 +198,6 @@ const refreshData = async () => {
     const res = await axios.post('/api/auth/refresh', null, { withCredentials: true });
     const { accessToken } = res.data;
     if (accessToken) {
-      console.log("refresh 갱신 성공")
       authStore.accessToken = accessToken;
       localStorage.setItem('accessToken', accessToken);
       axios.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;

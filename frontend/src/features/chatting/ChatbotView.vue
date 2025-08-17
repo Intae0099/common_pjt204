@@ -151,7 +151,6 @@ const handleSendMessage = async (text) => {
           const data = event.substring(5).trim();
 
           if (data === '[DONE]') {
-            console.log('스트림 수신 완료.');
             return; // 스트림 처리 완전 종료
           }
 

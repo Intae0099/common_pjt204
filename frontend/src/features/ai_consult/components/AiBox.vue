@@ -291,8 +291,6 @@ const saveConsultationRecord = async () => {
         isCompleted: false
       }
     });
-
-    console.log('상담 경위서 저장 성공:', response.data);
     // 성공 시 사용자에게 알림을 띄우는 로직을 추가할 수 있습니다 (예: toast 메시지)
     alert('상담 내용이 임시 저장되었습니다.');
 

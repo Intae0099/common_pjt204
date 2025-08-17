@@ -57,7 +57,6 @@ onMounted(() => { // async 제거
             errorMessage.value = '미리보기 로딩 중 오류가 발생했습니다.';
           }
         } else {
-          console.log('initPublisher 성공!');
           isInitialized.value = true;
         }
       }
@@ -92,14 +91,12 @@ const cleanup = () => {
     if (mediaStream) {
       mediaStream.getTracks().forEach(track => {
         track.stop();
-        console.log(`[PreviewCamera] cleanup: MediaStreamTrack (${track.kind})이 중지되었습니다.`);
       });
     }
   }
 
   if (publisher.value && typeof publisher.value.destroy === 'function') {
     publisher.value.destroy();
-    console.log('PreviewCamera의 OpenVidu 리소스가 성공적으로 해제되었습니다.');
   }
 
   publisher.value = null;

@@ -111,7 +111,6 @@ export const handlers = [
 
   http.post('/api/ai/pre-consultation', async ({ request }) => {
     const body = await request.json()
-    console.log('AI 사전상담 요청:', body)
 
     return HttpResponse.json({
       report: {
@@ -289,7 +288,6 @@ export const handlers = [
   // 상담 예약 요청
   http.post('/api/appointments', async ({ request }) => {
     const body = await request.json()
-    console.log('예약 요청 데이터:', body)
     return HttpResponse.json({
       message: '예약이 완료되었습니다',
       appointmentId: 9999

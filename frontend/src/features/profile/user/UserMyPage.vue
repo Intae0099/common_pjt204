@@ -237,7 +237,6 @@ const openDetailModal = async (applicationId) => {
       // API 응답 데이터 구조에 맞게 selectedApplication에 할당
       selectedApplication.value = res.data.data.application
       isDetailModalOpen.value = true // 데이터 로딩 성공 시 모달 열기
-      console.log(res)
     } else {
       throw new Error(res.data.message)
     }
@@ -292,8 +291,6 @@ onMounted(async () => {
     appointments.value = appointmentRes.data
     applications.value = formRes.data.data.applicationList
 
-    console.log(appointmentRes)
-    console.log(formRes)
 
     const map = {}
     lawyerListRes.data.forEach(lawyer => {

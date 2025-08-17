@@ -358,7 +358,6 @@ function endDraw() {
 function safeEnsureCanvasReady() {
   if (!canvas || !ctx) {
     const el = document.getElementById('draw-canvas');
-    console.log('client-video size:', el?.offsetWidth, el?.offsetHeight);
     if (el) {
       canvas = el;
       ctx = canvas.getContext('2d');
@@ -539,7 +538,6 @@ session.value.on('streamDestroyed', (event) => {
   // 4. 세션에 연결
   session.value.connect(token, { clientData: '사용자' })
     .then(() => {
-      console.log("세션 연결 성공!");
 
       // 5. 내 카메라/마이크(Publisher) 초기화
       const publisher = OV.value.initPublisher(
@@ -558,12 +556,10 @@ session.value.on('streamDestroyed', (event) => {
             console.error('Publisher 초기화 실패:', error);
             alert("카메라/마이크를 초기화하는 데 실패했습니다.");
           } else {
-            console.log('Publisher 초기화 성공!');
 
             // 6. Publisher 초기화 성공 시, 세션에 내 스트림을 게시
             session.value.publish(publisher)
               .then(() => {
-                console.log("스트림 게시 성공!");
                 mainStreamManager.value = publisher; // 상태에 저장
               })
               .catch(error => {
@@ -577,10 +573,6 @@ session.value.on('streamDestroyed', (event) => {
       console.error('세션 연결 실패:', error);
       alert("화상회의 서버에 연결할 수 없습니다.");
     });
-    // 파일 상단 어디든(예: onMounted 끝부분)
-    console.log('axios baseURL =', axios.defaults.baseURL)
-    console.log('axios Authorization =', axios.defaults.headers.common?.Authorization)
-
 });
 
 const isScreenStopping = ref(false);
@@ -615,7 +607,7 @@ const stopScreenShare = ({ silent = false } = {}) => {
       screenPublisher.value?.removeVideoElement(screenVideoEl.value);
     } catch (err) {console.warn('removeVideoElement 실패', err);}
     screenVideoEl.value = null;
-    if (!silent) console.log('화면공유 종료');
+    if (!silent);
       isScreenStopping.value = false;
   }
 };
@@ -691,7 +683,6 @@ const shareScreen = async () => {
 
 // 퇴장 함수
 const leaveSession = () => {
-  console.log('[MeetingRoom] leaveSession: 퇴장 절차를 시작합니다.');
 
   // 1. 화면 공유가 활성 상태이면 먼저 정리
   if (isMyScreenSharing.value && screenPublisher.value) {
@@ -703,7 +694,6 @@ const leaveSession = () => {
   if (mainStream) {
     mainStream.getTracks().forEach(track => {
       track.stop();
-      console.log(`[MeetingRoom] leaveSession: Main Stream Track (${track.kind}) stopped.`);
     });
   }
 
