@@ -164,13 +164,13 @@ const enterMeeting = async (appointmentId) => {
   // }
 
   try {
-    const res = await axios.post(/api/rooms/${appointmentId});
+    const res = await axios.post(`/api/rooms/${appointmentId}`);
     const token = res.data.data.openviduToken;
     router.push({ name: 'MeetingRoom', query: { token, appointmentId } });
   } catch (err) {
     if (err.response?.status === 409) {
       try {
-        const res = await axios.post(/api/rooms/${appointmentId}/participants);
+        const res = await axios.post(`/api/rooms/${appointmentId}/participants`);
         const token = res.data.data.openviduToken;
         router.push({ name: 'MeetingRoom', query: { token, appointmentId } });
       } catch (err2) {
@@ -250,11 +250,11 @@ const getTimeDifference = (startTime) => {
   const diffMinutes = Math.floor(diffMs / (1000 * 60));
 
   if (diffMinutes < 0) return '진행중';
-  if (diffMinutes < 60) return ${diffMinutes}분 후;
+  if (diffMinutes < 60) return `${diffMinutes}분 후`;
 
   const hours = Math.floor(diffMinutes / 60);
   const minutes = diffMinutes % 60;
-  return ${hours}시간 ${minutes}분 후;
+  return `${hours}시간 ${minutes}분 후`;
 };
 
 const canEnterMeeting = (startTime, endTime) => {
@@ -294,8 +294,8 @@ onMounted(async () => {
     const appointmentsWithLawyerInfo = await Promise.all(
       appointmentData.map(async (appointment) => {
         try {
-          const { data: lawyer } = await axios.get(/api/lawyers/${appointment.lawyerId});
-          const imageUrl = lawyer.photo ? data:image/jpeg;base64,${lawyer.photo} : null;
+          const { data: lawyer } = await axios.get(`/api/lawyers/${appointment.lawyerId}`);
+          const imageUrl = lawyer.photo ? `data:image/jpeg;base64,${lawyer.photo}` : null;
           return {
             ...appointment,
             lawyerName: lawyer.name,
@@ -344,7 +344,7 @@ onMounted(async () => {
 const goToApplication = async (applicationId) => {
   try {
     // API 응답에서 data 필드를 responseData라는 변수명으로 받습니다.
-    const { data: responseData } = await axios.get(/api/applications/${applicationId});
+    const { data: responseData } = await axios.get(`/api/applications/${applicationId}`);
 
     // API 요청이 성공했고, 응답 데이터 안에 application 객체가 있는지 확인합니다.
     if (responseData.success && responseData.data.application) {
