@@ -70,7 +70,6 @@ const handleLogin = async () => {
     // API 명세에 따라 refresh_token은 HttpOnly 쿠키로 자동 설정됩니다.
     // axios의 withCredentials: true 설정 덕분에 브라우저가 자동으로 처리합니다.
 
-    console.log('로그인 성공!')
 
     // 로그인 성공 후 관리자 대시보드 페이지로 이동
     router.push('/admin') // TODO: 실제 대시보드 경로로 변경하세요.

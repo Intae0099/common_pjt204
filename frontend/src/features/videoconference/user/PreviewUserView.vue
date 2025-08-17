@@ -159,7 +159,6 @@ const enterMeeting = async (appointmentId) => {
 
   // if (cameraComponentRef.value) {
   //   cameraComponentRef.value.cleanup();
-  //   console.log('[enterMeeting] PreviewCamera 리소스를 해제하여 MeetingRoom으로 전달 준비 완료.');
   // }
 
   try {
@@ -185,7 +184,6 @@ const enterMeeting = async (appointmentId) => {
 };
 
 onUnmounted(() => {
-    console.log("[onUnmounted] PreviewUserView가 파괴됩니다. 카메라 리소스를 최종적으로 확인하고 정리합니다.");
     if (cameraComponentRef.value) {
         cameraComponentRef.value.cleanup();
     }
@@ -265,7 +263,6 @@ const canEnterMeeting = (startTime, endTime) => {
 };
 
 onMounted(async () => {
-  console.log('[PreviewUserView] Mounted: 컴포넌트가 생성되었습니다.');
   try {
     // API 호출 시 params를 추가하여 승인된 상담만 가져오도록
     // const { data: appointmentData } = await axios.get('/api/appointments/me', {

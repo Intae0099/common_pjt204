@@ -351,7 +351,6 @@ onMounted(async () => {
     fetchAppointments(),
     fetchUnavailableSlots()
   ]);
-  console.log('API에서 받은 변호사 데이터:', lawyer.value?.certificationStatus);
 });
 </script>
 

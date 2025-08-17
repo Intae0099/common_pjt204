@@ -156,22 +156,15 @@ const handleFinalSubmit = async (finalQuestions) => {
     tags: tagIds,
   };
 
-  // ★ 디버깅 팁: 데이터를 보내기 전에 콘솔에서 확인해보세요!
-  console.log('Converted Tag IDs:', tagIds);
-  console.log('Final payload being sent:', JSON.stringify(payload, null, 2));
-
   try {
     if (applicationId.value) {
       // ID가 있으면 기존 상담서를 수정(PATCH)합니다.
-      console.log(`Attempting to PATCH application with ID: ${applicationId.value}`);
       await axios.patch(`api/applications/${applicationId.value}`, payload);
     } else {
       // ID가 없으면 새로운 상담서를 생성(POST)합니다.
-      console.log('Attempting to POST a new application.');
       const res = await axios.post('api/applications?isCompleted=true', payload);
       // 새로 생성된 ID를 저장하여 다음 저장 시에는 PATCH를 사용하도록 합니다.
       applicationId.value = res.data.applicationId;
-      console.log(`New application created with ID: ${applicationId.value}`);
     }
 
     showSaveModal.value = true;

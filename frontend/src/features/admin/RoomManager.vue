@@ -48,7 +48,6 @@ const terminateRoom = async () => {
     await instance.delete(`/api/admin/rooms/${appointmentId.value}`);
     message.value = `상담(ID: ${appointmentId.value})의 화상상담방이 성공적으로 종료되었습니다.`;
     messageType.value = 'success';
-    console.log(`상담방(ID: ${appointmentId.value}) 강제 종료 성공`);
     appointmentId.value = null; // 성공 후 입력 필드 초기화
   } catch (err) {
     console.error(`상담방(ID: ${appointmentId.value}) 강제 종료 실패:`, err);

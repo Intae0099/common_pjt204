@@ -11,10 +11,8 @@ const router = useRouter()
 const auth = useAuthStore()
 
 onMounted(() => {
-  console.log('window.location.search:', window.location.search)
   const params      = new URLSearchParams(window.location.search)
   const accessToken = params.get('accessToken')   // 여기서도 accessToken
-  console.log('parsed accessToken:', accessToken)
 
   if (accessToken) {
     auth.setToken(accessToken)

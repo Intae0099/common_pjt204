@@ -77,7 +77,6 @@ const fetchLawyerCertifications = async () => {
     if (response.data) {
       lawyers.value = response.data
     }
-    console.log(`'${selectedStatus.value}' 상태 변호사 목록:`, response.data)
   } catch (err) {
     console.error('변호사 인증 목록 조회 실패:', err)
     error.value = '데이터를 불러오는 데 실패했습니다.'

@@ -271,7 +271,6 @@ const selectTime = (time) => {
 
 
 const openModal = () => {
-  console.log('✅ 모달 열림 시도', selectedDate.value, selectedTime.value)
   showModal.value = true
 }
 </script>
