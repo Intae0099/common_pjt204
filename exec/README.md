@@ -101,8 +101,7 @@ Jenkins 또는 로컬에서 프로젝트 빌드 시 필요한 환경 변수 목�
 
 ### 3. DB 덤프 파일 최신본
 
-최신 데이터베이스의 전체 백업본입니다. 아래 명령어를 사용하여 EC2 서버 또는 DB 서버에서 직접 생성할 수 있습니다.
-*(필요 시, 여기에 덤프 생성 명령어나 파일 위치를 추가하세요.)*
+[DB 덤프 파일](https://lab.ssafy.com/s13-webmobile1-sub1/S13P11B204/-/blob/master/lawaid%20schema.sql?ref_type=heads)
 
 ---
 
