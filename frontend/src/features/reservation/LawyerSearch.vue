@@ -117,7 +117,7 @@ const selectedTags = ref([])
 
 /* 대분류 데이터 */
 const CATEGORY_MAP = [
-  { catId: 1, title: '형사 분야', tagIds: [1, 2, 3, 4, 5, 6] },
+  { catId: 1, title: '형사 분야', tagIds: [1, 2, 3, 4, 5, 6, 49, 50] },
   { catId: 2, title: '교통·사고·보험', tagIds: [7, 8, 9] },
   { catId: 3, title: '가사·가족', tagIds: [10, 11, 12, 13, 14] },
   { catId: 4, title: '민사·계약·채권', tagIds: [15, 16, 17, 18] },
@@ -128,7 +128,7 @@ const CATEGORY_MAP = [
   { catId: 9, title: '행정·조세', tagIds: [33, 34, 35, 36] },
   { catId: 10, title: '의료·생명·개인정보', tagIds: [37, 38, 39, 40] },
   { catId: 11, title: '환경·공공', tagIds: [41, 42, 43] },
-  { catId: 12, title: '금융·증권·기업', tagIds: [44, 45, 46, 47, 48] },
+  { catId: 12, title: '금융·증권·기업', tagIds: [44, 45, 46, 47, 48, 49] },
 ]
 
 const activeCatId = ref(CATEGORY_MAP[0].catId)
