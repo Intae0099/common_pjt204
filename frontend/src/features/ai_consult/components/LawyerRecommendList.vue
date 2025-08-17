@@ -187,8 +187,9 @@ const goToReservation = (lawyerId) => {
 .name {
   margin: 0;
   color: #0b2a47;
-  font-size: 18px;
+  font-size: 15px;
   font-weight: 800;
+  word-break: keep-all;
 }
 .suffix {
   font-weight: 600;
@@ -198,7 +199,7 @@ const goToReservation = (lawyerId) => {
 .pill {
   background: #e6edf5;
   color: #516f90;
-  font-size: 12px;
+  font-size: 11px;
   padding: 4px 10px;
   border-radius: 999px;
   line-height: 1;
