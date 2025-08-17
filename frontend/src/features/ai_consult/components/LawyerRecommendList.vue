@@ -214,7 +214,7 @@ const goToReservation = (lawyerId) => {
   color: #1d2939;
   font-size: 14px;
   line-height: 1.5;
-  min-height: 42px; /* 두 줄 정도 고정해 깔끔하게 */
+  min-height: 65px;
 }
 
 .field-row {
