@@ -101,7 +101,7 @@ Jenkins 또는 로컬에서 프로젝트 빌드 시 필요한 환경 변수 목�
 
 ### 3. DB 덤프 파일 최신본
 
-[DB 덤프 파일](https://lab.ssafy.com/s13-webmobile1-sub1/S13P11B204/-/blob/master/lawaid%20schema.sql?ref_type=heads)
+# [DB 덤프 파일](https://lab.ssafy.com/s13-webmobile1-sub1/S13P11B204/-/blob/master/lawaid%20schema.sql?ref_type=heads)
 
 ---
 
