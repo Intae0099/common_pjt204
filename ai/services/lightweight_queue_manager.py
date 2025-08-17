@@ -95,8 +95,8 @@ class SimpleResourceMonitor:
     """간단한 리소스 모니터링 (CPU 부하 최소화)"""
     
     def __init__(self):
-        self.memory_threshold = 90    # 90% 메모리 사용 시 제한 (경량화로 완화)
-        self.cpu_threshold = 90       # 90% CPU 사용 시 제한 (배치 최적화로 완화)
+        self.memory_threshold = 95    # 95% 메모리 사용 시 제한 (성능 최적화로 확장)
+        self.cpu_threshold = 95       # 95% CPU 사용 시 제한 (성능 최적화로 확장)
         self.last_check = 0
         self.check_interval = 3       # 3초마다 체크 (더 반응적)
         self.cached_status = True
