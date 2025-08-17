@@ -165,6 +165,8 @@ public class ApplicationService {
             throw new SecurityException("[ApplicationService - 00] 본인이 작성한 신청서만 수정할 수 있습니다.");
         }
 
+        application.setCompleted(isCompleted);
+
         // null이 아닌 필드만 application에 반영
         if(request.getTitle() != null) {
             application.setTitle(request.getTitle());
