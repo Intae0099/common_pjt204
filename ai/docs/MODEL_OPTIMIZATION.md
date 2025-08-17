@@ -145,6 +145,7 @@ export USE_OPTIMIZED_MODELS=false
 - **시스템**: 6 cores CPU, 15.9 GB RAM
 - **GPU**: NVIDIA GeForce RTX 3060 (12GB)
 - **측정 도구**: `scripts/simple_benchmark.py`
+- **운영 서버**: 122.38.210.80:8997 (실제 운영 환경)
 
 ### Cross-Encoder 모델 최적화 성과
 
@@ -201,13 +202,15 @@ def calculate_accuracy_correlation(original_scores, optimized_scores):
 
 ### 큐 시스템 개선 효과
 
-| 서비스 | 기존 동시처리 | 최적화 후 | 증가율 |
-|--------|---------------|-----------|--------|
-| case_analysis | 1 | 2 | **100%** |
-| search | 2 | 4 | **100%** |
-| consultation | 1 | 2 | **100%** |
-| structuring | 2 | 3 | **50%** |
-| chat | 3 | 5 | **67%** |
+| 서비스 | 기존 동시처리 | 최적화 후 | 증가율 | 현재 상태 |
+|--------|---------------|-----------|--------|----------|
+| case_analysis | 1 | 2 | **100%** | ✅ 적용됨 |
+| search | 2 | 4 | **100%** | ✅ 적용됨 |
+| consultation | 1 | 2 | **100%** | ✅ 적용됨 |
+| structuring | 2 | 3 | **50%** | ✅ 적용됨 |
+| chat | 3 | 5 | **67%** | ✅ 적용됨 |
+
+**업데이트**: 2025-08-17 기준 모든 최적화가 운영 환경에 적용되어 운영 중입니다.
 
 ## 🚀 사용법
 
@@ -323,13 +326,37 @@ python scripts/simple_benchmark.py
 - [NVIDIA Mixed Precision Training](https://docs.nvidia.com/deeplearning/performance/mixed-precision-training/)
 - [Sentence Transformers Performance](https://www.sbert.net/docs/training/overview.html)
 
+## 📊 실제 운영 성능 지표 (2025-08-17)
+
+### RAG 시스템 평가 결과
+**평가 데이터**: 20개 법률 케이스, 실제 운영 서버 측정
+
+| 메트릭 | 측정값 | 개선 사항 |
+|--------|--------|----------|
+| **End-to-End 정확도** | 0.0% | 검색 알고리즘 근본 개선 필요 |
+| **Sentence Prediction** | 52.8% | +32.8%p (이전 20.0%) |
+| **Tag F1-Score** | 53.5% | +5.3%p (이전 48.2%) |
+| **Statute Relevance** | 31.7% | +21.7%p (이전 10.0%) |
+| **평균 응답시간** | 36.1초 | 복잡성 증가로 지연 발생 |
+| **API 성공률** | 100.0% | 시스템 안정성 확보 |
+
+### 최적화 성과 분석
+✅ **성공한 영역**:
+- 모델 메모리 49.1% 절감으로 시스템 안정성 확보
+- 분석 정확도 대폭 향상 (판결 예측 2.6배, 법령 매칭 3배)
+- 큐 시스템 용량 100% 증가로 동시 처리 능력 향상
+
+⚠️ **개선 필요 영역**:
+- 검색 정확도 (Recall@K: 0%) - 임베딩 모델 도메인 특화 필요
+- 응답 시간 (36초) - 알고리즘 복잡성 최적화 필요
+
 ## 🔮 향후 개선 계획
 
-### Phase 2 최적화 (예정)
-1. **모델 압축**: Pruning 기법 적용
-2. **분산 처리**: 다중 GPU 지원
-3. **캐싱 시스템**: 임베딩 결과 캐시
-4. **A/B 테스트**: 성능 비교 프레임워크
+### Phase 2 최적화 (우선순위)
+1. **법률 도메인 특화 임베딩 모델**: 판례 데이터 Fine-tuning
+2. **검색 알고리즘 재설계**: 하이브리드 시스템 성능 최적화
+3. **응답 시간 최적화**: 알고리즘 복잡성 감소
+4. **캐싱 시스템**: 임베딩 결과 캐시
 
 ### 모니터링 강화
 1. **실시간 메트릭**: Prometheus/Grafana 연동
