@@ -17,7 +17,7 @@
 | --- | --- | --- | --- |
 | **개발 IDE** | | | |
 | | IntelliJ IDEA | 2024.01 | |
-| | Visual Studio Code | `[ VSCode 버전 ]` | Vue 개발용 확장 프로그램: `Volar`, `ESLint` |
+| | Visual Studio Code | 1.103.1 | Vue 개발용 확장 프로그램: `Volar`, `ESLint` |
 | **언어 (Language)** | | | |
 | | Java (JVM) | 21 | Spring Boot 실행에 사용 |
 | | Python | 3.11 | FastAPI 실행에 사용 |
