@@ -1,3 +1,4 @@
+#PreviewUserView.vue
 <template>
   <div class="preview-page">
     <div class="preview-left">
@@ -159,16 +160,17 @@ const enterMeeting = async (appointmentId) => {
 
   // if (cameraComponentRef.value) {
   //   cameraComponentRef.value.cleanup();
+  //   console.log('[enterMeeting] PreviewCamera 리소스를 해제하여 MeetingRoom으로 전달 준비 완료.');
   // }
 
   try {
-    const res = await axios.post(`/api/rooms/${appointmentId}`);
+    const res = await axios.post(/api/rooms/${appointmentId});
     const token = res.data.data.openviduToken;
     router.push({ name: 'MeetingRoom', query: { token, appointmentId } });
   } catch (err) {
     if (err.response?.status === 409) {
       try {
-        const res = await axios.post(`/api/rooms/${appointmentId}/participants`);
+        const res = await axios.post(/api/rooms/${appointmentId}/participants);
         const token = res.data.data.openviduToken;
         router.push({ name: 'MeetingRoom', query: { token, appointmentId } });
       } catch (err2) {
@@ -184,6 +186,7 @@ const enterMeeting = async (appointmentId) => {
 };
 
 onUnmounted(() => {
+    console.log("[onUnmounted] PreviewUserView가 파괴됩니다. 카메라 리소스를 최종적으로 확인하고 정리합니다.");
     if (cameraComponentRef.value) {
         cameraComponentRef.value.cleanup();
     }
@@ -247,11 +250,11 @@ const getTimeDifference = (startTime) => {
   const diffMinutes = Math.floor(diffMs / (1000 * 60));
 
   if (diffMinutes < 0) return '진행중';
-  if (diffMinutes < 60) return `${diffMinutes}분 후`;
+  if (diffMinutes < 60) return ${diffMinutes}분 후;
 
   const hours = Math.floor(diffMinutes / 60);
   const minutes = diffMinutes % 60;
-  return `${hours}시간 ${minutes}분 후`;
+  return ${hours}시간 ${minutes}분 후;
 };
 
 const canEnterMeeting = (startTime, endTime) => {
@@ -263,6 +266,7 @@ const canEnterMeeting = (startTime, endTime) => {
 };
 
 onMounted(async () => {
+  console.log('[PreviewUserView] Mounted: 컴포넌트가 생성되었습니다.');
   try {
     // API 호출 시 params를 추가하여 승인된 상담만 가져오도록
     // const { data: appointmentData } = await axios.get('/api/appointments/me', {
@@ -290,8 +294,8 @@ onMounted(async () => {
     const appointmentsWithLawyerInfo = await Promise.all(
       appointmentData.map(async (appointment) => {
         try {
-          const { data: lawyer } = await axios.get(`/api/lawyers/${appointment.lawyerId}`);
-          const imageUrl = lawyer.photo ? `data:image/jpeg;base64,${lawyer.photo}` : null;
+          const { data: lawyer } = await axios.get(/api/lawyers/${appointment.lawyerId});
+          const imageUrl = lawyer.photo ? data:image/jpeg;base64,${lawyer.photo} : null;
           return {
             ...appointment,
             lawyerName: lawyer.name,
@@ -305,28 +309,32 @@ onMounted(async () => {
       })
     );
 
+    //실제코드. 나중에 주석 해제해야함
     // 오늘 날짜의, 아직 끝나지 않은 예약만 필터링합니다.
-    const now = new Date();
-    const todaysAppointments = appointmentsWithLawyerInfo.filter(
-      (appointment) => {
-        const startTime = new Date(appointment.startTime);
-        const endTime = new Date(appointment.endTime);
+    // const now = new Date();
+    // const todaysAppointments = appointmentsWithLawyerInfo.filter(
+    //   (appointment) => {
+    //     const startTime = new Date(appointment.startTime);
+    //     const endTime = new Date(appointment.endTime);
 
         // 조건 1: 상담 시작일이 오늘인지 확인 (연, 월, 일 비교)
-        const isToday =
-          startTime.getFullYear() === now.getFullYear() &&
-          startTime.getMonth() === now.getMonth() &&
-          startTime.getDate() === now.getDate();
+        // const isToday =
+        //   startTime.getFullYear() === now.getFullYear() &&
+        //   startTime.getMonth() === now.getMonth() &&
+        //   startTime.getDate() === now.getDate();
 
         // 조건 2: 상담 종료 시간이 현재 시간 이후인지 확인
-        const hasNotEnded = endTime > now;
+    //     const hasNotEnded = endTime > now;
 
-        return isToday && hasNotEnded;
-      }
-    );
-    appointments.value = todaysAppointments;
+    //     return isToday && hasNotEnded;
+    //   }
+    // );
+    // appointments.value = todaysAppointments;
     //여기까지 실제코드
 
+    // [개발용] 모든 예약 목록을 표시하도록 수정
+    appointments.value = appointmentsWithLawyerInfo;
+    //여기까지 개발용
 
   } catch (e) {
     console.error('상담 일정 불러오기 실패:', e);
@@ -336,7 +344,7 @@ onMounted(async () => {
 const goToApplication = async (applicationId) => {
   try {
     // API 응답에서 data 필드를 responseData라는 변수명으로 받습니다.
-    const { data: responseData } = await axios.get(`/api/applications/${applicationId}`);
+    const { data: responseData } = await axios.get(/api/applications/${applicationId});
 
     // API 요청이 성공했고, 응답 데이터 안에 application 객체가 있는지 확인합니다.
     if (responseData.success && responseData.data.application) {
