@@ -159,7 +159,7 @@ const handleFinalSubmit = async (finalQuestions) => {
   try {
     if (applicationId.value) {
       // ID가 있으면 기존 상담서를 수정(PATCH)합니다.
-      await axios.patch(`api/applications/${applicationId.value}`, payload);
+      await axios.patch(`api/applications/${applicationId.value}?isCompleted=true`, payload);
     } else {
       // ID가 없으면 새로운 상담서를 생성(POST)합니다.
       const res = await axios.post('api/applications?isCompleted=true', payload);
