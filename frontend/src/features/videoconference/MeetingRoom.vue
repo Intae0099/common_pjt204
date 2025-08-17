@@ -25,8 +25,7 @@
       <div class="chat-content">
         <RealtimeChatView
           v-show="activeChat === 'realtime'"
-          :messages="messages"
-          @send-message="sendChatMessage"
+          :session="session"
         />
         <ChatbotView v-show="activeChat === 'chatbot'" />
       </div>
