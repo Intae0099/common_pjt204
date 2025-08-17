@@ -181,6 +181,11 @@ const enterMeeting = async (appointmentId) => {
 
 onMounted(async () => {
   try {
+    // API 호출 시 params를 추가하여 승인된('CONFIRMED') 상담만 가져오도록 변경
+    // const { data: allAppointments } = await axios.get('/api/appointments/me', {
+    //   params: { status: 'CONFIRMED' },
+    // });
+
     // 1. 'CONFIRMED' 상태와 'IN_PROGRESS' 상태에 대한 API 요청을 각각 생성합니다.
     const confirmedPromise = axios.get('/api/appointments/me', {
       params: { status: 'CONFIRMED' },
@@ -200,37 +205,32 @@ onMounted(async () => {
     const inProgressAppointments = inProgressResponse.data || [];
     const allAppointments = [...confirmedAppointments, ...inProgressAppointments];
 
-    // ================================
-    // 🔹 원래 코드: 오늘 날짜 상담만 표시
-    // const now = new Date();
-    // const todaysAppointments = allAppointments.filter(
-    //   (appointment) => {
-    //     const startTime = new Date(appointment.startTime);
-    //     const endTime = new Date(appointment.endTime);
+    // 오늘 날짜의, 아직 끝나지 않은 예약만 필터링합니다.
+    const now = new Date();
+    const todaysAppointments = allAppointments.filter(
+      (appointment) => {
+        const startTime = new Date(appointment.startTime);
+        const endTime = new Date(appointment.endTime);
 
-    //     // 조건 1: 상담 시작일이 오늘인지 확인 (연, 월, 일 비교)
-    //     const isToday =
-    //       startTime.getFullYear() === now.getFullYear() &&
-    //       startTime.getMonth() === now.getMonth() &&
-    //       startTime.getDate() === now.getDate();
+        // 조건 1: 상담 시작일이 오늘인지 확인 (연, 월, 일 비교)
+        const isToday =
+          startTime.getFullYear() === now.getFullYear() &&
+          startTime.getMonth() === now.getMonth() &&
+          startTime.getDate() === now.getDate();
 
-    //     // 조건 2: 상담 종료 시간이 현재 시간 이후인지 확인
-    //     const hasNotEnded = endTime > now;
+        // 조건 2: 상담 종료 시간이 현재 시간 이후인지 확인
+        const hasNotEnded = endTime > now;
 
-    //     return isToday && hasNotEnded;
-    //   }
-    // );
-    // appointments.value = todaysAppointments;
+        return isToday && hasNotEnded;
+      }
+    );
 
-    // ================================
-    // 🔹 개발용 코드: 오늘 상담 외에도 전체 상담 다 표시
-    appointments.value = allAppointments;
+    appointments.value = todaysAppointments;
 
   } catch (e) {
     console.error('상담 일정 불러오기 실패:', e);
   }
 });
-
 </script>
 
 <style scoped>
