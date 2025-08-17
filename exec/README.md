@@ -1,7 +1,5 @@
 # 포팅메뉴얼
-  
-  
-    
+<br>
 ### 1. Gitlab 소스 클론 이후 빌드 및 배포 문서
 
 이 문서는 새로운 담당자가 프로젝트 소스 코드를 내려받아 로컬 또는 서버 환경에 빌드하고 배포하는 전체 과정을 안내합니다.
@@ -41,10 +39,9 @@
 | | Jenkins | 2.504.3 | |
 | | Docker | Docker version 28.3.2 | |
 | | OpenVidu | 2.30.0 | |
-  
-  
-  
-  
+<br>
+<br>
+<br>
 #### 2) 빌드 시 환경 변수
 
 Jenkins 또는 로컬에서 프로젝트 빌드 시 필요한 환경 변수 목록입니다.
@@ -68,10 +65,9 @@ Jenkins 또는 로컬에서 프로젝트 빌드 시 필요한 환경 변수 목�
     - **GitLab Repository Access id**: `gitlab-repo-credentials`
     - **GitLab API token (GitLab API Access Token) id**: `gitlab-api-token`
     - **GitLab Registry Login Credentials id**: `gitlab-registry-credentials`
-  
-  
-  
-  
+<br>
+<br>
+<br>
 #### 3) 배포 시 특이사항
 
 1.  **CI/CD 파이프라인**
@@ -84,10 +80,9 @@ Jenkins 또는 로컬에서 프로젝트 빌드 시 필요한 환경 변수 목�
 3.  **Docker 실행**
     - EC2 서버에서는 `docker-compose.yml` 파일을 통해 각 서비스(frontend, backend, mysql 등)를 컨테이너로 실행합니다.
     - 배포 스크립트 실행 시 기존 컨테이너를 내리고 새로운 이미지로 컨테이너를 올리는 작업이 포함됩니다.
-  
-  
-  
-  
+<br>
+<br>
+<br>
 #### 4) 주요 계정 및 프로퍼티 정의 파일 목록
 
 | 파일 경로 | 주요 내용 |
@@ -97,9 +92,13 @@ Jenkins 또는 로컬에서 프로젝트 빌드 시 필요한 환경 변수 목�
 | `Jenkinsfile` | Jenkins CI/CD 파이프라인 스크립트 (빌드, 이미지 푸시, 배포) |
 | `/home/ubuntu/app/docker-compose.yml` | 각 서비스의 Docker 컨테이너 실행 및 네트워크 구성 정의 |
 | `proxy/conf.d/default.conf` | Nginx 리버스 프록시 라우팅 규칙 정의 |
-
+<br>
+<br>
+<br>
 ---
-
+<br>
+<br>
+<br>
 ### 2. 외부 서비스 정보
 
 프로젝트가 의존하는 외부 클라우드 서비스 및 API 정보입니다.
@@ -109,20 +108,19 @@ Jenkins 또는 로컬에서 프로젝트 빌드 시 필요한 환경 변수 목�
 | **카카오 소셜 로그인** | 사용자 인증 | https://developers.kakao.com/ | rbtjd1478@naver.com | ~~**REST API 키:** `[ 발급받은 키 ]`<br>**Client Secret:** `[ 발급받은 시크릿 ]`~~ | **Redirect URI:**<br>`https://i13b204.p.ssafy.io/api/login/oauth2/code/kakao` |
 | **OpenVidu** | 화상 통화 | 자체 호스팅 (Self-hosted) | - | **OPENVIDU_SECRET:** `ssafy204openvidulawaid` | **DOMAIN_OR_PUBLIC_IP:**<br>`https://i13b204.p.ssafy.io/openvidu` |
 | **AWS EC2** | 서버 호스팅 | i13b204.p.ssafy.io | - | - | `I13B204T.pem` |
-  
-  
-  
+<br>  
+<br>  
+<br>  
 ---
-  
-  
-  
+<br>  
+<br>  
+<br>  
 ### 3. DB 덤프 파일 최신본
 
 # [DB 덤프 파일](https://lab.ssafy.com/s13-webmobile1-sub1/S13P11B204/-/blob/master/lawaid%20schema.sql?ref_type=heads)
-  
-  
-  
-    
+<br>  
+<br>  
+<br>  
 ### 4. 시연 시나리오
 
 #### 애플리케이션 기능 및 관련 컴포넌트 정리
@@ -138,3 +136,6 @@ Jenkins 또는 로컬에서 프로젝트 빌드 시 필요한 환경 변수 목�
 | **마이페이지** | 자신의 상담 내역과 프로필 정보를 확인하고 수정. | `LawyerConsultHistory.vue` (및 기타 마이페이지 관련 컴포넌트) |
 | **관리자 기능** | 관리자 전용 페이지(`/admin`)에서 회원, 사건, 변호사 인증 등 사이트 전반을 관리. | `AdminLayout.vue` (및 기타 관리자 페이지 관련 컴포넌트) |
 | **공통/레이아웃** | 특정 페이지(관리자, 메인, 사건 상세 등)에서는 푸터를 숨기고, 그 외 페이지에서는 노출. | `BaseFooter.vue` (노출/비노출 로직은 `App.vue` 또는 라우터에서 제어) |
+<br>
+<br>
+<br>
