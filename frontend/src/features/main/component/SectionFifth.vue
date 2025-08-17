@@ -1,8 +1,6 @@
-<!-- SectionFifth.vue -->
 <template>
   <section class="fifth-section" ref="sectionRef">
     <div class="container">
-      <!-- 카드 1 -->
       <article class="card card-1" :style="{ '--bg': `url(${card1})` }">
         <div class="overlay"></div>
         <div class="copy">
@@ -14,7 +12,6 @@
         </div>
       </article>
 
-      <!-- 카드 2 -->
       <article class="card card-2" :style="{ '--bg': `url(${card2})` }">
         <div class="overlay"></div>
         <div class="copy">

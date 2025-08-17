@@ -6,7 +6,6 @@
     </div>
 
 
-    <!-- ▲ 안내 배너 -->
     <div v-if="showApplicationPopup" class="application-banner">
       <div class="banner-inner">
         <div class="banner-text">
@@ -20,9 +19,7 @@
       </div>
     </div>
 
-    <!-- 본문 2열 -->
     <div class="reservation-page">
-      <!-- 좌측: 변호사 카드 -->
       <div class="left-column">
         <div class="card profile-card">
           <img class="profile-card-img" v-if="lawyer?.photo" :src="`data:image/jpeg;base64,${lawyer.photo}`" alt="변호사 프로필" />
@@ -34,11 +31,9 @@
         </div>
       </div>
 
-      <!-- 우측: 스케줄 카드 -->
       <div class="card schedule-card">
         <h3 class="schedule-title">1:1 화상상담 예약</h3>
 
-        <!-- 1단계: 날짜 -->
         <div class="date-row">
           <ol class="stepper" aria-label="예약 단계1">
             <li :class="{ selectedDate }">
@@ -62,7 +57,6 @@
 
         </div>
 
-        <!-- 2단계: 시간 -->
         <div class="time-section">
           <div class="time-header">
             <ol class="stepper" aria-label="예약 단계2">
@@ -82,15 +76,12 @@
           </div>
 
           <div class="time-grid-wrapper" :class="{ locked: !selectedDate }" aria-live="polite">
-            <!-- 잠금 오버레이 (날짜 먼저) -->
             <div v-if="!selectedDate" class="locked-overlay">
               <div class="locked-text">먼저 날짜를 선택하세요</div>
             </div>
 
-            <!-- 로딩 상태 -->
             <div v-if="loadingSlots" class="slots-loading">가능한 시간을 불러오는 중…</div>
 
-            <!-- 시간 슬롯 -->
             <div v-else class="time-grid">
               <button
                 v-for="time in allTimeSlots"
@@ -109,7 +100,6 @@
           </div>
         </div>
 
-        <!-- 예약 버튼 -->
         <div class="reserve-row">
           <button
             class="reserve-button"
@@ -120,7 +110,6 @@
           </button>
         </div>
 
-        <!-- 신청서 선택 모달 -->
         <div v-if="showModal">
           <ApplicationChoiceModal
             :lawyerId="lawyerId"

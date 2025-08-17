@@ -64,7 +64,7 @@ export const useCasesStore = defineStore('cases', {
     async initializeSearch() {
       // 아직 검색이 수행되지 않았고, 결과 목록도 비어있을 때만 실행
       if (!this.searchPerformed && this._allCaseList.length === 0) {
-        this.query = '교통사고'; // 기본 검색어 설정
+        this.query = '횡령'; // 기본 검색어 설정
         await this.searchCases();   // 기존 검색 액션 호출
         this.query = '';
       }

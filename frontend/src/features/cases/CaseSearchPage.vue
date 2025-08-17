@@ -1,9 +1,6 @@
-<!-- src/views/CaseSearchPage.vue -->
-
 <template>
   <CaseLayout>
     <LayoutDefault>
-    <!-- 검색 UI는 변경 없음 -->
     <div class="search-container">
       <div class="search-bar">
         <input
@@ -20,7 +17,6 @@
       </select>
     </div>
 
-    <!-- 상태 메시지 UI는 변경 없음 -->
     <div v-if="isLoading" class="status-message">
       <p>판례를 검색 중입니다...</p>
     </div>
@@ -28,9 +24,7 @@
       <p>{{ error }}</p>
     </div>
 
-    <!-- ✨ 결과 표시 부분 수정 -->
     <div v-else-if="hasResults">
-      <!-- v-for는 이제 `paginatedCaseList` getter를 사용합니다. -->
       <div class="case-list">
         <CaseCard
           v-for="item in paginatedCaseList"
@@ -40,7 +34,6 @@
         />
       </div>
 
-      <!-- ✨ 페이지네이션 UI 추가 -->
       <div v-if="totalPages > 1" class="pagination-container">
         <button
           @click="setPage(currentPage - 1)"
@@ -68,7 +61,6 @@
       </div>
     </div>
 
-    <!-- 검색 결과 없음 메시지 UI는 변경 없음 -->
     <div v-else class="status-message">
       <p>{{ searchPerformed ? '검색 결과가 없습니다.' : '판례를 검색해 보세요.' }}</p>
     </div>

@@ -1,5 +1,4 @@
 <template>
-  <!-- 3섹션: 판례 검색 히어로 -->
   <section class="ruling-hero">
     <div class="ruling-container">
       <p class="eyebrow"><strong>두번째</strong>, 판례 찾아보기</p>
@@ -20,8 +19,6 @@
   </section>
 </template>
 
-<!-- 스크립트 불필요: 하드코딩 버전이므로 생략 -->
-<!-- <script setup></script> -->
 
 <style scoped>
 :root {

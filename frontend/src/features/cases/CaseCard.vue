@@ -1,4 +1,3 @@
-<!-- src/features/cases/CaseCard.vue -->
 <template>
   <router-link
     :to="{ name: 'CaseDetail', params: { id: data.caseId } }"
@@ -8,14 +7,12 @@
       <span class="accent" aria-hidden="true"></span>
 
       <header class="case-header">
-        <!-- eslint-disable-next-line vue/no-v-html -->
         <h3 class="case-title" v-html="highlightedTitle"></h3>
         <time class="case-date" :datetime="data.decisionDate">
           {{ formatDate(data.decisionDate) }}
         </time>
       </header>
 
-      <!-- eslint-disable-next-line vue/no-v-html -->
       <p class="case-excerpt" v-html="highlightedExcerpt"></p>
     </article>
   </router-link>

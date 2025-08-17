@@ -5,7 +5,6 @@
         {{ selectedDate }} {{ selectedTime }} 상담 예약
       </h3>
 
-      <!-- ✅ [수정] 커스텀 드롭다운으로 변경 -->
       <div class="custom-select-wrapper">
         <div class="custom-select" @click="toggleDropdown">
           <div class="custom-select-trigger">

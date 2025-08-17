@@ -41,7 +41,6 @@
                 상담신청서 보기
               </span>
             </div>
-            <!-- ✅ 우측 컬럼: 상단에 pc-flags, 하단에 버튼 -->
             <div class="right-col">
               <div class="pc-flags">
                 <span v-if="appt.isTimeConflict" class="chip chip-warn">동시간대 요청</span>

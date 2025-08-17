@@ -1,7 +1,5 @@
-<!-- src/components/layout/LawyerSearchLayout.vue -->
 <template>
   <div class="search-layout">
-    <!-- 배너 영역 -->
      <div class="banner-wrapper">
        <div class="banner">
          <img src="@/assets/banner-lawyersearch.png" alt="배경" class="banner-bg" />
@@ -11,7 +9,6 @@
        </div>
      </div>
 
-    <!-- 하위 콘텐츠 슬롯 -->
     <div class="content-wrapper">
       <slot />
     </div>

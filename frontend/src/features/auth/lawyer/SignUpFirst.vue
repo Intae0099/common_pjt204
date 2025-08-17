@@ -1,12 +1,10 @@
 <template>
   <div class="signup-wrapper">
-    <!-- 상단 제목 -->
     <div class="signup-header">
       <h2 class="signup-title">변호사 회원가입</h2>
       <p class="signup-subtitle">회원정보를 입력해주세요</p>
     </div>
 
-    <!-- 페이지 단계 표시 -->
     <div class="step-indicator">
       <span class="step active">1</span>
       <span class="dot"></span>
@@ -15,7 +13,6 @@
       <span class="step">3</span>
     </div>
 
-    <!-- 회원가입 폼 -->
     <div class="signup-box">
       <form @submit.prevent="handleSubmit" class="form-area">
         <div class="form-group">
@@ -67,7 +64,6 @@
       </form>
     </div>
 
-    <!-- 하단 링크 -->
     <div class="footer-links">
       <router-link to="/" class="main_link">메인화면으로</router-link>
     </div>

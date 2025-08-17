@@ -6,7 +6,6 @@
       </button>
       <div class="modal-scroll-area">
         <form class="consult-form">
-          <!-- 사건 제목 -->
           <input
             type="text"
             :value="data.title"
@@ -14,7 +13,6 @@
             class="readonly-input-title"
           />
 
-          <!-- 사건 개요 -->
           <div v-if="data.summary" class="form-group scrollable-group">
             <label>사건 개요</label>
             <textarea
@@ -24,7 +22,6 @@
             ></textarea>
           </div>
 
-          <!-- 원하는 결과 -->
           <div v-if="data.outcome" class="form-group scrollable-group">
             <label>원하는 결과</label>
             <textarea
@@ -34,7 +31,6 @@
             ></textarea>
           </div>
 
-          <!-- 불리한 점 -->
           <div v-if="data.disadvantage" class="form-group scrollable-group">
             <label>사건에서 불리한 점</label>
             <textarea
@@ -44,7 +40,6 @@
             ></textarea>
           </div>
 
-          <!-- 궁금한 점 -->
           <div v-if="data.recommendedQuestions && Object.keys(data.recommendedQuestions).length > 0" class="form-group scrollable-group">
             <label>변호사에게 궁금한 점</label>
             <textarea

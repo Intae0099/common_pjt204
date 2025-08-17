@@ -1,7 +1,6 @@
 <template>
   <div v-if="user && appointments !== null" class="mypage-container">
     <h1 class="mypage-title">마이페이지</h1>
-    <!-- ✅ 프로필 영역 -->
     <section class="profile-section">
       <div class="profile-box">
         <div class="profile-left">
@@ -19,7 +18,6 @@
       </div>
     </section>
 
-    <!-- ✅ 예약 일정 -->
     <section class="appointment-section">
       <h4>예약된 상담</h4>
       <ul v-if="confirmedAppointments.length > 0" class="appointment-list">
@@ -65,7 +63,6 @@
           :key="appt.appointmentId"
           class="appointment-item"
         >
-          <!-- X 버튼 (PENDING일 때만 노출) -->
           <button
             class="cancel-x-btn"
             @click.stop="cancelAppointment(appt)"
@@ -93,7 +90,6 @@
       <p v-else class="no-appt">예약 요청한 상담이 없습니다.</p>
     </section>
 
-    <!-- ✅ 상담신청서 보관함 -->
     <section class="application-section">
       <h4 @click="goToAllApplications" class="section-title-link">
         상담신청서 보관함
@@ -117,8 +113,6 @@
       </ul>
       <p v-else class="no-appt">상담신청서가 없습니다.</p>
     </section>
-
-    <!-- ✅ 기타 메뉴 -->
     <section class="menu-section">
       <div class="menu-item" @click="$router.push('/user/consult-history')">
         상담내역

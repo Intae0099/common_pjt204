@@ -7,16 +7,13 @@
       <h3 class="modal-title">사건 경위서 선택</h3>
       <div class="modal-info">불러온 사건 경위서를 직접 수정하실 수 있습니다.</div>
 
-      <!-- ✅ [수정] 데이터 있을 때: 기본 select를 커스텀 드롭다운으로 변경 -->
       <div v-if="applications.length > 0" class="custom-select-wrapper">
         <div class="custom-select" @click="toggleDropdown">
           <div class="custom-select-trigger">
-            <!-- computed 속성을 사용하여 선택된 제목 또는 플레이스홀더 표시 -->
             <span :class="{ 'has-value': selectedApplicationTitle }">{{ selectedApplicationTitle || '사건 경위서를 선택해주세요' }}</span>
             <div class="arrow" :class="{ 'open': isDropdownOpen }"></div>
           </div>
         </div>
-        <!-- 드롭다운 메뉴 (isDropdownOpen 값에 따라 표시/숨김) -->
         <div class="custom-options" v-if="isDropdownOpen">
           <div
             class="custom-option"
@@ -30,7 +27,6 @@
         </div>
       </div>
 
-      <!-- ❗ 데이터 없을 때 -->
       <p v-else class="no-data-message">
         불러올 사건 경위서가 없습니다.
       </p>
