@@ -27,7 +27,6 @@
         <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
         <button type="submit" class="lawyer-login">로그인</button>
       </form>
-      <router-link to="/findpassword/lawyer">비밀번호를 잊어버리셨나요?</router-link>
     </div>
 
     <div class="footer-links">
