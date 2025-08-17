@@ -38,6 +38,9 @@
 | | Docker | Docker version 28.3.2 | |
 | | OpenVidu | 2.30.0 | |
 
+
+
+
 #### 2) 빌드 시 환경 변수
 
 Jenkins 또는 로컬에서 프로젝트 빌드 시 필요한 환경 변수 목록입니다.
@@ -62,6 +65,9 @@ Jenkins 또는 로컬에서 프로젝트 빌드 시 필요한 환경 변수 목�
     - **GitLab API token (GitLab API Access Token) id**: `gitlab-api-token`
     - **GitLab Registry Login Credentials id**: `gitlab-registry-credentials`
 
+
+
+
 #### 3) 배포 시 특이사항
 
 1.  **CI/CD 파이프라인**
@@ -74,6 +80,10 @@ Jenkins 또는 로컬에서 프로젝트 빌드 시 필요한 환경 변수 목�
 3.  **Docker 실행**
     - EC2 서버에서는 `docker-compose.yml` 파일을 통해 각 서비스(frontend, backend, mysql 등)를 컨테이너로 실행합니다.
     - 배포 스크립트 실행 시 기존 컨테이너를 내리고 새로운 이미지로 컨테이너를 올리는 작업이 포함됩니다.
+
+
+
+
 
 #### 4) 주요 계정 및 프로퍼티 정의 파일 목록
 
@@ -97,11 +107,18 @@ Jenkins 또는 로컬에서 프로젝트 빌드 시 필요한 환경 변수 목�
 | **OpenVidu** | 화상 통화 | 자체 호스팅 (Self-hosted) | - | **OPENVIDU_SECRET:** `ssafy204openvidulawaid` | **DOMAIN_OR_PUBLIC_IP:**<br>`https://i13b204.p.ssafy.io/openvidu` |
 | **AWS EC2** | 서버 호스팅 | i13b204.p.ssafy.io | - | - | `I13B204T.pem` |
 
+
+
 ---
+
+
 
 ### 3. DB 덤프 파일 최신본
 
 # [DB 덤프 파일](https://lab.ssafy.com/s13-webmobile1-sub1/S13P11B204/-/blob/master/lawaid%20schema.sql?ref_type=heads)
+
+
+
 
 
 
