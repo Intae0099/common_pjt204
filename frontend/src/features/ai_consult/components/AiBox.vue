@@ -84,11 +84,11 @@
                   >
                     <li v-for="article in statute.articles" :key="article" style="font-size: 0.9rem;">
                       <a
-                        :href="`http://law.go.kr/법령/${encodeURIComponent(statute.code)}/${article}`"
+                        :href="`http://law.go.kr/법령/${encodeURIComponent(statute.code)}/제${article}`"
                         target="_blank"
                         rel="noopener noreferrer"
                       >
-                        제{{ article }}조
+                        제{{ article }}
                       </a>
                     </li>
                   </ul>
@@ -202,11 +202,11 @@
                     >
                       <li v-for="article in statute.articles" :key="article" style="font-size: 0.9rem;">
                         <a
-                          :href="`http://law.go.kr/법령/${encodeURIComponent(statute.code)}/${article}`"
+                          :href="`http://law.go.kr/법령/${encodeURIComponent(statute.code)}/제${article}`"
                           target="_blank"
                           rel="noopener noreferrer"
                         >
-                          제{{ article }}조
+                          제{{ article }}
                         </a>
                       </li>
                     </ul>
