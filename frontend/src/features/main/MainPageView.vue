@@ -184,7 +184,8 @@ onUnmounted(() => {
 .hero {
   position: relative;
   z-index: 2;
-  height: 100%;
+  /* height: 100%;  ⬅ 제거 */
+  min-height: calc(100svh - var(--nav-h)); /* 데스크톱/모바일 주소창 변화에도 안정적인 svh */
   max-width: min(92vw, 1440px);
   margin: 0 auto;
   padding: 80px 100px;
@@ -199,10 +200,20 @@ onUnmounted(() => {
 .glass-card {
   position: absolute;
   z-index: 0;
+
+  /* 기존: left/right + top:50% + translateY(-50%) */
+  /* left/right는 유지하되 세로는 inset + margin으로 가운데 정렬 */
   left: clamp(0px, 1vw, 12px);
   right: clamp(4px, 1vw, 7px);
-  top: 50%;                   /* ⬅️ vh 대신 percentage */
-  transform: translateY(-50%);
+
+  /* 세로 중앙 정렬 핵심 */
+  top: 0;
+  bottom: 0;
+  margin-block: auto;
+
+  /* 중심 맞췄으니 transform은 제거 */
+  /* transform: translateY(-50%);  ⬅ 제거 */
+
   height: 450px;
   width: 70%;
   border-radius: clamp(22px, 3.4vw, 38px);
@@ -254,22 +265,51 @@ onUnmounted(() => {
 }
 
 /* 로봇 이미지 */
+/* 1) 로봇 컨테이너 크기 잠금: 26vw로 보수적으로 */
 .visual {
   z-index: 2;
   grid-area: visual;
   justify-self: end;
   align-self: center;
-  width: clamp(360px, 30vw, 900px);
-  transform: none;
-    /* ⬇️ 위치/크기 조정용 변수 */
-  --robot-x: -450px;           /* 오른쪽(+) 왼쪽(-)으로 이동 */
-  --robot-y: -110px;           /* 아래(+) 위(-)로 이동 */
-  --robot-scale: 1;         /* 크기 */
 
+  /* 이전: width: clamp(360px, 30vw, 900px); */
+  width: clamp(360px, 28vw, 760px); /* 상한도 살짝 낮춤 */
+
+  --robot-x: -470px;
+  --robot-y: -100px;
+  --robot-scale: 1;
   transform: translate(var(--robot-x), var(--robot-y)) scale(var(--robot-scale));
-  transition: transform .25s ease; /* 미세 조정 시 부드럽게 */
+  transition: transform .25s ease;
 }
-.bot-img { width: 100%; height: auto; pointer-events: none; }
+
+/* 아주 넓은 화면에서 더 커지는 걸 한 번 더 제어(선택) */
+@media (min-width: 1600px) {
+  .visual { width: clamp(520px, 24vw, 780px); }
+}
+
+/* 2) 애니메이션 중에도 크기 고정 */
+.bot-img {
+  --float-y: 12px;
+  --tilt: 1.2deg;
+  --duration: 4.6s;
+
+  width: 100%;
+  height: auto;
+  display: block;    
+  object-fit: contain;     
+  animation: bot-float var(--duration) ease-in-out infinite;
+  transform-origin: 50% 60%;
+  will-change: transform, filter;
+  filter: drop-shadow(0 8px 18px rgba(63, 96, 149, 0.18));
+}
+
+@keyframes bot-float {
+  0%   { transform: translateY(0) rotate(var(--tilt))            scale(1); }
+  50%  { transform: translateY(calc(var(--float-y) * -1)) rotate(calc(var(--tilt) * -1)) scale(1); }
+  100% { transform: translateY(0) rotate(var(--tilt))            scale(1); }
+}
+
+
 
 
 /* 히어로 아래 스크롤 힌트 */
@@ -280,7 +320,7 @@ onUnmounted(() => {
   flex-direction: column;
   align-items: center;
   gap: 6px;
-  margin: -50px 0 28px;      /* 히어로와 2섹션 사이 간격 */
+  margin: -70px 0 28px;      /* 히어로와 2섹션 사이 간격 */
   color: #6b7a90;          /* --text-mute 톤 */
   cursor: pointer;
   user-select: none;
