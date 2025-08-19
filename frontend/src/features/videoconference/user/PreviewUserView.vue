@@ -306,7 +306,8 @@ onMounted(async () => {
         return isToday && hasNotEnded;
       }
     );
-    appointments.value = todaysAppointments;
+    // appointments.value = todaysAppointments;
+    appointments.value = appointmentsWithLawyerInfo
     //여기까지 실제코드
 
 

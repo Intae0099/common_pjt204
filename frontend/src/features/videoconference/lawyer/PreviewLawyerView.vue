@@ -225,7 +225,8 @@ onMounted(async () => {
       }
     );
 
-    appointments.value = todaysAppointments;
+    // appointments.value = todaysAppointments;
+    appointments.value = allAppointments
 
   } catch (e) {
     console.error('상담 일정 불러오기 실패:', e);
