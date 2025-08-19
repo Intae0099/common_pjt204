@@ -51,10 +51,10 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue' // ✅ computed 추가
+import { ref, onMounted, computed } from 'vue'
 import axios from '@/lib/axios'
 import { useRouter } from 'vue-router'
-
+import { showConfirm } from '@/composables/useAlert'
 const props = defineProps({
   lawyerId: [String, Number],
   selectedDate: String,
@@ -136,11 +136,11 @@ const submitReservation = async () => {
       endTime: endTimeStr
     })
 
-    alert('예약이 완료되었습니다!')
+    await showConfirm('예약이 완료되었습니다!', { showCancel: false })
     emit('close')
     router.push('/user/mypage')
   } catch (err) {
-    alert('예약 중 오류가 발생했습니다.')
+     await showConfirm('예약 중 오류가 발생했습니다.', { showCancel: false })
     console.error(err)
   }
 }
