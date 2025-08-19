@@ -229,8 +229,11 @@ const pendingAppointments = computed(() => {
     const startTime = new Date(appt.startTime);
     const timeDifference = startTime.getTime() - new Date().getTime();
     const oneHourInMillis = 60 * 60 * 1000;
-    const isTimeExpired = timeDifference < oneHourInMillis;
+    //실제코드
+    // const isTimeExpired = timeDifference < oneHourInMillis;
 
+    //개발용
+    const isTimeExpired=false
     return {
       ...appt,
       isTimeConflict: checkConflicts(appt),
