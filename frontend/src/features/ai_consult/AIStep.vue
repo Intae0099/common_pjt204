@@ -69,6 +69,7 @@ import LawyerRecommendList from './components/LawyerRecommendList.vue'
 // import axios from 'axios'
 import { fastapiApiClient } from '@/lib/axios';
 import { TAG_MAP } from '@/constants/lawyerTags'
+import { showConfirm } from '@/composables/useAlert'
 
 const aiBoxRef = ref(null)
 const showSaveModal = ref(false)
@@ -109,7 +110,7 @@ const handleUserInput = async (text) => {
       await pushAndScroll({ role: 'assistant', type: 'summary', payload: { case: data.data.case } })
     } else {
       console.error('API 응답 오류:', data.error.message)
-      alert(data.error.message)
+      await showConfirm(data.error.message, { showCancel: false })
     }
   } catch (error) {
     console.error('AI 응답 실패:', error)
@@ -137,13 +138,13 @@ const handleConfirmSave = () => {
 const handlePredictVerdict = async () => {
   const token = localStorage.getItem('access_token') // 또는 적절한 로그인 상태 체크 방식
   if (!token) {
-    alert('로그인이 필요합니다. 로그인 페이지로 이동합니다.')
+    await showConfirm('로그인이 필요합니다. 로그인 페이지로 이동합니다.', { showCancel: false })
     router.push('/login') // 실제 로그인 경로에 맞게 수정
     return
   }
 
   if (!aiResponse.value) {
-    alert('먼저 사건 내용을 입력하고 분석을 받아야 합니다.')
+    await showConfirm('먼저 사건 내용을 입력하고 분석을 받아야 합니다.', { showCancel: false })
     return
   }
 
@@ -182,12 +183,12 @@ const handlePredictVerdict = async () => {
       await pushAndScroll({ role: 'assistant', type: 'verdict', payload: { verdict: data.data.report } })
     } else {
       console.error('판례 분석 API 오류:', data.error.message)
-      alert(data.error.message)
+      await showConfirm(data.error.message, { showCancel: false })
     }
 
   } catch (err) {
     console.error('판례 분석 실패:', err)
-    alert('판례를 분석하는 중 오류가 발생했습니다.')
+    await showConfirm('판례를 분석하는 중 오류가 발생했습니다.', { showCancel: false })
   } finally {
     isFindingVerdict.value = false
   }

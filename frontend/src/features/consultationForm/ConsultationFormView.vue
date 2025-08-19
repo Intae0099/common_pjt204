@@ -45,6 +45,7 @@ import ConsultationForm from './component/ConsultationForm.vue'
 import ConsultationCompareResult from './component/ConsultationCompareResult.vue'
 import SaveAlertModal from './component/SaveAlertModal.vue'
 import { TAG_MAP } from '@/constants/lawyerTags'
+import { showConfirm } from '@/composables/useAlert'
 
 const isLoading = ref(true)
 const showCompareView = ref(false)
@@ -57,12 +58,12 @@ const router = useRouter()
 
 onMounted(() => {
   window.scrollTo(0, 0);
-  setTimeout(() => {
+  setTimeout(async () => {
     isLoading.value = false
 
     // 로그인 필요한 상태인지 query 확인 후 alert
     if (route.query.needLogin === 'true') {
-      alert('로그인이 필요한 페이지입니다.')
+      await showConfirm('로그인이 필요한 페이지입니다.', { showCancel: false })
       router.replace('/login')  // 히스토리에 남기지 않음
     }
   }, 1000)  // 1초 로딩 후 처리
@@ -125,7 +126,10 @@ const handleFormSubmit = async (formData) => {
     showCompareView.value = true
   } catch (err) {
     console.error('AI 상담서 생성 실패:', err)
-    alert(err.message || 'AI 상담서 생성 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.')
+    await showConfirm(
+      err.message || 'AI 상담서 생성 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.',
+      { showCancel: false }
+    )
   } finally {
     isLoading.value = false
   }
@@ -177,7 +181,7 @@ const handleFinalSubmit = async (finalQuestions) => {
     console.error('상담서 저장 실패:', err);
     console.error('Error response:', err.response?.data); // 서버 응답을 자세히 로깅
     const serverErrorMessage = err.response?.data?.message || err.response?.data?.error || '저장에 실패했습니다.';
-    alert(serverErrorMessage);
+    await showConfirm(serverErrorMessage, { showCancel: false })
   }
 };
 /*

@@ -32,7 +32,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from '@/lib/axios'
 import { ChevronLeftIcon } from '@heroicons/vue/24/solid'
-
+import { showConfirm } from '@/composables/useAlert'
 
 const router = useRouter()
 const name = ref('')
@@ -44,7 +44,7 @@ const goBack = () => {
 
 const saveChanges = async () => {
   if (!name.value.trim() || !email.value.trim()) {
-    alert('이름과 이메일을 모두 입력해주세요.')
+    await showConfirm('이름을 입력해주세요.', { showCancel: false })
     return
   }
 
@@ -53,11 +53,11 @@ const saveChanges = async () => {
       oauthName: name.value,
       email: email.value
     })
-    alert('수정이 완료되었습니다.')
+    await showConfirm('수정이 완료되었습니다.', { showCancel: false })
     router.back()
   } catch (err) {
     console.error('수정 실패:', err)
-    alert('오류가 발생했습니다.')
+    await showConfirm('오류가 발생했습니다. 잠시 후 다시 시도해주세요.', { showCancel: false })
   }
 }
 

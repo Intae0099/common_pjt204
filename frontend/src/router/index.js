@@ -50,7 +50,8 @@ import { useAuthStore } from '@/stores/auth';
 import LawyerCertifications from '@/features/admin/LawyerCertifications.vue';
 import ApplicationListView from '@/features/profile/user/ApplicationListView.vue';
 
-
+//Alert
+import { showConfirm } from '@/composables/useAlert';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -254,7 +255,7 @@ const router = createRouter({
   ],
 })
 
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   const token = localStorage.getItem('access_token'); // 일반 사용자 토큰 확인
 
   // 1. "인증이 필요한 페이지"에 접근하려고 할 때 (meta.requiresAuth === true)
