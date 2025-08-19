@@ -134,6 +134,7 @@ import ApplicationChoiceModal from '@/features/reservation/ApplicationChoiceModa
 import { TAG_MAP } from '@/constants/lawyerTags'
 import { ChevronLeftIcon } from '@heroicons/vue/24/solid'
 import checkbadge from '@/assets/check-badge.png'
+import { showConfirm } from '@/composables/useAlert'
 
 const router = useRouter()
 const route = useRoute()
@@ -180,11 +181,10 @@ const closePopup = () => {
   showApplicationPopup.value = false;
 };
 
-const goToApplicationForm = () => {
-  // TODO: 실제 AI 상담신청서 페이지 경로로 수정해주세요.
-  alert('AI 상담신청서 페이지로 이동합니다.');
-  router.push('/consult-form');
-};
+const goToApplicationForm = async () => {
+  await showConfirm('AI 상담신청서 페이지로 이동합니다.', { showCancel: false })
+  router.push('/consult-form')
+}
 
 const fetchLawyerInfo = async () => {
   const res = await axios.get(`/api/lawyers/list`)

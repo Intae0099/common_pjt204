@@ -236,6 +236,7 @@ import { ref, watch, nextTick, computed } from 'vue'
 import { defineProps, defineEmits, defineExpose } from 'vue'
 import instance from '@/lib/axios'
 import LoadingDots from './LoadingDots.vue'
+import { showConfirm } from '@/composables/useAlert'
 
 const props = defineProps({
   isLoading: Boolean,
@@ -320,11 +321,13 @@ const saveConsultationRecord = async () => {
 
   try {
     await instance.post('/api/applications', payload, { params: { isCompleted: false } })
-    alert('상담 내용이 임시 저장되었습니다.')
+    await showConfirm('상담 내용이 임시 저장되었습니다.', { showCancel: false })
   } catch (error) {
-    console.error('상담 경위서 저장 실패:', error)
-    if (error.response) alert(`저장에 실패했습니다: ${error.response.data.message}`)
-    else alert('저장 중 오류가 발생했습니다.')
+    if (error.response) {
+      await showConfirm(`저장에 실패했습니다: ${error.response.data.message}`, { showCancel: false })
+    } else {
+      await showConfirm('저장 중 오류가 발생했습니다.', { showCancel: false })
+    }
   }
 }
 

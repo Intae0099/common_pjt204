@@ -107,6 +107,8 @@ import { MagnifyingGlassIcon, ChevronDownIcon, XMarkIcon, ChevronRightIcon } fro
 import LawyerSearchLayout from '@/components/layout/LawyerSearchLayout.vue';
 import LayoutDefault from '@/components/layout/LayoutDefault.vue'
 import checkbadge from '@/assets/check-badge.png'
+import { showConfirm } from '@/composables/useAlert'
+
 /* ----- 상태 ----- */
 const router = useRouter()
 const showFilters = ref(false)
@@ -192,9 +194,9 @@ const isLawyer = localStorage.getItem('userType') === 'LAWYER'
 const toggleShowTags = id => expandedCards.value.includes(id)
   ? expandedCards.value = expandedCards.value.filter(i => i !== id)
   : expandedCards.value.push(id)
-const goToReservation = lawyer => {
+const goToReservation = async (lawyer) => {
   if (!localStorage.getItem('userType')) {
-    alert('로그인이 필요한 기능입니다.');
+    await showConfirm('로그인이 필요한 기능입니다.', { showCancel: false })
     router.push('/login')
     return
   }

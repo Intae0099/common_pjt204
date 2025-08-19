@@ -94,6 +94,7 @@ import { useRouter } from 'vue-router'
 import axios from '@/lib/axios'
 import ApplicationDetail from '@/features/profile/user/ApplicationDetail.vue'
 import { ChevronLeftIcon, } from '@heroicons/vue/24/solid'
+import { showConfirm } from '@/composables/useAlert'
 
 // ✅ 페이지네이션 관련 상태 변수 추가
 const allAppointments = ref([])
@@ -208,7 +209,7 @@ const formatDateTime = (dateStr) => {
 
 const goToApplication = async (applicationId) => {
   if (!applicationId) {
-    alert('상담 신청서가 존재하지 않습니다.');
+    await showConfirm('상담 신청서가 존재하지 않습니다.', { showCancel: false })
     return;
   }
   try {
@@ -217,7 +218,7 @@ const goToApplication = async (applicationId) => {
     showModal.value = true;
   } catch (err) {
     console.error('상담 신청서 조회 실패:', err);
-    alert('상담 신청서를 불러오는 데 실패했습니다.');
+    await showConfirm('상담 신청서를 불러오는 데 실패했습니다.', { showCancel: false })
   }
 };
 

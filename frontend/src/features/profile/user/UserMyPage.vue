@@ -140,7 +140,7 @@ import { ref, onMounted, computed } from 'vue'
 import axios from '@/lib/axios'
 import ApplicationDetail from './ApplicationDetail.vue'
 import { useRouter } from 'vue-router'
-
+import { showConfirm } from '@/composables/useAlert'
 const router = useRouter()
 const user = ref(null)
 const appointments = ref([])
@@ -170,10 +170,10 @@ const cancelAppointment = async (appt) => {
     await axios.post(`/api/appointments/${appt.appointmentId}/cancel`)
     // 낙관적 업데이트: 상태를 CANCELLED로 갱신하여 목록에서 즉시 반영
     appt.appointmentStatus = 'CANCELLED'
-    alert('예약이 취소되었습니다.')
+    await showConfirm('예약이 취소되었습니다.', { showCancel: false })
   } catch (err) {
     console.error('예약 취소 실패:', err)
-    alert('취소 중 오류가 발생했습니다. 다시 시도해주세요.')
+    await showConfirm('취소 중 오류가 발생했습니다. 다시 시도해주세요.', { showCancel: false })
   }
 }
 
@@ -236,7 +236,7 @@ const openDetailModal = async (applicationId) => {
     }
   } catch (error) {
     console.error('상세 정보 로딩 실패:', error)
-    alert(error.message || '상세 정보를 불러오는 데 실패했습니다.')
+    await showConfirm(error.message || '상세 정보를 불러오는 데 실패했습니다.', { showCancel: false })
   }
 }
 
@@ -259,7 +259,7 @@ const handleWithdraw = async () => {
 
   try {
     await axios.delete('/api/clients/me')  // ✅ 탈퇴 API 호출
-    alert('회원탈퇴가 완료되었습니다.')
+    await showConfirm('회원탈퇴가 완료되었습니다.', { showCancel: false })
 
     // JWT 토큰 및 사용자 타입 제거
     localStorage.removeItem('accessToken')
@@ -269,7 +269,7 @@ const handleWithdraw = async () => {
     window.location.href = '/'
   } catch (error) {
     console.error('회원탈퇴 실패:', error)
-    alert('탈퇴 중 오류가 발생했습니다. 다시 시도해주세요.')
+    await showConfirm('탈퇴 중 오류가 발생했습니다. 다시 시도해주세요.', { showCancel: false })
   }
 }
 
