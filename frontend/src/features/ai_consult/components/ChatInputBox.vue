@@ -1,31 +1,43 @@
 <template>
   <div class="chat-input-box">
     <div class="input-area">
-      <textarea
-        ref="textareaRef" v-model="text"
-        class="textarea"
-        :placeholder="placeholder"
-        :disabled="disabled"
-        @keydown.enter.prevent="submit"
-        @input="handleInput"
-      ></textarea>
+      <!-- 테두리/배경/둥근모서리를 가지는 공용 래퍼 -->
+      <div class="field">
+        <textarea
+          ref="textareaRef"
+          v-model="text"
+          class="textarea"
+          :placeholder="placeholder"
+          :disabled="disabled"
+          @keydown.enter.prevent="submit"
+          @input="handleInput"
+        ></textarea>
 
+        <!-- 글자수 카운터: 좌하단 -->
+        <div
+          class="char-counter"
+          :class="{ invalid: text.trim().length < 50 }"
+        >
+          {{ text.length }} 자
+        </div>
 
-      <button
-        v-if="!disabled"
-        @click="submit"
-        :disabled="!text.trim()"
-        class="submit-button"
-      >
-        <ArrowRightIcon class="arrow-icon"/>
-      </button>
-
+        <button
+          v-if="!disabled"
+          @click="submit"
+          :disabled="!text.trim()"
+          class="submit-button"
+        >
+          <ArrowRightIcon class="arrow-icon" />
+        </button>
+      </div>
     </div>
+
     <p v-if="showWarning" class="warning-text">
       50자 이상으로 내용을 더 정확하게 입력해 주세요.
     </p>
   </div>
 </template>
+
 
 <script setup>
 import { ref } from 'vue'
@@ -87,8 +99,18 @@ const submit = () => {
 }
 
 .input-area {
+
+  width: 100%;
+}
+
+.field {
   position: relative;
   width: 100%;
+  background: #fff;
+  border: 1px solid #e0ecf5;
+  border-radius: 12px;
+  box-shadow: 0 0 6px rgba(0, 132, 255, 0.1);
+  padding: 16px 48px 40px 16px;
 }
 
 .input-wrapper {
@@ -100,16 +122,13 @@ const submit = () => {
 .textarea {
   box-sizing: border-box;
   width: 100%;
-  min-height: 120px;
-  border: 1px solid #e0ecf5;
-  border-radius: 12px;
-  padding: 16px 16px 40px 16px;
-  font-size: 16px;
-  resize: none;
-  box-shadow: 0 0 6px rgba(0, 132, 255, 0.1);
+  min-height: 80px;
+  border: none;             /* ← 테두리 제거 */
   outline: none;
-  background: white;
+  resize: none;
+  background: transparent;  /* ← 배경 투명 */
   overflow-y: hidden;
+  font-size: 16px;
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
@@ -127,8 +146,8 @@ const submit = () => {
 
 .submit-button {
   position: absolute;
-  bottom: 12px;
   right: 12px;
+  bottom: 12px;
   border: none;
   background: none;
   font-size: 18px;
@@ -145,7 +164,13 @@ const submit = () => {
   width: 24px;
   height: 24px;
 }
-
+.char-counter {
+  position: absolute;
+  left: 16px;
+  bottom: 12px;
+  font-size: 14px;
+  color: #6c757d;
+}
 .warning-text {
   color: red;
   font-size: 14px;

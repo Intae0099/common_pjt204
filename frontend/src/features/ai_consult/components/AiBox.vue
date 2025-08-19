@@ -100,10 +100,18 @@
         </div>
       </div>
 
-      <div v-if="isFindingVerdict" class="finding-verdict-container">
+      <!-- 판례 찾는 중 표시(스택 맨 아래) -->
+      <div v-if="isFindingVerdict" class="finding-verdict-container" ref="loadingRef">
         <LoadingDots />
         <p class="loading-text">AI가 실제 판례를 찾고 있습니다...</p>
-        <img src="@/assets/ai-writing3.png" alt="AI 작성 중" class="loading-image" />
+        <CircleTimingGame
+          :active="isFindingVerdict"
+          mode="band"
+          :radius="70"
+          :target-band-height="42"
+          @played="onGamePlayed"
+        />
+
       </div>
     </div>
 
@@ -116,10 +124,17 @@
 
       <div v-else-if="response" class="result-box">
         <div class="ai-message-box">
-          <div v-if="isFindingVerdict" class="finding-verdict-container">
+          <div v-if="isFindingVerdict" class="finding-verdict-container" ref="loadingRef">
             <LoadingDots />
             <p class="loading-text">AI가 실제 판례를 찾고 있습니다...</p>
-            <img src="@/assets/ai-writing3.png" alt="AI 작성 중" class="loading-image" />
+            <CircleTimingGame
+              :active="isFindingVerdict"
+              mode="band"
+              :radius="70"
+              :target-band-height="42"
+              @played="onGamePlayed"
+            />
+
           </div>
 
           <template v-else>
@@ -234,13 +249,16 @@ import { ref, watch, nextTick, computed } from 'vue'
 import { defineProps, defineEmits, defineExpose } from 'vue'
 import instance from '@/lib/axios'
 import LoadingDots from './LoadingDots.vue'
+import CircleTimingGame from './CircleTimingGame.vue'
+
 const props = defineProps({
   isLoading: Boolean,
-  isFindingVerdict: Boolean, // 판례 검색 로딩 상태를 위한 prop 추가
+  isFindingVerdict: Boolean,
   response: Object,
   verdictResult: Object,
   messages: { type: Array, default: () => [] }
 })
+
 const showBot = computed(() => {
   return !!(
     props.isLoading ||
@@ -251,23 +269,59 @@ const showBot = computed(() => {
   )
 })
 
+/* 스크롤 컨테이너 & 로딩 블록 참조 */
 const scrollEl = ref(null)
+const loadingRef = ref(null)
+
+/* 스크롤 헬퍼들 */
 const scrollToBottom = async () => {
   await nextTick()
-  if (scrollEl.value) scrollEl.value.scrollTop = scrollEl.value.scrollHeight
+  if (!scrollEl.value) return
+  scrollEl.value.scrollTop = scrollEl.value.scrollHeight
 }
-watch(() => props.messages?.length, () => scrollToBottom())
+
+const scrollToLoading = async () => {
+  await nextTick()
+  const parent = scrollEl.value
+  const target = loadingRef.value
+  if (!parent) return
+
+  if (target) {
+    // 로딩 블록을 뷰포트 상단에서 약간(20%) 아래 위치로 보이게
+    const top = target.offsetTop - parent.clientHeight * 0.2
+    const y = Math.max(0, top)
+    // 부드러운 스크롤 (지원 안 해도 자동 폴백됨)
+    parent.scrollTo?.({ top: y, behavior: 'smooth' }) || (parent.scrollTop = y)
+  } else {
+    // ref가 아직 안 잡혔으면 일단 맨 아래로
+    parent.scrollTo?.({ top: parent.scrollHeight, behavior: 'smooth' }) ||
+      (parent.scrollTop = parent.scrollHeight)
+  }
+}
+
+/* 메시지 수 변동 시: 로딩 중이면 로딩 위치로, 아니면 맨 아래로 */
+watch(() => props.messages?.length, async () => {
+  if (props.isFindingVerdict) await scrollToLoading()
+  else await scrollToBottom()
+})
+
+/* 로딩 시작/종료 감지해서 자동 스크롤 */
+watch(() => props.isFindingVerdict, async (on) => {
+  if (on) {
+    await scrollToLoading()
+  }
+})
 
 const emit = defineEmits(['open-modal'])
 
+
+/* 임시 저장 */
 const saveConsultationRecord = async () => {
-  // response 객체가 없거나 필요한 데이터가 없으면 실행하지 않음
   if (!props.response || !props.response.title) {
-    console.error('저장할 데이터가 없습니다.');
-    return;
+    console.error('저장할 데이터가 없습니다.')
+    return
   }
 
-  // API 요청에 필요한 데이터 구성
   const payload = {
     title: props.response.title,
     summary: props.response.summary,
@@ -276,50 +330,36 @@ const saveConsultationRecord = async () => {
     disadvantage: null,
     recommendedQuestion: null,
     tags: null
-  };
+  }
 
   try {
-    // isCompleted=false 쿼리 파라미터와 함께 POST 요청
-    const response = await instance.post('/api/applications', payload, {
-      params: {
-        isCompleted: false
-      }
-    });
-    // 성공 시 사용자에게 알림을 띄우는 로직을 추가할 수 있습니다 (예: toast 메시지)
-    alert('상담 내용이 임시 저장되었습니다.');
-
+    await instance.post('/api/applications', payload, { params: { isCompleted: false } })
+    alert('상담 내용이 임시 저장되었습니다.')
   } catch (error) {
-    console.error('상담 경위서 저장 실패:', error);
-    // 실패 시 사용자에게 알림
-    if (error.response) {
-      alert(`저장에 실패했습니다: ${error.response.data.message}`);
-    } else {
-      alert('저장 중 오류가 발생했습니다.');
-    }
+    console.error('상담 경위서 저장 실패:', error)
+    if (error.response) alert(`저장에 실패했습니다: ${error.response.data.message}`)
+    else alert('저장 중 오류가 발생했습니다.')
   }
-};
+}
 
-// ❗️ 부모 컴포넌트에서 이 함수를 호출할 수 있도록 노출시킵니다.
+/* 외부에서 호출할 수 있게 노출 */
 defineExpose({
   saveConsultationRecord,
   scrollToBottom
-});
+})
 
-
-// ❗️ response 데이터가 변경될 때를 감지합니다.
-watch(() => props.response, (newResponse) => {
-  // ❗️ 조건: verdictResult가 없고(판례 검색 전) response.summary가 있을 때 (AI 요약 완료)
-  if (newResponse && newResponse.summary && !props.verdictResult) {
-    // 부모 컴포넌트에 모달을 열어달라는 이벤트를 보냅니다.
-    emit('open-modal');
-  }
-}, {
-  // 컴포넌트가 처음 마운트될 때도 watch를 실행할 수 있으나,
-  // response는 비동기로 받아오므로 깊은 감지가 더 적합할 수 있습니다.
-  deep: true
-});
-
+/* 요약 생성 완료되면 모달 열기 */
+watch(
+  () => props.response,
+  (newResponse) => {
+    if (newResponse && newResponse.summary && !props.verdictResult) {
+      emit('open-modal')
+    }
+  },
+  { deep: true }
+)
 </script>
+
 
 <style scoped>
 .ai-box-wrapper {

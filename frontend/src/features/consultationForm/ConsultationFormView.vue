@@ -31,7 +31,7 @@
       />
     </LayoutDefault>
   </ConsultationFomLayout>
-  <SaveAlertModal v-if="showSaveModal" @close="showSaveModal = false" />
+  <SaveAlertModal v-if="showSaveModal" @close="onSavedConfirm" />
 </template>
 
 <script setup>
@@ -70,6 +70,11 @@ onMounted(() => {
 
 const handleApplicationSelect = (id) => {
   applicationId.value = id;
+};
+const onSavedConfirm = () => {
+  showSaveModal.value = false;            // 모달 닫고
+  router.push({ name: 'UserMyPage' });    // 마이페이지로 이동
+  // 또는 path로: router.push('/user/mypage')
 };
 
 const handleFormSubmit = async (formData) => {

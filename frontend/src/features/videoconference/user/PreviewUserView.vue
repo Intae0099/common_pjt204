@@ -118,7 +118,7 @@
 <script setup>
 import PreviewCamera from '../components/PreviewCamera.vue';
 import { ref, onMounted, computed, onUnmounted } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
+import { useRouter} from 'vue-router';
 import axios from '@/lib/axios';
 import ApplicationDetail from '@/features/profile/user/ApplicationDetail.vue';
 import { Smile, MoveRight, ChevronDown, ChevronUp } from 'lucide-vue-next';
@@ -129,7 +129,6 @@ const cameraComponentRef = ref(null);
 const appointments = ref([]);
 const defaultImage = '/default-profile.png';
 const router = useRouter();
-const route = useRoute();
 const showDetailModal = ref(false);
 const selectedApplicationData = ref(null);
 const selectedAppointmentId = ref(null);
@@ -244,13 +243,6 @@ const getTimeDifference = (startTime) => {
   return `${hours}시간 ${minutes}분 후`;
 };
 
-const canEnterMeeting = (startTime, endTime) => {
-  const now = new Date();
-  const start = new Date(startTime);
-  const end = new Date(endTime);
-
-  return now >= new Date(start.getTime() - 10 * 60 * 1000) && now < end;
-};
 
 onMounted(async () => {
   try {
