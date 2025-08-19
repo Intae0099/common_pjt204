@@ -132,6 +132,7 @@ import '@vuepic/vue-datepicker/dist/main.css';
 import { useTagStore } from '@/stores/tags';
 import ApplicationDetail from '@/features/profile/user/ApplicationDetail.vue';
 import checkbadge from '@/assets/check-badge.png'
+import { showConfirm } from '@/composables/useAlert';
 
 const lawyer = ref(null);
 const appointments = ref([]);
@@ -294,7 +295,7 @@ const fetchUnavailableSlots = async () => {
 // ✅ 상담 신청서 조회 함수 추가
 const viewApplication = async (applicationId) => {
   if (!applicationId) {
-    alert('상담 신청서가 존재하지 않습니다.');
+    await showConfirm('상담 신청서가 존재하지 않습니다.', { showCancel: false });
     return;
   }
   try {
@@ -303,29 +304,28 @@ const viewApplication = async (applicationId) => {
     isModalOpen.value = true;
   } catch (err) {
     console.error('상담 신청서 조회 실패:', err);
-    alert('상담 신청서를 불러오는 데 실패했습니다.');
+    await showConfirm('상담 신청서를 불러오는 데 실패했습니다.', { showCancel: false });
   }
 };
 
 const updateAppointmentStatus = async (appointmentId, status) => {
-  const statusText = status === 'REJECTED' ? '거절' : '수락';
-  if (!confirm(`정말로 이 상담 요청을 ${statusText}하시겠습니까?`)) {
-    return;
-  }
+  const statusTextKo = status === 'REJECTED' ? '거절' : '수락';
+
+  const ok = await showConfirm(`정말로 이 상담 요청을 ${statusTextKo}하시겠습니까?`, { showCancel: true }); // <-- CHANGED
+  if (!ok) return;
 
   try {
     const res = await axios.patch(`/api/appointments/${appointmentId}/status`, {
-      "appointmentStatus": status
+      appointmentStatus: status
     });
 
     if (res.status === 200) {
-      alert(`상담이 ${statusText}되었습니다.`);
-      // ✅ 상태 변경 후 예약 목록을 다시 가져와 UI를 즉시 갱신
+      await showConfirm(`상담이 ${statusTextKo}되었습니다.`, { showCancel: false }); // <-- CHANGED
       await fetchAppointments();
     }
   } catch (error) {
-    console.error(`상담 ${statusText} 실패:`, error);
-    alert(`상담 ${statusText}에 실패했습니다. 다시 시도해주세요.`);
+    console.error(`상담 ${statusTextKo} 실패:`, error);
+    await showConfirm(`상담 ${statusTextKo}에 실패했습니다. 다시 시도해주세요.`, { showCancel: false }); // <-- CHANGED
   }
 };
 
@@ -338,19 +338,21 @@ const goToHistory = () => {
 };
 
 const handleWithdraw = async () => {
-  if (!confirm('정말로 회원탈퇴하시겠습니까?')) return;
+  const ok = await showConfirm('정말로 회원탈퇴하시겠습니까?', { showCancel: true }); // <-- CHANGED
+  if (!ok) return;
 
   try {
     await axios.delete('/api/lawyers/me');
-    alert('회원탈퇴가 완료되었습니다.');
+    await showConfirm('회원탈퇴가 완료되었습니다.', { showCancel: false }); // <-- CHANGED
     localStorage.removeItem('accessToken');
     localStorage.removeItem('userType');
     window.location.href = '/';
   } catch (error) {
     console.error('회원탈퇴 실패:', error);
-    alert('회원탈퇴에 실패했습니다. 다시 시도해주세요.');
+    await showConfirm('회원탈퇴에 실패했습니다. 다시 시도해주세요.', { showCancel: false }); // <-- CHANGED
   }
 };
+
 
 onMounted(async () => {
   await fetchLawyerProfile();
@@ -425,7 +427,7 @@ h4 {
   margin-top: 10px;
 }
 .profile-img {
-  width: 160px;
+  width: 120px;
   height: 120px;
   border-radius: 50%;
   object-fit: cover;

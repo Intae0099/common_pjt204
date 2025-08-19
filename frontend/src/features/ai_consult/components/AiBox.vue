@@ -101,16 +101,10 @@
       </div>
 
       <!-- 판례 찾는 중 표시(스택 맨 아래) -->
-      <div v-if="isFindingVerdict" class="finding-verdict-container" ref="loadingRef">
+      <div v-if="isFindingVerdict" class="finding-verdict-container">
         <LoadingDots />
         <p class="loading-text">AI가 실제 판례를 찾고 있습니다...</p>
-        <CircleTimingGame
-          :active="isFindingVerdict"
-          mode="band"
-          :radius="70"
-          :target-band-height="42"
-          @played="onGamePlayed"
-        />
+        <img src="@/assets/ai-writing3.png" alt="AI 작성 중" class="loading-image" />
 
       </div>
     </div>
@@ -124,17 +118,10 @@
 
       <div v-else-if="response" class="result-box">
         <div class="ai-message-box">
-          <div v-if="isFindingVerdict" class="finding-verdict-container" ref="loadingRef">
+          <div v-if="isFindingVerdict" class="finding-verdict-container">
             <LoadingDots />
             <p class="loading-text">AI가 실제 판례를 찾고 있습니다...</p>
-            <CircleTimingGame
-              :active="isFindingVerdict"
-              mode="band"
-              :radius="70"
-              :target-band-height="42"
-              @played="onGamePlayed"
-            />
-
+            <img src="@/assets/ai-writing3.png" alt="AI 작성 중" class="loading-image" />
           </div>
 
           <template v-else>
@@ -249,7 +236,6 @@ import { ref, watch, nextTick, computed } from 'vue'
 import { defineProps, defineEmits, defineExpose } from 'vue'
 import instance from '@/lib/axios'
 import LoadingDots from './LoadingDots.vue'
-import CircleTimingGame from './CircleTimingGame.vue'
 
 const props = defineProps({
   isLoading: Boolean,
