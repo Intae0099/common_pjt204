@@ -98,7 +98,7 @@ const handleFormSubmit = async (formData) => {
       case: {
         title: formData.title,
         summary: summaryForApi,
-        fullText: contentForApi,
+        fullText: summaryForApi,
       },
       desiredOutcome: formData.outcome,
       weakPoints: formData.disadvantage,
