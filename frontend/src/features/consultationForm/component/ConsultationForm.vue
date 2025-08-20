@@ -104,7 +104,7 @@ const submit = () => {
 }
 const handleSelect = (data) => {
   form.value.title = data.title
-  form.value.content = data.content
+  form.value.content = data.summary
   form.value.summary = data.summary
   emit('application-selected', data.applicationId)
   showModal.value = false
