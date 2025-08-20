@@ -87,7 +87,7 @@ const confirm = () => {
   emit('select', {
     applicationId: selected.applicationId,
     title: selected.title,
-    content: selected.content,
+    content: selected.summary,
     summary: selected.summary,
   })
     emit('close')
