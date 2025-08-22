@@ -14,6 +14,7 @@ from services.chat_service import ChatService
 from services.consultation_service import ConsultationService
 from services.external_api_client import ExternalAPIClient
 from services.lawyer_recommendation_service import LawyerRecommendationService
+from services.bm25_service import BM25Service  # BM25Service 임포트
 from llm.clients.openai_client import get_async_openai_client
 from llm.clients.langchain_client import Gpt4oMini
 
@@ -62,9 +63,11 @@ class Container:
         # 모델들 (싱글톤)
         embedding_model = ModelLoader.get_embedding_model()
         cross_encoder_model = ModelLoader.get_cross_encoder_model()
+        bm25_service = BM25Service() # BM25 서비스 싱글톤으로 생성
         
         self.register_singleton(EmbeddingModel, embedding_model)
         self.register_singleton(CrossEncoderModel, cross_encoder_model)
+        self.register_singleton(BM25Service, bm25_service) # BM25 서비스 등록
         
         # LLM 클라이언트들
         self.register_factory(
@@ -84,7 +87,8 @@ class Container:
             SearchService,
             lambda: SearchService(
                 self.get(EmbeddingModel),
-                self.get(CrossEncoderModel)
+                self.get(CrossEncoderModel),
+                self.get(BM25Service)  # BM25Service 주입
             )
         )
         

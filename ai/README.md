@@ -102,7 +102,7 @@ graph TB
 | 분야 | 기술 |
 |------|------|
 | **Framework** | FastAPI, Pydantic |
-| **AI/LLM** | OpenAI GPT-4o, LangChain, Sentence-Transformers |
+| **AI/LLM** | OpenAI GPT-4o, LangChain, Sentence-Transformers, rank-bm25, Kiwipiepy |
 | **Database** | PostgreSQL, pgvector, SQLite |
 | **Deployment** | Docker, Uvicorn |
 | **Testing** | Pytest |
