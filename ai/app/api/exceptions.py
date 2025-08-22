@@ -28,13 +28,6 @@ class BadRequestException(APIException):
         super().__init__(ErrorCode.INVALID_PARAM, message, details)
 
 
-class UnauthorizedException(APIException):
-    """
-    401 Unauthorized
-    """
-
-    def __init__(self, message: str = "인증에 실패했습니다.", details: Any | None = None) -> None:
-        super().__init__(ErrorCode.UNAUTHORIZED, message, details)
 
 
 class ResourceNotFoundException(APIException):

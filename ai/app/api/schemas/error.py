@@ -8,7 +8,6 @@ class ErrorCode(str, Enum):
     API 에러 코드
     """
     INVALID_PARAM = "INVALID_PARAM"
-    UNAUTHORIZED = "UNAUTHORIZED"
     NOT_FOUND = "NOT_FOUND"
     SERVER_ERROR = "SERVER_ERROR"
 

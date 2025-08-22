@@ -14,7 +14,7 @@ from app.api.schemas.search import (
 from app.api.decorators import handle_api_exceptions, validate_pagination
 from app.api.response_models import PaginatedResponse
 from services.search_service import SearchService
-from app.api.dependencies import get_search_service, get_current_user
+from app.api.dependencies import get_search_service
 from app.api.dependencies_queue import get_queue_service
 from app.api.exceptions import ResourceNotFoundException, BadRequestException
 from services.lightweight_queue_manager import LightweightQueueManager, ResourceExhaustionError, QueueFullError
@@ -34,7 +34,6 @@ async def search_cases_endpoint(
     keyword: str = Query(..., min_length=2, description="검색 키워드 (2자 이상)"),
     page: int = Query(1, ge=1, description="페이지 번호"),
     size: int = Query(10, ge=1, le=100, description="페이지 당 결과 수"),
-    user_id: str = Depends(get_current_user),
     queue_service: LightweightQueueManager = Depends(get_queue_service)
 ):
     """
@@ -55,7 +54,7 @@ async def search_cases_endpoint(
         search_result = await queue_service.submit_and_wait(
             service_type="search",
             request_data=request_data,
-            user_id=user_id,
+            user_id="anonymous",
             timeout=120  # 2분 타임아웃
         )
         

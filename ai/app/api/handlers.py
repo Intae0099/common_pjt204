@@ -8,6 +8,7 @@ from fastapi.responses import JSONResponse
 
 from app.api.exceptions import APIException
 from app.api.schemas.error import BaseErrorResponse, Error, ErrorCode
+from utils.exceptions import BaseServiceException, DatabaseError, LLMError, SearchError, ValidationError
 
 logger = logging.getLogger(__name__)
 
@@ -18,9 +19,7 @@ async def api_exception_handler(request: Request, exc: APIException) -> JSONResp
     """
     error = Error(code=exc.code, message=exc.message)
     status_code = status.HTTP_400_BAD_REQUEST
-    if exc.code == ErrorCode.UNAUTHORIZED:
-        status_code = status.HTTP_401_UNAUTHORIZED
-    elif exc.code == ErrorCode.NOT_FOUND:
+    if exc.code == ErrorCode.NOT_FOUND:
         status_code = status.HTTP_404_NOT_FOUND
 
     logger.warning(f"API Exception: {exc.code} - {exc.message}", extra={"details": exc.details})
@@ -53,6 +52,36 @@ async def validation_exception_handler(
     )
 
 
+async def service_exception_handler(request: Request, exc: BaseServiceException) -> JSONResponse:
+    """
+    서비스 레이어 예외를 API 응답으로 변환하는 핸들러
+    """
+    if isinstance(exc, ValidationError):
+        error_code = ErrorCode.INVALID_PARAM
+        status_code = status.HTTP_400_BAD_REQUEST
+    elif isinstance(exc, (DatabaseError, SearchError, LLMError)):
+        error_code = ErrorCode.SERVER_ERROR
+        status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+    else:
+        error_code = ErrorCode.SERVER_ERROR
+        status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+
+    error = Error(code=error_code, message=exc.message)
+    
+    logger.error(
+        f"Service Exception: {type(exc).__name__} - {exc.message}",
+        extra={
+            "details": exc.details,
+            "original_exception": str(exc.original_exception) if exc.original_exception else None
+        }
+    )
+    
+    return JSONResponse(
+        status_code=status_code,
+        content=BaseErrorResponse(error=error, details=exc.details).model_dump(exclude_none=True),
+    )
+
+
 async def generic_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     """
     처리되지 않은 모든 예외 핸들러
@@ -71,8 +100,6 @@ async def http_error_handler(request: Request, exc: StarletteHTTPException) -> J
     """
     if exc.status_code == status.HTTP_404_NOT_FOUND:
         code, message = ErrorCode.NOT_FOUND, "요청한 리소스를 찾을 수 없습니다."
-    elif exc.status_code == status.HTTP_401_UNAUTHORIZED:
-        code, message = ErrorCode.UNAUTHORIZED, "인증에 실패했습니다."
     elif exc.status_code == status.HTTP_400_BAD_REQUEST:
         code, message = ErrorCode.INVALID_PARAM, "요청 파라미터가 잘못되었습니다."
     else:

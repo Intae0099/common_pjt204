@@ -5,6 +5,7 @@ from collections import deque
 from typing import Deque, Dict, Tuple
 from openai import OpenAI
 from utils.logger import get_logger
+from utils.exceptions import LLMError
 
 logger = get_logger(__name__)
 
@@ -36,7 +37,9 @@ class ChatService:
 
         except Exception as e:
             logger.error(f"LLM stream error for user {user_id}: {e}")
-            yield f"data: {{'error': 'An error occurred during the stream.'}}\n\n"
+            error_msg = f"채팅 스트리밍 중 오류가 발생했습니다: {str(e)}"
+            yield f"data: {{'error': '{error_msg}'}}\n\n"
+            # 스트리밍 응답이므로 예외를 재발생시키지 않고 에러 메시지를 전송
 
         finally:
             if assistant_reply:

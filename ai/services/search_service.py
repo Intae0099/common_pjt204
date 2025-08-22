@@ -6,6 +6,7 @@ from datetime import date
 
 from db.database import get_psycopg2_connection
 from utils.logger import setup_logger, get_logger
+from utils.exceptions import DatabaseError, SearchError, handle_service_exceptions
 from llm.models.embedding_model import EmbeddingModel
 from llm.models.cross_encoder_model import CrossEncoderModel
 
@@ -149,10 +150,10 @@ class SearchService:
 
         except psycopg2.Error as e:
             logger.error(f"데이터베이스 오류: {e}")
-            return [], 0
+            raise DatabaseError(f"판례 검색 중 데이터베이스 오류가 발생했습니다: {str(e)}", original_exception=e)
         except Exception as e:
             logger.error(f"예상치 못한 오류: {e}")
-            return [], 0
+            raise SearchError(f"판례 검색 중 예상치 못한 오류가 발생했습니다: {str(e)}", original_exception=e)
         finally:
             if conn:
                 conn.close()
@@ -335,7 +336,7 @@ class SearchService:
             logger.error(f"고정밀도 검색 오류: {e}")
             import traceback
             traceback.print_exc()
-            return []
+            raise SearchError(f"고정밀도 검색 중 오류가 발생했습니다: {str(e)}", original_exception=e)
         finally:
             if conn:
                 conn.close()
@@ -363,10 +364,10 @@ class SearchService:
                 return None
         except psycopg2.Error as e:
             logger.error(f"데이터베이스 오류: {e}")
-            return None
+            raise DatabaseError(f"판례 상세 조회 중 데이터베이스 오류가 발생했습니다: {str(e)}", original_exception=e)
         except Exception as e:
             logger.error(f"예상치 못한 오류: {e}")
-            return None
+            raise SearchError(f"판례 상세 조회 중 예상치 못한 오류가 발생했습니다: {str(e)}", original_exception=e)
         finally:
             if conn:
                 conn.close()

@@ -26,8 +26,10 @@ from app.api.handlers import (
     generic_exception_handler,
     validation_exception_handler,
     http_error_handler,
+    service_exception_handler,
 )
 from app.api.exceptions import APIException
+from utils.exceptions import BaseServiceException
 from app.api.routers import analysis, structuring, search, chat, consult, queue_status
 from config.settings import get_api_settings
 from llm.models.model_loader import ModelLoader
@@ -90,6 +92,7 @@ app.add_middleware(
 )
 
 app.add_exception_handler(APIException, api_exception_handler)
+app.add_exception_handler(BaseServiceException, service_exception_handler)
 app.add_exception_handler(RequestValidationError, validation_exception_handler)
 app.add_exception_handler(StarletteHTTPException, http_error_handler)
 app.add_exception_handler(Exception, generic_exception_handler)

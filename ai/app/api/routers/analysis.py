@@ -1,6 +1,6 @@
 # app/api/routers/analysis.py
 from fastapi import APIRouter, Depends, status
-from app.api.dependencies import get_case_analysis_service, get_current_user
+from app.api.dependencies import get_case_analysis_service
 from app.api.dependencies_queue import get_queue_service
 from app.api.exceptions import BadRequestException
 from app.api.schemas.analysis import (
@@ -17,17 +17,14 @@ router = APIRouter()
     response_model=AnalysisResponse,               # ← 공통 성공 래퍼 사용
     status_code=status.HTTP_200_OK,
     response_model_exclude_none=True,              # ← None 필드 제거
-    dependencies=[Depends(get_current_user)],      # ← 인증을 바디 파싱 전에 수행
     responses={
         status.HTTP_400_BAD_REQUEST: {"model": BaseErrorResponse, "description": "잘못된 요청"},
-        status.HTTP_401_UNAUTHORIZED: {"model": BaseErrorResponse, "description": "인증 실패"},
         status.HTTP_404_NOT_FOUND: {"model": BaseErrorResponse, "description": "리소스를 찾을 수 없음"},
         status.HTTP_500_INTERNAL_SERVER_ERROR: {"model": BaseErrorResponse, "description": "서버 내부 오류"},
     },
 )
 async def analyze_case_endpoint(
     request: AnalysisRequest,
-    user_id: str = Depends(get_current_user),
     queue_service: LightweightQueueManager = Depends(get_queue_service),
 ):
     if not request.case or not getattr(request.case, "fullText", "").strip():
@@ -43,7 +40,7 @@ async def analyze_case_endpoint(
         service_result = await queue_service.submit_and_wait(
             service_type="case_analysis",
             request_data=request_data,
-            user_id=user_id,
+            user_id="anonymous",
             timeout=300  # 5분 타임아웃
         )
         
