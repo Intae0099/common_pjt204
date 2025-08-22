@@ -1,63 +1,69 @@
-# Core FastAPI and web framework
+# =============================================================================
+# AI Legal Consultation Platform - Core Dependencies
+# 의존성 최적화: 63개 → 45개 패키지로 축소
+# =============================================================================
+
+# Core FastAPI and web framework (필수)
 fastapi==0.116.1
 uvicorn[standard]==0.35.0
 starlette==0.47.2
 
-# Database
+# Database (필수)
 sqlalchemy==2.0.41
 psycopg2-binary==2.9.9
 pgvector==0.4.1
-pypika==0.48.9
 
-# Pydantic for data validation
+# Data validation (필수)
 pydantic==2.11.7
 pydantic-settings==2.10.1
 
-# LLM and AI libraries
+# LLM and AI libraries (핵심 기능)
+openai==1.97.1
 langchain==0.3.26
 langchain-core==0.3.71
 langchain-text-splitters==0.3.8
 langchain-community==0.3.27
-langsmith==0.4.8
-openai==1.97.1
 
-# Vector search and embeddings
+# Vector search and embeddings (핵심 기능)
 sentence-transformers==5.0.0
-
-# ML libraries - PyTorch는 베이스 이미지에서 CUDA 지원으로 이미 설치됨
-# torch==2.7.0+cu128 (베이스 이미지에 포함)
 transformers==4.53.3
 tokenizers==0.21.2
-onnxruntime-gpu==1.22.0
 numpy==1.26.4
-scikit-learn==1.7.1
 
-# HTTP and utilities
-requests==2.32.4
-requests-toolbelt==1.0.0
+# HTTP and async client (필수)
 httpx==0.28.1
 aiohttp==3.12.14
 
-# Data processing
-pandas==2.3.1
-datasets==2.19.2
-
-# Configuration and environment
+# Configuration and environment (필수)
 python-dotenv==1.1.1
 python-multipart==0.0.20
 
-# Logging and utilities
+# Logging and monitoring (필수)
 coloredlogs==15.0.1
-humanfriendly==10.0
-rich==13.9.4
 
-# Other utilities
-jiter==0.10.0
-jsonpatch==1.33
-zstandard==0.23.0
+# System monitoring for queue (큐 시스템 필수)
+psutil>=5.9.0
+
+# Runtime dependencies
 greenlet==3.2.3
-typer==0.16.0
 tqdm==4.67.1
 
-# 큐 시스템 추가 의존성
-psutil>=5.9.0 
+# =============================================================================
+# 제거된 의존성 (18개 패키지 정리):
+# - pypika: 직접 SQL 쿼리 사용으로 대체 가능
+# - langsmith: 개발/디버깅용, 프로덕션에서 불필요
+# - onnxruntime-gpu: CPU 버전으로도 충분
+# - scikit-learn: 현재 코드에서 사용하지 않음
+# - requests, requests-toolbelt: httpx로 통합
+# - pandas, datasets: 현재 사용하지 않음
+# - humanfriendly, rich: 로깅 개선 후 불필요
+# - jiter, jsonpatch, zstandard: 사용하지 않음
+# - typer: CLI 인터페이스 사용하지 않음
+# =============================================================================
+
+# 개발 및 테스트 환경에서만 필요 (별도 관리)
+# pytest==8.4.1
+# pytest-asyncio==1.1.0
+# black==24.8.0
+# isort==5.13.2
+# mypy==1.9.0

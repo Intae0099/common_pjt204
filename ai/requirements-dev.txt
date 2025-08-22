@@ -1,0 +1,27 @@
+# =============================================================================
+# AI Legal Consultation Platform - Development Dependencies
+# 개발, 테스트, 린팅 전용 패키지
+# =============================================================================
+
+# 프로덕션 의존성 포함
+-r requirements.txt
+
+# Testing framework
+pytest==8.4.1
+pytest-asyncio==1.1.0
+pytest-mock==3.14.0
+coverage==7.6.0
+
+# Code formatting and linting
+black==24.8.0
+isort==5.13.2
+flake8==7.0.0
+mypy==1.9.0
+
+# Development tools
+ipython==8.29.0
+jupyter==1.1.1
+
+# Debugging and profiling
+langsmith==0.4.8  # LLM 디버깅용
+rich==13.9.4      # 개발 중 로깅 개선용
