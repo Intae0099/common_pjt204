@@ -5,17 +5,17 @@
         v-for="message in messages"
         :key="message.id"
         class="message-bubble-container"
-        :class="message.sender === 'me' ? 'my-message-container' : 'other-message-container'"
+        :class="[
+          message.sender === 'me' ? 'my-message-container' : 'other-message-container',
+          message.name === 'AI 챗봇' ? 'ai-bot' : ''
+        ]"
       >
-        <!-- [수정됨] 발신자 이름 표시 -->
         <div class="sender-name">{{ message.name }}</div>
-
         <div class="message-bubble">
           {{ message.text }}
         </div>
       </div>
       <div v-if="isLoading" class="other-message-container">
-        <!-- [수정됨] 로딩 버블에도 이름 표시 (옵션) -->
         <div class="sender-name">Chatbot</div>
         <div class="message-bubble loading-bubble">
           <span>.</span><span>.</span><span>.</span>
@@ -86,8 +86,7 @@ watch(
   font-family: 'Noto Sans KR', sans-serif;
 }
 .chat-container {
-  width: 400px;
-  height: 660px;
+  flex: 1;
   border-radius: 8px;
   display: flex;
   flex-direction: column;
@@ -97,7 +96,8 @@ watch(
   border: none;
 }
 .message-area {
-  flex-grow: 1;
+  flex: 1 1 auto;
+  min-height: 0;
   padding: 20px 10px;
   overflow-y: auto;
   background-color: #2C2C2C;
@@ -130,7 +130,8 @@ watch(
 .message-bubble {
   padding: 10px 15px;
   border-radius: 10px;
-  word-wrap: break-word; /* 긴 텍스트 줄바꿈 */
+  word-wrap: break-word;
+   white-space: pre-wrap;
 }
 .my-message-container .message-bubble {
   background-color: #C5C5C5;
@@ -139,6 +140,12 @@ watch(
   background-color: #5A5A5A;
   color: #C5C5C5;
 }
+/* AI 챗봇의 말풍선만 파란색으로 */
+.other-message-container.ai-bot .message-bubble {
+  background-color: #4da3ff; /* 파란색 */
+  color: #fff;
+}
+
 .input-area {
   display: flex;
   padding: 10px;
@@ -155,7 +162,7 @@ watch(
 }
 .input-area input:focus {
   outline: none;
-  border-color: #4A90E2;
+  border-color: #6c9bcf ;
 }
 .input-area button {
   padding: 10px 20px;

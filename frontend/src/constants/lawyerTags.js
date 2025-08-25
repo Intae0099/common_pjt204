@@ -46,5 +46,7 @@ export const TAG_MAP = [
     { id: 45, name: '증권범죄' },
     { id: 46, name: '기업파산' },
     { id: 47, name: 'M&A' },
-    { id: 48, name: '기업법무' }
+    { id: 48, name: '기업법무' },
+    { id: 49, name: '횡령죄' },
+    { id: 50, name: '형사' }
 ];

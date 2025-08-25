@@ -3,7 +3,7 @@
     <h1>관리자 - 변호사 자격 인증 관리</h1>
     <div class="search-form">
       <label for="status-select">인증 상태 선택:</label>
-      <select id="status-select" v-model="selectedStatus" @change="fetchLawyerCertifications">
+      <select class="status-select" id="status-select" v-model="selectedStatus" @change="fetchLawyerCertifications">
         <option value="PENDING">대기중 (PENDING)</option>
         <option value="APPROVED">승인됨 (APPROVED)</option>
         <option value="REJECTED">거절됨 (REJECTED)</option>
@@ -18,7 +18,7 @@
     </p>
 
     <div v-if="lawyers.length > 0">
-      <h2>'{{ selectedStatus }}' 상태의 변호사 목록</h2>
+      <h3>'{{ selectedStatus }}' 상태의 변호사 목록</h3>
       <table>
         <thead>
           <tr>
@@ -57,7 +57,7 @@ import { ref, onMounted } from 'vue'
 import instance from '@/lib/axios' // 제공된 axios 설정 파일 경로
 
 const lawyers = ref([])
-const selectedStatus = ref('PENDING') // 기본값 설정
+const selectedStatus = ref('APPROVED') // 기본값 설정
 const loading = ref(false)
 const error = ref(null)
 
@@ -77,7 +77,6 @@ const fetchLawyerCertifications = async () => {
     if (response.data) {
       lawyers.value = response.data
     }
-    console.log(`'${selectedStatus.value}' 상태 변호사 목록:`, response.data)
   } catch (err) {
     console.error('변호사 인증 목록 조회 실패:', err)
     error.value = '데이터를 불러오는 데 실패했습니다.'
@@ -93,25 +92,59 @@ onMounted(fetchLawyerCertifications)
 <style scoped>
 /* 이전 컴포넌트와 동일한 스타일 사용 */
 .container {
+  font-family: 'Noto Sans KR', sans-serif;
   padding: 20px;
 }
+h1 {
+  font-size: 1.8rem;
+  margin-bottom: 16px;
+  font-weight: bold;
+}
+h3 {
+  font-size: 1.2rem;
+  margin-bottom: 16px;
+  font-weight: bold;
+}
+
 .search-form {
   margin-bottom: 20px;
+  color: #333333;
+}
+.status-select{
+  padding: 4px;
+  font-size: 0.8rem;
+  border: 1px solid #cfcfcf;
+  border-radius: 15px;
+  color: #888;
+  margin-left: 10px;
 }
 .error-message {
   color: red;
 }
 table {
   width: 100%;
-  border-collapse: collapse;
+  border : 1px solid #888;
   margin-top: 20px;
+  color:#333333;
+  font-size: 0.8rem;
+
 }
 th, td {
   border: 1px solid #ddd;
-  padding: 8px;
-  text-align: left;
+  padding: 6px;
+  text-align: center;
 }
 th {
   background-color: #f2f2f2;
+}
+
+table th:nth-child(2),
+table td:nth-child(2) {
+  white-space: nowrap; /* 줄바꿈 방지 */
+}
+
+table th:nth-child(5),
+table td:nth-child(5) {
+  white-space: nowrap; /* 줄바꿈 방지 */
 }
 </style>

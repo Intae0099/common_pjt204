@@ -83,17 +83,19 @@ public class AdminController {
           new UsernamePasswordAuthenticationToken(dto.getLoginEmail(), dto.getPassword())
       );
 
+      System.out.println("관리자 ^^  :  " + auth.getPrincipal());
+
       String email = auth.getName();
       Admin admin = adminService.findByLoginEmail(email);
       String subject = "ADMIN:" + admin.getLoginEmail();
 
       // 리프레시 토큰 생성·저장
-      String refreshToken = jwtUtil.generateRefreshToken(subject);
+      String refreshToken = jwtUtil.generateRefreshToken(subject, "ADMIN");
       refreshTokenService.createForAdmin(admin, refreshToken);
 
       // 쿠키 세팅
       ResponseCookie cookie = ResponseCookie.from("refresh_token", refreshToken)
-          .httpOnly(true).secure(true).sameSite("Strict")
+          .httpOnly(true).secure(true).sameSite("None")
           .path("/").maxAge(Duration.ofDays(7)).build();
       response.setHeader(HttpHeaders.SET_COOKIE, cookie.toString());
       // 액세스 토큰 발급

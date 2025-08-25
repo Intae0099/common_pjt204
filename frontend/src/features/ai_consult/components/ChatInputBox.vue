@@ -1,6 +1,5 @@
 <template>
   <div class="chat-input-box">
-    <!-- 입력창 -->
     <div class="input-area">
       <textarea
         ref="textareaRef" v-model="text"
@@ -12,10 +11,10 @@
       ></textarea>
 
 
-      <!-- 제출 버튼 (아이콘 대체 가능) -->
       <button
+        v-if="!disabled"
         @click="submit"
-        :disabled="!text.trim() || disabled"
+        :disabled="!text.trim()"
         class="submit-button"
       >
         <ArrowRightIcon class="arrow-icon"/>
@@ -34,7 +33,7 @@ import { ArrowRightIcon } from '@heroicons/vue/24/solid'
 const { placeholder, disabled} = defineProps({
   placeholder: {
     type: String,
-    default: '질문을 입력해주세요...'
+    default: '질문을 입력해주세요(50자 이상)'
   },
   disabled: {
     type: Boolean,
@@ -65,7 +64,6 @@ const submit = () => {
 
   showWarning.value = false
   emit('submit', text.value.trim())
-  text.value = ''
 
   if (textareaRef.value) {
     textareaRef.value.style.height = '120px' // 기존 CSS에 설정된 min-height 값
@@ -80,13 +78,12 @@ const submit = () => {
 .chat-input-box {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
   gap: 10px;
   position: relative;
-  flex: 1; /* 왼쪽 컬럼의 공간을 차지하도록 flex 속성 추가 */
-  max-width: 500px;
-  min-width: 350px;
-  margin-top: 81px;
+  max-width: 100%;
+  min-width: 920px;
+  margin-top: 8px;
 }
 
 .input-area {
@@ -97,7 +94,7 @@ const submit = () => {
 .input-wrapper {
   position: relative;
   width: 100%;
-  max-width: 500px;
+  max-width: 920px;
 }
 
 .textarea {
@@ -113,15 +110,15 @@ const submit = () => {
   outline: none;
   background: white;
   overflow-y: hidden;
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 .textarea::placeholder {
   color: #d1dee8;
 }
 .textarea:disabled {
-  background-color: #f5f5f5;
-  color: #aaa;
+  background-color: #fff;
+  color: #6c9bcf;
 }
 /* Webkit 브라우저(크롬, 사파리 등)용 스크롤바 숨기기 */
 .textarea::-webkit-scrollbar {

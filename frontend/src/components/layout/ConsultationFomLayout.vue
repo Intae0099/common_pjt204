@@ -1,7 +1,5 @@
-<!-- src/components/layout/ConsultationFomLayout.vue -->
 <template>
   <div class="case-layout">
-    <!-- 배너 영역 -->
      <div class="banner-wrapper">
        <div class="banner">
          <img src="@/assets/banner-bg2.png" alt="배경" class="banner-bg" />
@@ -11,7 +9,6 @@
        </div>
      </div>
 
-    <!-- 하위 콘텐츠 슬롯 -->
     <div class="content-wrapper">
       <slot />
     </div>
@@ -33,7 +30,6 @@
   right: 50%;
   margin-left: -50vw;
   margin-right: -50vw;
-  max-width: 100vw;
   overflow: hidden;
 }
 
@@ -53,6 +49,7 @@
 }
 
 .banner-text {
+  font-family: 'Noto Sans KR', sans-serif;
   position: absolute;
   top: 55%;
   left: 35%;
@@ -68,6 +65,7 @@
 }
 
 .content-wrapper {
+  font-family: 'Noto Sans KR', sans-serif;
   margin: 0 auto;
   padding: 40px 0px;
   background: white;

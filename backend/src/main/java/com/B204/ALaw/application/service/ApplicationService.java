@@ -155,7 +155,7 @@ public class ApplicationService {
         throw new IllegalStateException("[ApplicationService - 007] 알 수 없는 에러가 발생했습니다. 관리자에게 문의하세요.");
     }
 
-    public void modifyApplication(Long applicationId, ModifyApplicationRequest request, Long clientId) throws Exception {
+    public void modifyApplication(Long applicationId, ModifyApplicationRequest request, Long clientId, boolean isCompleted) throws Exception {
 
         // application 객체 얻기
         Application application = applicationRepository.findById(applicationId).orElseThrow(() -> new NoSuchElementException("[ApplicationService - 008] 해당 ID 값을 가지는 Appointment가 없습니다."));
@@ -164,6 +164,8 @@ public class ApplicationService {
         if(!clientId.equals(application.getClient().getId())) {
             throw new SecurityException("[ApplicationService - 00] 본인이 작성한 신청서만 수정할 수 있습니다.");
         }
+
+        application.setCompleted(isCompleted);
 
         // null이 아닌 필드만 application에 반영
         if(request.getTitle() != null) {

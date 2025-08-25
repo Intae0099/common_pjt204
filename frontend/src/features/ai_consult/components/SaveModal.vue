@@ -1,5 +1,4 @@
 <template>
-  <!-- .self 수정자는 모달창 내부가 아닌 배경을 클릭했을 때만 닫히도록 합니다. -->
   <div class="modal-backdrop" @click.self="closeModal">
     <div class="modal-content">
       <h4 class="modal-title">상담 내용 저장</h4>

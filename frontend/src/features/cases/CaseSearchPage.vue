@@ -1,9 +1,6 @@
-<!-- src/views/CaseSearchPage.vue -->
-
 <template>
   <CaseLayout>
     <LayoutDefault>
-    <!-- 검색 UI는 변경 없음 -->
     <div class="search-container">
       <div class="search-bar">
         <input
@@ -14,13 +11,12 @@
         />
         <button @click="performSearch">→</button>
       </div>
-      <select v-model="sortOption" @change="performSearch" class="sort-select">
+      <select v-model="sortOption" @change="handleSortChange" class="sort-select">
         <option value="accuracy">정확도 순</option>
         <option value="recent">최신 순</option>
       </select>
     </div>
 
-    <!-- 상태 메시지 UI는 변경 없음 -->
     <div v-if="isLoading" class="status-message">
       <p>판례를 검색 중입니다...</p>
     </div>
@@ -28,18 +24,16 @@
       <p>{{ error }}</p>
     </div>
 
-    <!-- ✨ 결과 표시 부분 수정 -->
     <div v-else-if="hasResults">
-      <!-- v-for는 이제 `paginatedCaseList` getter를 사용합니다. -->
       <div class="case-list">
         <CaseCard
           v-for="item in paginatedCaseList"
           :key="item.caseId"
           :data="item"
+          :highlight="query"
         />
       </div>
 
-      <!-- ✨ 페이지네이션 UI 추가 -->
       <div v-if="totalPages > 1" class="pagination-container">
         <button
           @click="setPage(currentPage - 1)"
@@ -67,7 +61,6 @@
       </div>
     </div>
 
-    <!-- 검색 결과 없음 메시지 UI는 변경 없음 -->
     <div v-else class="status-message">
       <p>{{ searchPerformed ? '검색 결과가 없습니다.' : '판례를 검색해 보세요.' }}</p>
     </div>
@@ -83,7 +76,9 @@ import { useCasesStore } from '@/stores/cases';
 import { storeToRefs } from 'pinia';
 import { onMounted } from 'vue'
 
-onMounted(()=>{ window.scrollTo(0, 0);})
+onMounted(()=>{
+  window.scrollTo(0, 0);
+})
 
 // 1. 스토어 인스턴스 생성
 const casesStore = useCasesStore();
@@ -109,6 +104,12 @@ const { searchCases, setPage } = casesStore;
 const performSearch = () => {
   searchCases();
 };
+
+const handleSortChange = () => {
+  // `v-model`이 이미 `sortOption` 상태를 변경했습니다.
+  // 우리는 페이지만 1로 리셋하여 사용자 경험을 향상시킵니다.
+  setPage(1);
+};
 </script>
 
 <style scoped>
@@ -124,13 +125,13 @@ const performSearch = () => {
   display: flex;
   align-items: center;
   width: 600px;
-  border: 1px solid #b4c3d1;
-  border-radius: 10px;
+  border: 1px solid #cfcfcf;
+  border-radius: 15px;
   padding: 0.75rem 1rem;
   transition: border 0.3s ease;
 }
 .search-bar:hover {
-  border: 1px solid #007bff;
+  border: 1px solid #6c9bcf
 }
 .search-bar input {
   flex: 1;
@@ -145,7 +146,7 @@ const performSearch = () => {
   background: none;
   cursor: pointer;
   font-size: 18px;
-  color: #007bff;
+  color: #888;
   transition: transform 0.2s ease;
 }
 .search-bar button:hover {
@@ -155,29 +156,46 @@ const performSearch = () => {
   appearance: none;
   height: 30px;
   padding: 0 2.5rem 0 1rem;
-  border: 1px solid #b4c3d1;
+  border: 1px solid #cfcfcf;
   border-radius: 15px;
   font-size: 12px;
-  color: #333;
-  background-image: url("data:image/svg+xml,%3Csvg fill='black' height='16' viewBox='0 0 24 24' width='16' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+  color:  #888;
+  background-image: url("data:image/svg+xml,%3Csvg fill='gray' height='16' viewBox='0 0 24 24' width='16' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 1rem center;
   background-size: 12px;
 }
+
 .status-message {
   text-align: center;
   margin-top: 2rem;
-  color: #666;
+  color: #888;
 }
 .error {
   color: red;
 }
-.case-list {
-  /* 필요하다면 여기에 case-list 스타일 추가 */
+
+/* 결과 카드 리스트 레이아웃 */
+.case-list{
+  max-width: 980px;            /* 배너/검색과 균형 */
+  margin: 24px auto 0;
+  display: grid;
+  gap: 12px;                   /* 카드 간격 */
+  grid-template-columns: 3fr;  /* 기본 1열 */
 }
+
+/* 넓은 화면에서는 2열로 (검색바 폭 600px과도 균형) */
+@media (min-width: 1200px){
+  .case-list{
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+}
+
 
 /* ✨ 페이지네이션 UI 스타일 추가 */
 .pagination-container {
+  font-family: 'Noto Sans KR', sans-serif;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -185,11 +203,11 @@ const performSearch = () => {
   gap: 0.5rem;
 }
 .page-btn {
-  border: 1px solid #ddd;
+  border: none;
   background-color: #fff;
-  color: #337ab7;
+  color: #6c9bcf;
   padding: 8px 12px;
-  border-radius: 4px;
+  border-radius: 8px;
   cursor: pointer;
   transition: background-color 0.2s;
 }
@@ -197,13 +215,13 @@ const performSearch = () => {
   background-color: #eee;
 }
 .page-btn.active {
-  background-color: #337ab7;
+  background-color: #6c9bcf;
   color: white;
-  border-color: #337ab7;
+  border-color: #6c9bcf;
   cursor: default;
 }
 .page-btn:disabled {
-  color: #ccc;
+  color: #cfcfcf;
   cursor: not-allowed;
 }
 </style>

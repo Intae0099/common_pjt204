@@ -103,7 +103,7 @@ public class LawyerService implements UserDetailsService {
     // 3) 토큰 생성
     String accessToken = jwtUtil.generateAccessToken(
         String.valueOf(lawyer.getId()), roles, "LAWYER");
-    String refreshToken = jwtUtil.generateRefreshToken(String.valueOf(lawyer.getId()));
+    String refreshToken = jwtUtil.generateRefreshToken(String.valueOf(lawyer.getId()), "LAWYER");
 
     // 4) DB에 리프레시 토큰 저장
     refreshTokenService.createForLawyer(lawyer, refreshToken);
@@ -112,7 +112,7 @@ public class LawyerService implements UserDetailsService {
     ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", refreshToken)
         .httpOnly(true)
         .secure(true)
-        .sameSite("Strict")
+        .sameSite("None")
         .path("/")
         .maxAge(Duration.ofDays(7))
         .build();

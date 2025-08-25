@@ -19,6 +19,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import java.util.Set;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -29,6 +30,8 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseCookie;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.authentication.LockedException;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.Customizer;
@@ -64,7 +67,6 @@ public class SecurityConfig {
 
   private final ClientService clientService;
   private final RefreshTokenService refreshTokenService;
-  private final AdminService adminService;
 
   public SecurityConfig(
       JwtUtil jwtUtil,
@@ -76,8 +78,8 @@ public class SecurityConfig {
     this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     this.clientService = clientService;
     this.refreshTokenService = refreshTokenService;
-    this.adminService = adminService;
   }
+
 
   @Component
   public static class OAuth2JwtSuccessHandler implements AuthenticationSuccessHandler {
@@ -86,7 +88,6 @@ public class SecurityConfig {
     private final JwtUtil jwtUtil;
     private final RefreshTokenService refreshTokenService;
     private final ClientRegistrationRepository clientRegRepo; // UserNameAttributeName 조회용
-
 
     public OAuth2JwtSuccessHandler(
         ClientRepository clientRepository,
@@ -132,26 +133,85 @@ public class SecurityConfig {
           "CLIENT"
       );
 
-      String refreshToken = jwtUtil.generateRefreshToken(client.getOauthIdentifier());
+      String refreshToken = jwtUtil.generateRefreshToken(client.getOauthIdentifier(), "CLIENT");
       refreshTokenService.createForClient(client, refreshToken);
 
       ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", refreshToken)
           .httpOnly(true)
           .secure(true)
-          .sameSite("Strict")
+          .sameSite("None")
           .path("/")
           .maxAge(Duration.ofDays(7))
           .build();
       res.setHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
 
-      // BE 개발 편의를 위해 8080으로 변경 (-> front 서버 결합 시 5173으로 변경 필요) -> 배포 환경으로 변경
+      /*
+      redirectUrl를 도메인 프론트로 설정
+      String frontBase = resolveFrontRedirectBase(req);
+
+      String redirectUrl = UriComponentsBuilder
+          .fromUriString(frontBase + "/oauth2/callback/kakao")
+          .queryParam("accessToken", accessToken)
+          .build().toUriString();
+
+      System.out.println("frontBase={" +  frontBase + "} redirectUrl={"  +  redirectUrl + "}");
+      */
+
+      String redirectUrl = UriComponentsBuilder
+          .fromUriString("https://i13b204.p.ssafy.io/oauth2/callback/kakao")
+          .queryParam("accessToken", accessToken)
+          .build().toUriString();
+
+      /*
+       redirectUrl을 로컬 프론트로 설정
+       */
+      /*
       String redirectUrl = UriComponentsBuilder
           .fromUriString("http://localhost:5173/oauth2/callback/kakao")
           .queryParam("accessToken", accessToken)
           .build().toUriString();
 
+       */
+
       res.sendRedirect(redirectUrl);
     }
+
+    private String resolveFrontRedirectBase(HttpServletRequest req) {
+      // 1) 프록시 헤더 우선 (운영)
+      String fProto  = header(req, "X-Forwarded-Proto");
+      String fHost   = header(req, "X-Forwarded-Host");
+      String fPrefix = header(req, "X-Forwarded-Prefix"); // 예: "/api"
+
+      if (fHost != null && fHost.contains(",")) fHost = fHost.split(",")[0].trim();
+
+      // ✅ 화이트리스트
+      Set<String> allowHosts = Set.of(
+          "i13b204.p.ssafy.io", "localhost:8080", "localhost"
+      );
+
+      if (fHost != null && allowHosts.contains(fHost)) {
+        String proto = (fProto != null) ? fProto : "https";
+        return proto + "://" + fHost;
+      }
+
+      // 2) 로컬/그 외 폴백
+      String serverName = req.getServerName();
+      if ("localhost".equalsIgnoreCase(serverName)) {
+        return "http://localhost:5173";
+      }
+      if ("i13b204.p.ssafy.io".equalsIgnoreCase(serverName)) {
+        return "";
+      }
+
+      // 마지막 안전 폴백
+      return "http://localhost:5173";
+    }
+
+    private String header(HttpServletRequest req, String name) {
+      String v = req.getHeader(name);
+      return (v == null || v.isBlank()) ? null : v;
+    }
+
   }
 
   @Bean("lawyerAuthenticationManager")
@@ -166,9 +226,7 @@ public class SecurityConfig {
     // UserDetailsService : Lawyer → Spring Security UserDetails 로 변환
     provider.setUserDetailsService(username -> {
       Lawyer lawyer = lawyerService.findByLoginEmail(username);
-      if (lawyer == null) {
-        throw new UsernameNotFoundException("No lawyer: " + username);
-      }
+
       // 권한 목록 (ROLE_LAWYER 고정)
       List<GrantedAuthority> authorities =
           AuthorityUtils.createAuthorityList("ROLE_LAWYER");
@@ -197,11 +255,16 @@ public class SecurityConfig {
   ) throws Exception {
 
     // 의뢰인 OAuth2 로그인 실패 핸들러
-    AuthenticationFailureHandler oauth2FailureHandler = (
-        req,
-        res,
-        ex) ->
-        res.sendError(HttpServletResponse.SC_UNAUTHORIZED, "OAuth2 Login Failed");
+    AuthenticationFailureHandler oauth2FailureHandler = ( req, res, ex) ->{
+      String msg = ex.getMessage();
+      if (msg != null && msg.contains("rate limit")) {
+        res.setStatus(429);
+        res.setContentType("application/json;charset=UTF-8");
+        res.getWriter().write("{\"error\":\"kakao_rate_limit\",\"message\":\"잠시 후 다시 시도해주세요.\"}");
+        return;
+      }
+      res.sendError(HttpServletResponse.SC_UNAUTHORIZED, "OAuth2 Login Failed");
+    };
 
     // 변호사 로컬 로그인 성공 핸들러 → JWT 발급
     AuthenticationSuccessHandler lawyerLoginSuccessHandler =
@@ -212,13 +275,13 @@ public class SecurityConfig {
 
           Lawyer lawyer = lawyerService.findByLoginEmail(email);
           String subject = String.valueOf(lawyer.getId());
-          String refreshToken = jwtUtil.generateRefreshToken(subject);
+          String refreshToken = jwtUtil.generateRefreshToken(subject, "LAWYER");
           refreshTokenService.createForLawyer(lawyer, refreshToken);
 
           ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", refreshToken)
               .httpOnly(true)
               .secure(true)
-              .sameSite("Strict")
+              .sameSite("None")
               .path("/")
               .maxAge(Duration.ofDays(7))
               .build();
@@ -235,15 +298,28 @@ public class SecurityConfig {
         };
 
     // 변호사 로컬 로그인 실패 핸들러
-    AuthenticationFailureHandler lawyerLoginFailureHandler = (req, res, ex) -> {
-      res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+    AuthenticationFailureHandler lawyerLoginFailureHandler =
+        (req, res, ex) -> {
+      int status = HttpServletResponse.SC_UNAUTHORIZED;
+      if(ex instanceof DisabledException || ex instanceof LockedException){
+        status = HttpServletResponse.SC_FORBIDDEN;
+      }
+
+      res.setStatus(status);
       res.setContentType("application/json");
-      res.getWriter().write("{\"error\":\"Lawyer Login Failed\"}");
+      res.setCharacterEncoding("UTF-8");
+
+      String message = switch (status) {
+        case HttpServletResponse.SC_FORBIDDEN -> "{\"error\":\"승인 대기 중이거나 거부된 계정입니다. \"}";
+        default -> "{\"error\":\"아이디 또는 비밀번호가 올바르지 않습니다.\"}";
+      };
+
+      res.getWriter().write(message);
       res.getWriter().flush();
     };
 
     JsonUsernamePasswordAuthenticationFilter jsonLoginFilter =
-        new JsonUsernamePasswordAuthenticationFilter(authManager);
+        new JsonUsernamePasswordAuthenticationFilter(authManager, lawyerService);
     jsonLoginFilter.setFilterProcessesUrl("/api/lawyers/login");
     jsonLoginFilter.setAuthenticationSuccessHandler(lawyerLoginSuccessHandler);
     jsonLoginFilter.setAuthenticationFailureHandler(lawyerLoginFailureHandler);
@@ -255,17 +331,6 @@ public class SecurityConfig {
         // 2) CORS 활성화 (기본 CorsConfigurationSource 빈을 사용하려면 withDefaults())
         .cors(Customizer.withDefaults())
 
-        // 로컬 로그인 설정 (formLogin)
-//        .formLogin(form -> form
-//            .loginPage("http://localhost:5173/")
-//            // .loginProcessingUrl("/auth/login") // POST 요청
-//            .loginProcessingUrl("/api/lawyers/login")
-//            .usernameParameter("loginEmail")
-//            .passwordParameter("password")
-//            .successHandler(lawyerLoginSuccessHandler)
-//            .failureHandler(lawyerLoginFailureHandler)
-//            .permitAll()
-//        )
         .addFilterAt(jsonLoginFilter, UsernamePasswordAuthenticationFilter.class)
 
 
@@ -280,9 +345,6 @@ public class SecurityConfig {
 
         // 세션 설정 (기존 유지: OAuth2용 state 저장 가능)
         .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
-
-        // 인증 Provider 등록
-        // .authenticationProvider(lawyerAuthProvider(lawyerService))
 
         // JWT 필터: OAuth2 로그인 이후에 추가
         .addFilterAfter(jwtAuthenticationFilter, OAuth2LoginAuthenticationFilter.class)
@@ -324,47 +386,14 @@ public class SecurityConfig {
                 "/webjars/**"
             ).permitAll()
 
-            // .requestMatchers("/.well-known/**").permitAll()
-            // .requestMatchers("/api/protected/**").authenticated()
-
             .requestMatchers(HttpMethod.OPTIONS).permitAll()
             .anyRequest().authenticated()
-        );
-
-    return http.build();
-  }
-
-  /**
-   * 관리자 로그인만 해당 메서드에서 처리, 나머지는 LawyerFilterChain에서 처리
-   */
-  @Bean
-  @Order(1)
-  public SecurityFilterChain adminFilterChain(
-      HttpSecurity http,
-      JwtAuthenticationFilter jwtAuthenticationFilter
-  ) throws Exception {
-
-    http
-//        .securityMatcher("/api/admin/**")
-        .securityMatcher("/api/admin/login")
-
-        .csrf(csrf -> csrf.disable())
-        .cors(Customizer.withDefaults())
-
-        .authorizeHttpRequests(auth -> auth
-//            .requestMatchers("/api/admin/**").permitAll()
-            .requestMatchers(HttpMethod.POST, "/api/admin/login").permitAll()
-            .anyRequest().authenticated()
         )
-
-        // JWT 검사 필터
-        .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-
-        // 인증 실패 시 401
-        .exceptionHandling(ex -> ex
-            .authenticationEntryPoint((req, res, ex2) ->
-                res.sendError(HttpServletResponse.SC_UNAUTHORIZED))
-        );
+        .exceptionHandling(ex -> ex.authenticationEntryPoint((req, res, e) -> {
+          res.setStatus(401);
+          res.setContentType("application/json;charset=UTF-8");
+          res.getWriter().write("{\"error\":\"unauthorized\"}");
+        }));
 
     return http.build();
   }
@@ -375,24 +404,10 @@ public class SecurityConfig {
     return new InMemoryOAuth2AuthorizedClientService(registrations);
   }
 
-
   // 이 아래로 로컬 로그인 @@@@@@@@@@@@@@@@@@@@@@@
   @Bean
   public PasswordEncoder passwordEncoder(){
     return new BCryptPasswordEncoder() ;
   }
-
-  @Bean
-  public DaoAuthenticationProvider lawyerAuthProvider(LawyerService lawyerDetailsService) {
-    DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
-    provider.setUserDetailsService(lawyerDetailsService);
-    provider.setPasswordEncoder(passwordEncoder());
-    return provider;
-  }
-
-//  @Bean
-//  public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
-//    return config.getAuthenticationManager();
-//  }
 
 }

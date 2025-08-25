@@ -1,32 +1,39 @@
 <template>
   <div class="profile-edit-container">
-    <!-- ⬅️ 뒤로가기 버튼 + 제목 -->
-    <div class="header-row">
-      <button class="back-btn" @click="goBack">← 마이페이지</button>
-
+    <div class="back-button" @click="goBack">
+      <ChevronLeftIcon class="chevron-icon" />
+      <span>마이페이지</span>
     </div>
+
     <h2>프로필 수정</h2>
 
-    <!-- 프로필 사진 및 업로드 -->
     <div class="profile-photo-wrapper">
       <img
+        v-if="photo"
         :src="`data:image/jpeg;base64,${photo}`"
         alt="프로필 이미지"
         class="profile-img"
       />
-      <label class="upload-label">
-        사진 변경
-        <input type="file" accept="image/*" @change="onFileChange" />
-      </label>
+      <img
+        v-else
+        src="https://via.placeholder.com/120"
+        alt="기본 프로필 이미지"
+        class="profile-img"
+      />
+      <div class="upload-section">
+        <label class="upload-label">
+          사진 변경 (1MB 미만)
+          <input type="file" accept="image/*" @change="onFileChange" />
+        </label>
+        <p v-if="imageError" class="error-message">{{ imageError }}</p>
+      </div>
     </div>
 
-    <!-- 이름 입력 -->
     <div class="section">
       <h3>이름</h3>
       <input type="text" v-model="name" placeholder="이름을 입력하세요" />
     </div>
 
-    <!-- 소개글 입력 -->
     <div class="section">
       <h3>소개글</h3>
       <textarea
@@ -36,7 +43,6 @@
       />
     </div>
 
-    <!-- 태그 선택 -->
     <div class="section">
       <h3>태그 선택</h3>
       <div class="tag-container">
@@ -51,9 +57,8 @@
       </div>
     </div>
 
-    <!-- 저장 버튼 -->
     <div class="footer">
-      <button @click="saveChanges">변경사항 확인</button>
+      <button @click="saveChanges">변경사항 저장</button>
     </div>
   </div>
 </template>
@@ -66,6 +71,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from '@/lib/axios'
 import { TAG_MAP } from '@/constants/lawyerTags'
+import { ChevronLeftIcon } from '@heroicons/vue/24/solid'
 
 const router = useRouter()
 
@@ -73,6 +79,7 @@ const name = ref('')
 const introduction = ref('')
 const selectedTagIds = ref(new Set())
 const photo = ref('')
+const imageError = ref('')
 
 // 🧠 프론트에 고정된 tagMap
 const tagMap = TAG_MAP
@@ -91,14 +98,24 @@ const toggleTag = (tagId) => {
 
 const onFileChange = (e) => {
   const file = e.target.files[0]
-  if (file) {
-    const reader = new FileReader()
-    reader.onload = () => {
-      const base64 = reader.result.split(',')[1]
-      photo.value = base64
-    }
-    reader.readAsDataURL(file)
+  imageError.value = ''
+
+  if (!file) return;
+
+  const MAX_SIZE = 1 * 1024 * 1024;
+  if (file.size > MAX_SIZE) {
+    imageError.value = '이미지 파일은 1MB를 초과할 수 없습니다.';
+    e.target.value = null; // input 값 초기화 (같은 파일 재선택 가능하게)
+    return; // 파일이 크면 여기서 함수를 중단
   }
+
+  const reader = new FileReader()
+  reader.onload = () => {
+    const base64 = reader.result.split(',')[1]
+    photo.value = base64
+  }
+  reader.readAsDataURL(file)
+
 }
 
 const saveChanges = async () => {
@@ -106,11 +123,9 @@ const saveChanges = async () => {
     name: name.value,
     introduction: introduction.value,
     tags: Array.from(selectedTagIds.value),
-
+    photoBase64: photo.value,
   }
-  if (photo.value) {
-  payload.photo = photo.value
-}
+
 
   try {
     await axios.patch('/api/lawyers/me/edit', payload)
@@ -128,7 +143,7 @@ onMounted(async () => {
     name.value = res.data.name
     introduction.value = res.data.introduction
     selectedTagIds.value = new Set(res.data.tags) // ID만 받음
-    photo.value = res.data.photo
+    photo.value = res.data.photoBase64
   } catch (err) {
     console.error('변호사 정보 로딩 실패:', err)
   }
@@ -137,6 +152,20 @@ onMounted(async () => {
 
 
 <style scoped>
+.upload-section {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  margin-left: 14px;
+}
+
+.error-message {
+  color: #d32f2f; /* 에러를 나타내는 빨간색 */
+  font-size: 12px;
+  font-weight: 500;
+}
+
 .header-row {
   display: flex;
   align-items: center;
@@ -163,15 +192,37 @@ onMounted(async () => {
   padding: 40px;
   background-color: #ffffff;
   border-radius: 12px;
-  font-family: 'Pretendard', sans-serif;
-  color: #2B2F38;
+  font-family: 'Noto Sans KR', sans-serif;
+  color: #333333;
 }
+.back-button {
+  margin-top: 10px;
+  margin-bottom: 20px;
+  margin-left: -10px;
+  font-size: 1rem;
+  color: #6c9bcf;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  width: 100px;
+  transition: color 0.2s ease-in-out;
+}
+
+.back-button:hover {
+  color: #cfcfcf;
+}
+.chevron-icon {
+  width: 20px;
+  height: 20px;
+}
+
 
 .profile-edit-container h2 {
   font-size: 24px;
   font-weight: 700;
   margin-bottom: 32px;
-  color: #2B2F38;
+  text-align: center;
 }
 
 .section {
@@ -182,38 +233,40 @@ onMounted(async () => {
   font-size: 16px;
   font-weight: 600;
   margin-bottom: 8px;
-  color: #2B2F38;
+  color: #333333;
 }
 
 input[type="text"],
 textarea {
   width: 100%;
   padding: 12px;
-  border: 1px solid #D5DAE0;
+  border: 1px solid #cfcfcf;
   border-radius: 8px;
   font-size: 14px;
   resize: none;
   background-color: #ffffff;
-  color: #2B2F38;
+  color: #333333;
 }
 
 textarea::placeholder {
-  color: #8590A6;
+  color: #888;
 }
 
 /* 프로필 사진 업로드 */
 .profile-photo-wrapper {
   display: flex;
-  align-items: center;
-  gap: 20px;
+  flex-direction: column;   /* ⬅️ 핵심: 세로 배치 */
+  align-items: flex-start;      /* ⬅️ 이미지 기준 중앙 정렬 (왼쪽 정렬 원하면 flex-start) */
+  gap: 12px;                /* 이미지와 버튼 간격 */
+  width: 100%;
 }
 
 .profile-img {
-  width: 120px;
-  height: 120px;
+  width: 180px;
+  height: 200px;
   border-radius: 8px;
   object-fit: cover;
-  border: 1px solid #D5DAE0;
+  border: 1px solid #f1f1f1;
 }
 
 .upload-label {
@@ -245,13 +298,13 @@ input[type="file"] {
 }
 
 .tag-button {
-  padding: 6px 12px;
-  border: 1px solid #D5DAE0;
-  border-radius: 20px;
-  background-color: #F0F3F8;
+  padding: 4px 8px;
+  border: 1px solid #f1f1f1;
+  border-radius: 12px;
+  background-color: #f1f1f1;
   font-size: 13px;
   cursor: pointer;
-  color: #2B2F38;
+  color: #333;
   transition: all 0.2s;
 }
 
@@ -279,7 +332,7 @@ input[type="file"] {
 }
 
 .footer button:hover {
-  background-color: #1A2F8F;
+  background-color: #6c9bcf;
 }
 
 </style>

@@ -24,10 +24,9 @@
             required
           />
         </div>
-
+        <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
         <button type="submit" class="lawyer-login">로그인</button>
       </form>
-      <router-link to="/findpassword/lawyer">비밀번호를 잊어버리셨나요?</router-link>
     </div>
 
     <div class="footer-links">
@@ -47,7 +46,8 @@ export default {
       form: {
         loginEmail: '',
         password: ''
-      }
+      },
+      errorMessage: ''
     };
   },
   methods: {
@@ -62,13 +62,16 @@ export default {
         authStore.setToken(token);               // ✅ access_token 저장
         authStore.setUserType('LAWYER');         // ✅ userType 저장 (변호사)
 
+        localStorage.setItem('hasRefresh', 'true');
+
         this.$router.push('/lawyer/mypage');     // ✅ 변호사 마이페이지로 이동
       } catch (err) {
         const status = err.response?.status;
-        const msg = err.response?.data?.error;
+        //const msg = err.response?.data?.error;
 
-        if (status === 403 && msg === '계정 승인 대기 중입니다.') {
-          this.$router.push('/pending-notice');
+        if (status === 403) {
+          this.errorMessage = '계정 승인 대기 중입니다.';
+          //this.$router.push('/pending-notice');
         } else if (status === 401) {
           this.errorMessage = '이메일 또는 비밀번호가 올바르지 않습니다.';
         } else if (status === 404) {
@@ -148,6 +151,12 @@ export default {
   font-weight: bold;
   font-size: 15px;
   cursor: pointer;
+}
+
+.error-message {
+  color: red;
+  font-size: 13px;
+  margin-bottom: 15px;
 }
 
 .footer-links {

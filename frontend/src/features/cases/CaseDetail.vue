@@ -1,164 +1,218 @@
-<!-- src/pages/case/CaseDetail.vue -->
 <template>
   <CaseLayout>
-    <div class="text-wrapper-9 back-button" @click="goBack">이전</div>
-    <div v-if="isLoading" class="status-message">
-      <p>판례 정보를 불러오는 중입니다...</p>
+    <LayoutDefault>
+    <div class="back-button" @click="goBack">
+        <ChevronLeftIcon class="chevron-icon" />
+        <span>이전</span>
     </div>
-    <div v-else-if="error" class="status-message error">
-      <p>{{ error }}</p>
-    </div>
-  <!-- 데이터가 로드된 후에만 전체 내용을 보여줍니다. -->
-     <div v-else-if="caseData" class="case-detail-container">
-
-      <!-- '이전' 버튼: 클릭 시 뒤로 갑니다. -->
 
 
-      <div class="rectangle-3"></div>
+    <div v-if="isLoading" class="status-message"><p>판례 정보를 불러오는 중입니다...</p></div>
+    <div v-else-if="error" class="status-message error"><p>{{ error }}</p></div>
 
-      <!-- 제목 -->
-      <p class="text-wrapper-10">{{ caseData.title }}</p>
+    <section v-else-if="caseData" class="detail-container">
+      <header class="title-block">
+        <h1 class="title">{{ caseData.title }}</h1>
+      </header>
 
-      <div class="text-wrapper-12">사건번호</div>
-      <div class="text-wrapper-19">{{ caseData.caseNumber }}</div>
-
-      <div class="text-wrapper-17">사건종류</div>
-      <div class="text-wrapper-23">{{ caseData.category }}</div>
-
-      <div class="text-wrapper-18">선고일자</div>
-      <div class="text-wrapper-24">{{ caseData.decisionDate }}</div>
-
-      <!-- 참조 법령 -->
-      <div class="overlap">
-        <div class="text-wrapper-13">
-          참조 법령
-          <br />
-          조문 목록
+      <section class="meta-card">
+        <div class="meta-grid">
+          <div class="meta-item">
+            <span class="meta-label">사건번호</span>
+            <span class="meta-value">{{ caseData.caseId || '-' }}</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">사건종류</span>
+            <span class="meta-value badge">{{ caseData.category || '-' }}</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">선고일자</span>
+            <time class="meta-value">{{ caseData.decisionDate || '-' }}</time>
+          </div>
         </div>
-        <!-- v-html을 사용하여 <br> 태그가 렌더링되도록 합니다. -->
-        <p class="text-wrapper-14" v-html="caseData.statutes"></p>
+      </section>
+
+      <section class="content-card" v-if="caseData.statutes">
+        <h2 class="section-title">참조 법령 · 조문</h2>
+        <div class="richtext" v-html="caseData.statutes"></div>
+      </section>
+
+      <section class="content-card" v-if="caseData.issue">
+        <h2 class="section-title">판시사항</h2>
+        <div class="richtext" v-html="caseData.issue"></div>
+      </section>
+
+      <section class="content-card" v-if="caseData.summary">
+        <h2 class="section-title">판결요지</h2>
+        <div class="richtext" v-html="caseData.summary"></div>
+      </section>
+
+      <section class="content-card" v-if="caseData.fullText">
+        <h2 class="section-title">판례전문</h2>
+        <div class="richtext" v-html="caseData.fullText"></div>
+      </section>
+
+      <div class="bottom-actions">
+        <button class="to-list" @click="goBack">목록으로</button>
+        <button class="to-top" @click="scrollToTop">맨 위로 ↑</button>
+
       </div>
+    </section>
 
-      <!-- 판시사항 -->
-      <div class="text-wrapper-15">판시사항</div>
-      <p class="text-wrapper-20" v-html="caseData.issue"></p>
-
-      <!-- 판결요지 -->
-      <div class="text-wrapper-16">판결요지</div>
-      <p class="text-wrapper-21" v-html="caseData.summary"></p>
-
-      <!-- 판례전문 -->
-      <div class="text-wrapper-11">판례전문</div>
-      <p class="text-wrapper-22" v-html="caseData.fullText"></p>
-
-    </div>
-    <!-- 데이터가 로드되기 전이나 없을 때 보여줄 메시지 -->
-    <div v-else>
-      <p>판례 정보를 불러오는 중입니다...</p>
-    </div>
+    <div v-else class="status-message"><p>판례 정보를 불러오는 중입니다...</p></div>
+    </LayoutDefault>
   </CaseLayout>
 </template>
 
 <script setup>
-import CaseLayout from '@/components/layout/CaseLayout.vue';
-import { ref, onMounted } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
-import { fastapiApiClient } from '@/lib/axios';
+import CaseLayout from '@/components/layout/CaseLayout.vue'
+import { ref, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { fastapiApiClient } from '@/lib/axios'
+import LayoutDefault from '@/components/layout/LayoutDefault.vue'
+import { ChevronLeftIcon } from '@heroicons/vue/24/solid'
 
-// 라우트 정보와 라우터 인스턴스를 가져옵니다.
-const route = useRoute();
-const router = useRouter();
-// 판례 상세 데이터를 담을 ref
-const caseData = ref(null);
-const isLoading = ref(true);
-const error = ref(null);
+const route = useRoute()
+const router = useRouter()
 
+const caseData = ref(null)
+const isLoading = ref(true)
+const error = ref(null)
 
-// 뒤로 가기 함수
-const goBack = () => {
-  router.go(-1);
-};
+const goBack = () => router.go(-1)
 
-// API 응답에 <br> 태그 등이 이미 포함되어 있을 수 있으므로,
-// 추가 변환 없이 그대로 사용하거나, 필요 시 줄바꿈 문자를 <br>로 변환
-const formatHtml = (text) => {
-  if (!text) return '';
-  // 예시: API 응답이 순수 텍스트이고 줄바꿈(\n)이 있다면 <br>로 변환
-  // return text.replace(/\n/g, '<br />');
-  return text; // API 응답을 믿고 그대로 반환
-};
+/* ✅ 맨 위로 스크롤 함수 */
+const scrollToTop = () => {
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
 
 onMounted(async () => {
-  const precId = route.params.id;
+  const precId = route.params.id
   if (!precId) {
-    error.value = '잘못된 접근입니다. 판례 ID가 없습니다.';
-    isLoading.value = false;
-    return;
+    error.value = '잘못된 접근입니다. 판례 ID가 없습니다.'
+    isLoading.value = false
+    return
   }
-
   try {
-    isLoading.value = true;
-    error.value = null;
-
-    // ✨ fastapiApiClient를 사용하여 호출합니다.
-    const response = await fastapiApiClient.get(`/cases/${precId}`);
-
-    if (response.data.success) {
-      caseData.value = response.data.data;
+    isLoading.value = true
+    const { data } = await fastapiApiClient.get(`/cases/${precId}`)
+    if (data.success) {
+      caseData.value = data.data
     } else {
-      throw new Error(response.data.error.message);
+      throw new Error(data.error?.message || '오류')
     }
   } catch (err) {
-    console.error('판례 상세 조회 실패:', err);
-    if (err.response?.status === 404) {
-      error.value = '해당 판례를 찾을 수 없습니다.';
-    } else {
-      error.value = err.response?.data?.error?.message || '정보를 불러오는 데 실패했습니다.';
-    }
+    console.error(err)
+    error.value = err.response?.data?.error?.message || '정보를 불러오는 데 실패했습니다.'
   } finally {
-    isLoading.value = false;
+    isLoading.value = false
   }
-});
-
-/*
-// 백엔드 API를 대체할 더미 데이터베이스
-const dummyDB = [
-  {
-    id: '1', // URL 파라미터는 문자열이므로 id도 문자열로 맞추는 것이 안전합니다.
-    title: '유언효력확인의소[녹음에 의한 유언의 효력 확인을 구한 사건]',
-    caseNumber: '대법원 2023. 6. 1. 선고 2023다215537 판결', // 사건번호를 더 명확하게 수정
-    category: '민사',
-    decisionDate: '2023-06-01',
-    statutes: `[1]민법 제1067조, 제1073조, 민사소송법 제288조, 제355조 <br />[2]민사소송법 제202조`,
-    issue: `[1] 유언증서가 성립한 후에 멸실되거나 분실된 경우, 이해관계인이 유언증서의 내용을 증명하여 유언의 유효를 주장할 수 있는지 여부(적극) 및 이는 녹음에 의한 유언이 성립한 후에 녹음테이프나 녹음파일 등이 멸실 또는 분실된 경우에도 마찬가지인지 여부(적극) / 원본의 존재 및 원본 성립의 진정에 관하여 다툼이 있고 사본을 원본의 대용으로 하는 것에 대하여 상대방으로부터 이의가 있는 경우, 사본으로써 원본을 대신할 수 있는지 여부(소극) 및 서증으로서 사본 제출의 효과 / 서증 제출에 있어 원본을 제출할 필요가 없는 경우 및 그 주장·증명책임의 소재(=해당 서증의 신청당사자)
-      <br /><br />
-      [2] 감정인의 감정 결과의 증명력`,
-    summary: `[1] 유언증서가 성립한 후에 멸실되거나 분실되었다는 사유만으로 유언이 실효되는 것은 아니고 이해관계인은 유언증서의 내용을 증명하여 유언의 유효를 주장할 수 있다. 이는 녹음에 의한 유언이 성립한 후에 녹음테이프나 녹음파일 등이 멸실 또는 분실된 경우에도 마찬가지이다. ... (이하 생략)`,
-    fullText: `【원고, 피상고인】 원고 1 외 2인 (소송대리인 법무법인 서휘 담당변호사 김익현 외 5인) <br />【피고, 상고인】 피고 (소송대리인 법무법인 가람 외 1인) <br />【원심판결】 서울고법 2023. 2. 1. 선고 2021나2035828 판결 ... (이하 생략)`
-  },
-  {
-    id: '2',
-    title: '손해배상 청구 사건 (예시)',
-    caseNumber: '대법원 2022. 5. 1. 선고 2022다12345 판결',
-    category: '민사',
-    decisionDate: '2022-05-01',
-    statutes: `민법 제750조`,
-    issue: `불법행위로 인한 손해배상 책임의 성립 요건에 관한 판시사항입니다.`,
-    summary: `고의 또는 과실로 인한 위법행위로 타인에게 손해를 가한 자는 그 손해를 배상할 책임이 있다.`,
-    fullText: `손해배상 청구 사건의 상세 전문 내용입니다.`
-  },
-  // 다른 판례 데이터 추가 가능
-];
-
-onMounted(() => {
-  // 현재 URL에서 'id' 파라미터를 가져옵니다.
-  const currentCaseId = route.params.id;
-
-  // 더미 데이터베이스에서 해당 id를 가진 판례를 찾습니다.
-  // 실제 애플리케이션에서는 이 부분에서 API를 호출합니다.
-  // 예: const response = await fetch('/api/cases/' + currentCaseId);
-  //     caseData.value = await response.json();
-  caseData.value = dummyDB.find(item => item.id === currentCaseId);
-});
-*/
+})
 </script>
+
+
+<style scoped>
+.back-button {
+  margin-top: 10px;
+  margin-bottom: 20px;
+  margin-left: -10px;
+  font-size: 1rem;
+  color: #6c9bcf;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  width: 80px;
+  transition: color 0.2s ease-in-out;
+}
+
+.back-button:hover {
+  color: #cfcfcf;
+}
+.chevron-icon {
+  width: 20px;
+  height: 20px;
+}
+
+
+
+/* 상단 바 */
+.detail-topbar{
+  max-width: 980px; margin: 24px auto 10px; display:flex; align-items:center; gap:10px;
+}
+
+/* 컨테이너 */
+.detail-container{ max-width:980px; margin: 0 auto 60px; }
+.title-block{
+  position:relative; padding:18px 22px 10px 22px; margin-bottom:12px; border-left:4px solid #6c9bcf;
+}
+.title{ margin-bottom:10px; font-size:24px; line-height:1.5; font-weight:800; color:#333333; word-break: keep-all; }
+
+/* 메타 카드 */
+.meta-card{
+  border:1px solid #cfcfcf; border-radius:15px; background:#fff; padding:16px 18px; margin-bottom:16px;
+}
+.meta-grid{
+  display:grid; grid-template-columns: 1fr 1fr 1fr; gap:20px;
+}
+.meta-item{ display:flex; flex-direction:column; gap:6px; }
+.meta-label{ font-size:12px; color:#888; }
+.meta-value{ font-size:14px; color:#333333; }
+.badge{
+  width: 200px; display:inline-block; padding:4px 30px; border:1px solid #e7eef7; background:#f4f7fb; border-radius:10px; color:#355a88;
+}
+
+/* 콘텐츠 카드 공통 */
+.content-card{
+  border:1px solid #cfcfcf; border-radius:16px; background:#fff; padding:20px 22px; margin-bottom:16px;
+}
+.section-title{
+  margin:0 16px 10px 0; font-size:16px; font-weight:700; color:#333333; position:relative;
+}
+.section-title::after{
+  content:''; display:block; width:28px; height:3px; border-radius:2px; background:#6c9bcf; margin-top:6px;
+}
+
+/* 본문 리치텍스트 가독성 */
+.richtext{
+  color:#333333; font-size:15px; line-height:1.85;white-space: pre-line;
+}
+.richtext :is(p, li){ margin: 8px 0; }
+.richtext br{ content:''; display:block; margin-bottom:6px; }
+.richtext b, .richtext strong{ font-weight:700; }
+.richtext u{ text-underline-offset:2px; }
+.richtext a{ color:#2b6cb0; text-decoration:underline; }
+
+/* 하단 동작 */
+.bottom-actions{ display:flex; justify-content:flex-end; gap:8px; margin-top:10px; }
+.to-list{
+  appearance: none;
+  height: 30px;
+  padding: 0 1rem;
+  border: 1px solid #cfcfcf;
+  border-radius: 15px;
+  font-size: 15px;
+  color:  #888;
+  background-color: #fff;
+}
+
+.to-top{
+  border:none; background:#fff; color: #6c9bcf; padding: 0 2.5rem 0 1rem; cursor:pointer;
+}
+.to-top:hover{ color:#cfcfcf; }
+
+/* 상태 */
+.status-message{ text-align:center; margin:40px 0; color:#888 }
+.error{ color:#d33 }
+
+/* 반응형 */
+@media (max-width: 1024px){
+  .meta-grid{ grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 640px){
+  .detail-topbar{ margin-top: 12px; }
+  .title{ font-size:20px; }
+  .meta-grid{ grid-template-columns: 1fr; }
+  .content-card{ padding:16px; }
+}
+</style>

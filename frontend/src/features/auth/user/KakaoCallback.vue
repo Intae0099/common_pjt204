@@ -11,15 +11,15 @@ const router = useRouter()
 const auth = useAuthStore()
 
 onMounted(() => {
-  console.log('window.location.search:', window.location.search)
   const params      = new URLSearchParams(window.location.search)
   const accessToken = params.get('accessToken')   // 여기서도 accessToken
-  console.log('parsed accessToken:', accessToken)
 
   if (accessToken) {
     auth.setToken(accessToken)
     auth.setUserType('USER')
+    localStorage.setItem('hasRefresh', 'true');
     router.replace({ name: 'UserMyPage' })
+
   } else {
     alert('로그인에 실패했습니다.')
     router.replace({ name: 'SocialLogin' })

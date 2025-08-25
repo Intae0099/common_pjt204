@@ -1,11 +1,11 @@
 <template>
   <div class="admin-container">
     <aside class="admin-sidebar">
+      <img class="logo-image" src="@/assets/logo-white.png" alt="에이로로고">
       <h2>관리자 메뉴</h2>
       <nav>
         <ul>
           <li>
-            <!-- name을 사용한 라우터 링크 -->
             <router-link :to="{ name: 'admin-lawyer-management' }">변호사 인증 관리</router-link>
           </li>
           <li>
@@ -21,30 +21,35 @@
       </nav>
     </aside>
     <main class="admin-content">
-      <!-- 자식 라우트의 컴포넌트가 이 자리에 렌더링됩니다. -->
       <router-view />
     </main>
   </div>
 </template>
 
 <script setup>
-// 이 컴포넌트는 레이아웃 역할만 하므로 스크립트는 비워둬도 됩니다.
 </script>
 
 <style scoped>
 .admin-container {
   display: flex;
   min-height: 100vh;
+  font-family: 'Noto Sans KR', sans-serif;
+}
+.logo-image {
+  width: 150px;
+  margin-left: 7px;
 }
 .admin-sidebar {
-  width: 240px;
-  background-color: #2c3e50;
+  flex: 0 0 220px;
+  width: 220px;
+  background-color: #1d2b50;
   color: white;
-  padding: 20px;
+  padding: 60px 20px 20px 20px;
 }
 .admin-sidebar h2 {
-  margin-top: 0;
-  text-align: center;
+  margin-top: 10px;
+  margin-left: 10px;
+  /* text-align: center; */
 }
 .admin-sidebar nav ul {
   list-style: none;
@@ -60,11 +65,14 @@
 }
 .admin-sidebar nav li a:hover,
 .router-link-exact-active { /* 현재 활성화된 링크 스타일 */
-  background-color: #34495e;
+  color: #6c9bcf;
 }
+
 .admin-content {
   flex-grow: 1;
-  padding: 20px;
-  background-color: #f4f6f9;
+  padding: 40px;
+  background-color: #f1f1f1;
+  font-family: 'Noto Sans KR', sans-serif;
+  color: #333
 }
 </style>

@@ -3,102 +3,91 @@
      :class="[isMenuOpen ? 'navbar--default-text' : navbarTextColorClass, { 'navbar--scrolled': isScrolled }]">
 
 
-    <!-- 배경 어두운 오버레이 (메뉴 바깥 누르면 닫힘) -->
     <div v-if="isMenuOpen" class="menu-backdrop" @click="isMenuOpen = false"></div>
 
     <div class="container d-flex justify-content-between align-items-center">
 
-      <!-- 왼쪽: 로고 -->
-      <RouterLink to="/" class="fw-bold text-dark text-decoration-none">LOGO</RouterLink>
+      <RouterLink to="/" class="fw-bold text-dark text-decoration-none">
+        <img :src="logoSrc" alt="로고" style="height: 25px;" />
+      </RouterLink>
 
-      <!-- 햄버거 아이콘 (모바일용) -->
       <button class="btn d-lg-none" @click="isMenuOpen = !isMenuOpen">
         <Bars2Icon class="hamburger-icon" />
       </button>
 
-      <!-- 가운데: 메뉴 목록 (PC) -->
       <ul class="nav gap-4 d-none d-lg-flex">
         <li class="nav-item">
-          <RouterLink to="/ai-consult" class="nav-link">AI사전상담</RouterLink>
+          <RouterLink to="/ai-consult" class="nav-link" @click="refreshData">AI사전상담</RouterLink>
         </li>
         <li class="nav-item">
-          <RouterLink to="/cases/search" class="nav-link" :class="{ active: isActive('/cases/search') }">판례 검색</RouterLink>
+          <RouterLink to="/cases/search" class="nav-link" :class="{ active: isActive('/cases/search') }" @click="refreshData">판례 검색</RouterLink>
         </li>
         <li class="nav-item">
-          <RouterLink to="/lawyers" class="nav-link">변호사 조회</RouterLink>
+          <RouterLink to="/lawyers" class="nav-link" @click="refreshData">변호사 찾기</RouterLink>
         </li>
         <li class="nav-item">
-          <RouterLink to="/consult-form" class="nav-link" :class="{ active: isActive('/consult-form') }" @click.prevent="goToConsultForm">AI상담신청서</RouterLink>
+          <RouterLink to="/consult-form" class="nav-link" :class="{ active: isActive('/consult-form') }" @click="refreshData" @click.prevent="goToConsultForm">AI상담신청서</RouterLink>
         </li>
         <li class="nav-item">
-          <RouterLink to="/videocall/preview/client" class="nav-link">화상상담</RouterLink>
+          <RouterLink :to="videoCallPath" class="nav-link" @click="refreshData">화상상담</RouterLink>
         </li>
       </ul>
 
-      <!-- 오른쪽: 마이페이지 & 로그아웃 (PC) -->
       <div class="d-none d-lg-block">
-        <!-- 로그인 상태일 때 -->
         <template v-if="isLoggedIn">
-          <RouterLink :to="mypagePath" class="me-3 text-dark fw-medium text-decoration-none">
+          <RouterLink :to="mypagePath" class="me-3 fw-medium text-decoration-none nav-link" @click="refreshData">
             마이페이지
           </RouterLink>
-          <a href="#" class="text-dark fw-medium text-decoration-none" @click.prevent="logout">
-            Logout
+          <a href="#" class="fw-medium text-decoration-none nav-link" @click.prevent="logout">
+            로그아웃
           </a>
         </template>
 
-        <!-- 로그아웃 상태일 때 -->
         <template v-else>
-          <RouterLink to="/login" class="text-dark fw-medium text-decoration-none">
-            Login
+          <RouterLink to="/login" class="fw-medium text-decoration-none nav-link">
+            로그인
           </RouterLink>
         </template>
       </div>
 
     </div>
 
-    <!-- 모바일 메뉴 슬라이드 -->
     <div
       :class="['mobile-menu', { open: isMenuOpen }]"
       class="d-lg-none"
       @click.stop
     >
-      <!-- 닫기 아이콘 -->
       <button class="close-button" @click="isMenuOpen = false">
         <XMarkIcon class="close-icon" />
       </button>
 
       <div class="mobile-menu-inner d-flex flex-column h-100">
-        <!-- 상단 메뉴 -->
         <ul class="nav flex-column p-3 pt-5 text-start">
-          <li class="nav-item"><RouterLink to="/ai-consult" class="nav-link">AI사전상담</RouterLink></li>
-          <li class="nav-item"><RouterLink to="/cases/search" class="nav-link">판례 검색</RouterLink></li>
-          <li class="nav-item"><RouterLink to="/lawyers" class="nav-link">변호사 조회</RouterLink></li>
-          <li class="nav-item"><RouterLink to="/consult-form" class="nav-link" @click.prevent="handleMobileConsultFormClick">AI상담신청서</RouterLink></li>
-          <li class="nav-item"><RouterLink to="/videocall/preview/client" class="nav-link">화상상담</RouterLink></li>
+          <li class="nav-item"><RouterLink to="/ai-consult" class="nav-link" @click="refreshData">AI사전상담</RouterLink></li>
+          <li class="nav-item"><RouterLink to="/cases/search" class="nav-link" @click="refreshData">판례 검색</RouterLink></li>
+          <li class="nav-item"><RouterLink to="/lawyers" class="nav-link" @click="refreshData">변호사 조회</RouterLink></li>
+          <li class="nav-item"><RouterLink to="/consult-form" class="nav-link" @click.prevent="handleMobileConsultFormClick" @click="refreshData">AI상담신청서</RouterLink></li>
+          <li class="nav-item"><RouterLink :to="videoCallPath" class="nav-link" @click="refreshData">화상상담</RouterLink></li>
         </ul>
 
-        <!-- 하단 마이페이지 / Login, Logout -->
         <ul class="nav flex-column px-3 pb-4 text-start menu-footer">
-          <!-- 로그인 상태일 때: 마이페이지 + 로그아웃 -->
           <template v-if="isLoggedIn">
             <li class="nav-item">
-              <RouterLink :to="mypagePath" class="nav-link text-dark fw-medium text-decoration-none">
+              <RouterLink :to="mypagePath" class="nav-link text-dark fw-medium text-decoration-none" @click="refreshData">
                 마이페이지
               </RouterLink>
             </li>
             <li class="nav-item">
               <a href="#" class="nav-link text-dark fw-medium text-decoration-none" @click.prevent="logout">
-                Logout
+                로그아웃
               </a>
             </li>
           </template>
 
-          <!-- 로그아웃 상태일 때: 로그인 -->
           <template v-else>
             <li class="nav-item">
               <RouterLink to="/login" class="nav-link text-dark fw-medium text-decoration-none">
-                Login
+                로그인
               </RouterLink>
             </li>
           </template>
@@ -114,6 +103,9 @@ import { Bars2Icon, XMarkIcon  } from '@heroicons/vue/24/solid'
 import { useAuthStore } from '@/stores/auth'
 import { useRouter, useRoute } from 'vue-router'
 import { onMounted, onUnmounted, ref, computed } from 'vue'
+import defaultLogo from '@/assets/logo.png'
+import whiteLogo from '@/assets/logo-white.png'
+import axios from '@/lib/axios';
 
 const isMenuOpen = ref(false)
 const authStore = useAuthStore()
@@ -125,14 +117,30 @@ const mypagePath = computed(() =>
   authStore.userType === 'LAWYER' ? '/lawyer/mypage' : '/user/mypage'
 )
 
+const videoCallPath = computed(() =>
+  authStore.userType === 'LAWYER' ? '/videocall/preview/lawyer' : '/videocall/preview/client'
+)
+
+const logoSrc = computed(() => {
+  const whitePages = ['/cases/search', '/consult-form']
+  const isWhitePage = whitePages.includes(route.path)  || route.path.startsWith('/cases/detail');
+
+  if (isWhitePage && !isScrolled.value) {
+    return whiteLogo
+  } else {
+    return defaultLogo
+  }
+})
+
 const logout = () => {
   authStore.clearAuth()
+  localStorage.removeItem('hasRefresh');
   router.push('/login')
 }
 
 const navbarTextColorClass = computed(() => {
-  const whitePages = ['/cases/search', '/consult-form']
-  const isWhitePage = whitePages.includes(route.path)
+  const whitePages = ['/cases/search', '/cases/detail/:id', '/consult-form',]
+  const isWhitePage = whitePages.includes(route.path)  || route.path.startsWith('/cases/detail');
   if (isWhitePage && !isScrolled.value) {
     return 'navbar--white-text'
   } else {
@@ -165,6 +173,28 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll)
 })
+
+/* access 토큰 갱신 */
+const refreshData = async () => {
+  const hasRefresh = localStorage.getItem('hasRefresh') === 'true';
+
+  if (!hasRefresh) {
+    return; // 리프레시 토큰 없다고 판단
+  }
+  try {
+    const res = await axios.post('/api/auth/refresh', null, { withCredentials: true });
+    const { accessToken } = res.data;
+    if (accessToken) {
+      authStore.accessToken = accessToken;
+      localStorage.setItem('accessToken', accessToken);
+      axios.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
+    }
+  } catch (e) {
+    console.error('토큰 갱신 실패:', e);
+  }
+};
+
+
 </script>
 
 <style scoped>
@@ -184,7 +214,7 @@ onUnmounted(() => {
 ::v-deep(a.nav-link) {
   color: #6c9bcf;
   transition: color 0.2s ease;
-  padding: 6px 0;
+  padding: 10px 0;
   text-decoration: none;
   display: inline-block;
 }

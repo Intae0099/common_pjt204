@@ -1,6 +1,5 @@
 <template>
   <form @submit.prevent="submit" class="consult-form">
-    <!-- 사건 제목 -->
     <div class="form-group">
       <div class="label-row">
         <label for="title">사건 제목</label>
@@ -23,20 +22,6 @@
       />
     </div>
 
-    <!-- 사건 한 줄 요약 (읽기 전용) -->
-    <div class="form-group">
-      <label for="summary">사건 한 줄 요약</label>
-      <input
-        id="summary"
-        v-model="form.summary"
-        type="text"
-        placeholder="불러오기를 통해 요약을 불러올 수 있습니다."
-        readonly
-        style="background-color: #f9fafb; color: #6b7280; cursor: not-allowed;"
-      />
-    </div>
-
-    <!-- 사건 개요 -->
      <div class="form-group scrollable-group">
        <label for="content">사건 개요</label>
        <textarea
@@ -48,7 +33,6 @@
        />
      </div>
 
-    <!-- 원하는 결과 -->
     <div class="form-group scrollable-group">
       <label for="outcome">원하는 결과</label>
       <textarea
@@ -59,7 +43,6 @@
       />
     </div>
 
-    <!-- 불리한 점 -->
     <div class="form-group scrollable-group">
       <label for="disadvantage">사건에서 불리한 점</label>
       <textarea
@@ -70,7 +53,6 @@
       />
     </div>
 
-    <!-- 변호사에게 궁금한 점 -->
     <div class="form-group scrollable-group">
       <label for="questions">변호사에게 궁금한 점 (쉼표로 구분)</label>
       <textarea
@@ -80,8 +62,6 @@
         placeholder="예: 무죄 가능할까요?, 운전자 바꿔치기 괜찮을까요?"
       />
     </div>
-
-    <!-- 제출 버튼 -->
     <button v-if="!props.hideSubmitButton" type="submit">AI 상담서 작성하기</button>
   </form>
   <IncidentSelect v-if="showModal" @select="handleSelect" @close="showModal = false" />
@@ -127,16 +107,18 @@ const handleSelect = (data) => {
   form.value.content = data.content
   form.value.summary = data.summary
   emit('application-selected', data.applicationId)
+  showModal.value = false
 }
 
 </script>
 
 <style scoped>
 .consult-form {
+  color: #333333;
   display: flex;
   flex-direction: column;
   gap: 2rem;
-  border: 1px solid #cfdfe9;
+  border: 1px solid #cfcfcf;
   border-radius: 12px;
   padding: 2rem 1rem 3rem 1rem;
   background-color: #fff;
@@ -152,13 +134,13 @@ const handleSelect = (data) => {
 }
 input, textarea {
   padding: 0.75rem;
-  border: 1px solid #ccc;
+  border: 1px solid #cfcfcf;
   border-radius: 8px;
   font-size: 1rem;
   resize: vertical;
 }
 button {
-  background: #072D45;
+  background: #1d2b50; ;
   color: white;
   padding: 0.75rem;
   border: none;
@@ -167,18 +149,18 @@ button {
   margin-top: 20px;
 }
 button:hover {
-  background: #032133;
+  background: #6c9bcf;
 }
 input::placeholder,
 textarea::placeholder {
-  color: #a0aec0;
+  color: #888;
   opacity: 1;
 }
 .fetch-btn {
   font-size: 0.9rem;
   background: none;
   border: none;
-  color: #a0aec0;
+  color: #888;
   cursor: pointer;
   padding: 0;
   margin-top: 0px;
@@ -207,7 +189,7 @@ textarea::placeholder {
 .info-icon {
   width: 20px;
   height: 20px;
-  color: #a0aec0;
+  color: #888;
   cursor: pointer;
 }
 

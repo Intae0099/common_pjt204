@@ -262,7 +262,7 @@ public class ApplicationController {
     }
 
     @PatchMapping("/{applicationId}")
-    public ResponseEntity<ModifyApplicationResponse> modifyApplication(Authentication authentication, @PathVariable Long applicationId, ModifyApplicationRequest request) throws Exception {
+    public ResponseEntity<ModifyApplicationResponse> modifyApplication(Authentication authentication, @PathVariable Long applicationId, @RequestParam(name = "isCompleted", required = false) Boolean isCompleted, @RequestBody ModifyApplicationRequest request) throws Exception {
 
         // Principal 객체 얻기
         Object principal = authentication.getPrincipal();
@@ -270,7 +270,8 @@ public class ApplicationController {
         // 의뢰인이면 그대로 비즈니스 로직 진행, 아니면 에러 응답
         if(principal instanceof ClientPrincipal clientPrincipal) {
             try {
-                applicationService.modifyApplication(applicationId, request, clientPrincipal.getId());
+                boolean completedFlag = (isCompleted != null && isCompleted);
+                applicationService.modifyApplication(applicationId, request, clientPrincipal.getId(), completedFlag);
             } catch(NoSuchElementException e) {
                 ModifyApplicationResponse modifyApplicationResponse = ModifyApplicationResponse.builder()
                         .success(false)

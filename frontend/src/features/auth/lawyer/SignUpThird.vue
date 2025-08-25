@@ -1,33 +1,31 @@
 <template>
   <div class="signup-wrapper">
-    <!-- 상단 제목 -->
     <div class="signup-header">
       <h2 class="signup-title">변호사 회원가입</h2>
       <p class="signup-subtitle">회원정보를 입력해주세요</p>
     </div>
 
-    <!-- 페이지 단계 표시 -->
     <div class="step-indicator">
-      <span class="step">1</span>
-      <span class="dot">···</span>
-      <span class="step">2</span>
-      <span class="dot">···</span>
+      <span class="step" @click="goToFirstStep">1</span>
+      <span class="dot"></span>
+      <span class="step" @click="goToSecondStep">2</span>
+      <span class="dot"></span>
       <span class="step active">3</span>
     </div>
 
-    <!-- 회원가입 폼 -->
     <div class="signup-box">
       <form @submit.prevent="handleSubmit" class="form-area">
-        <!-- 프로필 사진 -->
         <div class="form-group">
-          <label>프로필 사진 (필수)</label>
-          <input type="file" accept="image/*" @change="handleImageUpload" />
+          <label>프로필 사진 (필수, 1MB 미만)</label>
+          <input type="file" accept="image/*" class="file-choice" @change="handleImageUpload" />
+
+          <p v-if="imageError" class="error-message">{{ imageError }}</p>
+
           <div v-if="form.photoPreview">
             <img :src="form.photoPreview" alt="사진 미리보기" class="profile-preview" />
           </div>
         </div>
 
-        <!-- 소개글 -->
         <div class="form-group">
           <label>소개글 (필수)</label>
           <textarea
@@ -38,7 +36,6 @@
           ></textarea>
         </div>
 
-        <!-- 태그 선택 -->
         <div class="form-group">
           <label>태그 선택 (1개 이상 필수 선택)</label>
           <div class="tag-list">
@@ -59,7 +56,6 @@
       </form>
     </div>
 
-    <!-- 완료 모달 -->
     <BaseModal
       :visible="showModal"
       message="인증까지 2~3일이 소요됩니다."
@@ -87,7 +83,9 @@ export default {
         photoPreview: ''
       },
       tagMap: TAG_MAP,
-      showModal: false
+      showModal: false,
+      // [수정 2] 이미지 에러 메시지를 위한 상태 추가
+      imageError: ''
     };
   },
   computed: {
@@ -104,9 +102,33 @@ export default {
         this.form.tags.push(tagId);
       }
     },
+
+    goToFirstStep() {
+      this.$router.push('/signup/step1'); // SignUpFirst.vue의 경로
+    },
+    goToSecondStep() {
+      this.$router.push('/signup/step2'); // SignUpFirst.vue의 경로
+    },
+
+
+    // [수정 3] 파일 크기 검증 로직 추가된 handleImageUpload 메소드
     handleImageUpload(event) {
       const file = event.target.files[0];
+      this.imageError = ''; // 새 파일 선택 시 기존 에러 메시지 초기화
+
       if (!file) return;
+
+      // 1MB 파일 크기 제한 설정 (1 * 1024 * 1024 bytes)
+      const MAX_SIZE = 1048576;
+      if (file.size > MAX_SIZE) {
+        this.imageError = '이미지 파일은 1MB를 초과할 수 없습니다.';
+        // input 값과 미리보기 초기화
+        event.target.value = null;
+        this.form.photo = '';
+        this.form.photoPreview = '';
+        return; // 파일이 크면 여기서 함수를 중단
+      }
+
       const reader = new FileReader();
       reader.onload = (e) => {
         const base64String = e.target.result.split(',')[1];
@@ -115,18 +137,22 @@ export default {
       };
       reader.readAsDataURL(file);
     },
+
     async handleSubmit() {
-      this.authStore.updateSignup({
+      const previousSignupData = this.authStore.signupData;
+
+      const payload = {
+        ...previousSignupData,
         introduction: this.form.introduction,
         tags: this.form.tags,
-        photo: this.form.photo
-      });
-      const payload = { ...this.authStore.signupData };
+        photoBase64: this.form.photo
+      };
+
       try {
         await axios.post('/api/lawyers/signup', payload);
         this.showModal = true;
       } catch (error) {
-        console.error('회원가입 실패:', error);
+        console.error('회원가입 실패:', error.response?.data || error.message);
         alert('회원가입에 실패했습니다. 다시 시도해주세요.');
       }
     },
@@ -140,12 +166,13 @@ export default {
 </script>
 
 <style scoped>
-/* 기존 스타일 유지 */
+/* 기존 스타일은 그대로 유지 */
 .signup-wrapper {
   display: flex;
   flex-direction: column;
   align-items: center;
   margin-top: 120px;
+  margin-bottom: 50px;
   font-family: 'Pretendard', sans-serif;
 }
 .signup-header {
@@ -182,11 +209,11 @@ export default {
   font-size: 1.5rem;
 }
 .dot {
-  color: #B9D0DF;
-  font-size: 1.5rem;
+  color: #6c9bcf;
+  font-size: 0rem;
   display: flex;
   align-items: center;
-  letter-spacing: 0.2rem;
+  margin-top: 15px;
 }
 .signup-box {
   width: 400px;
@@ -212,6 +239,14 @@ export default {
   font-weight: bold;
   color: #072D45;
 }
+.file-choice {
+  width: 100%;
+  padding: 2px;
+  font-size: 14px;
+  border-radius: 6px;
+  /* border: 1px solid #ccc; */
+  margin-top: 8px;
+}
 .textarea-input {
   width: 100%;
   padding: 10px;
@@ -233,19 +268,19 @@ export default {
   gap: 10px;
 }
 .tag-btn {
-  padding: 6px 12px;
-  border-radius: 20px;
+  padding: 4px 8px;
+  border-radius: 12px;
   border: 1px solid #ccc;
-  background-color: #f1f5f9;
+  background-color: #f1f1f1;
   font-size: 13px;
   color: #333;
   cursor: pointer;
   transition: all 0.2s;
 }
 .tag-btn.selected {
-  background-color: #0c2c46;
+  background-color: #1d2b50;
   color: white;
-  border-color: #0c2c46;
+  border-color: #1d2b50;
 }
 .next-btn {
   background-color: #0c2c46;
@@ -263,5 +298,12 @@ button:disabled {
   background-color: #ccc;
   cursor: not-allowed;
   opacity: 0.7;
+}
+
+/* [수정 4] 에러 메시지 스타일 추가 */
+.error-message {
+  color: #d9534f; /* 에러를 나타내는 빨간색 */
+  font-size: 12px;
+  margin-top: 5px;
 }
 </style>

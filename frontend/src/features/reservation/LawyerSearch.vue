@@ -2,7 +2,6 @@
   <LawyerSearchLayout>
     <LayoutDefault>
       <div class="lawyer-page-container">
-
         <div class="filter-wrapper">
           <div class="filter-header">
             <span class="header-title">태그를 선택해주세요.</span>
@@ -11,6 +10,7 @@
             </button>
           </div>
 
+          <div class="search-divider"></div>
           <div class="search-box">
             <MagnifyingGlassIcon class="search-icon" />
             <input
@@ -32,8 +32,7 @@
                       @click="selectCategory(c.catId)"
                       :class="['list-item', { active: activeCatId === c.catId }]"
                     >{{ c.title }}
-                    <ChevronRightIcon class="arrow-icon" /></li>
-
+                      <ChevronRightIcon class="arrow-icon" /></li>
                   </ul>
                 </div>
 
@@ -62,20 +61,25 @@
           </transition>
         </div>
 
-        <div class="sort-dropdown-wrapper">
+        <div class="result-options-wrapper">
+          <div class="search-summary"> <strong>총 {{ lawyers.length }}명</strong>의 변호사가 검색되었습니다.</div>
           <select class="sort-dropdown" v-model="sortOption" @change="applyFilters">
             <option value="name">이름순</option>
             <option value="many">상담많은순</option>
           </select>
         </div>
 
-        <div class="search-summary">총 {{ lawyers.length }}명의 변호사가 검색되었습니다.</div>
+
 
         <div class="lawyer-card-list" id="lawyer-results">
           <div class="lawyer-card" v-for="lawyer in lawyers" :key="lawyer.id">
-            <img v-if="lawyer.photo" :src="`data:image/jpeg;base64,${lawyer.photo}`" alt="프로필" />
+            <img v-if="lawyer.photo" :src="`data:image/jpeg;base64,${lawyer.photo}`" alt="프로필" class="lawyer-profile-img"/>
             <div class="lawyer-bottom">
-              <p class="lawyer-name">{{ lawyer.name }} 변호사</p>
+              <p class="lawyer-name">{{ lawyer.name }} 변호사
+                <span class="badge-wrapper">
+                   <span class="tooltip">에이로에서 인증받은 변호사에요!</span><img :src="checkbadge" alt="인증 배지" class="check-badge-icon" />
+                </span>
+              </p>
               <div class="lawyer-tags">
                 <span class="tag" v-for="tag in lawyer.tags.slice(0,2)" :key="tag">#{{ getTagName(tag) }}</span>
                 <button v-if="lawyer.tags.length>2" @click="toggleShowTags(lawyer.id)" class="more-btn">
@@ -102,62 +106,69 @@ import { TAG_MAP } from '@/constants/lawyerTags'
 import { MagnifyingGlassIcon, ChevronDownIcon, XMarkIcon, ChevronRightIcon } from '@heroicons/vue/24/solid'
 import LawyerSearchLayout from '@/components/layout/LawyerSearchLayout.vue';
 import LayoutDefault from '@/components/layout/LayoutDefault.vue'
-
+import checkbadge from '@/assets/check-badge.png'
 /* ----- 상태 ----- */
-const router       = useRouter()
-const showFilters  = ref(false)
-const lawyers      = ref([])
-const searchQuery  = ref('')
-const sortOption   = ref('name')
+const router = useRouter()
+const showFilters = ref(false)
+const lawyers = ref([])
+const searchQuery = ref('')
+const sortOption = ref('name')
 const selectedTags = ref([])
 
 /* 대분류 데이터 */
 const CATEGORY_MAP = [
-  { catId: 1, title: '형사 분야',          tagIds: [1,2,3,4,5,6] },
-  { catId: 2, title: '교통·사고·보험',      tagIds: [7,8,9] },
-  { catId: 3, title: '가사·가족',          tagIds: [10,11,12,13,14] },
-  { catId: 4, title: '민사·계약·채권',      tagIds: [15,16,17,18] },
-  { catId: 5, title: '파산·회생·채무조정',    tagIds: [19,20,21] },
-  { catId: 6, title: '상속·증여',          tagIds: [22,23,24] },
-  { catId: 7, title: '지식재산권',          tagIds: [25,26,27,28] },
-  { catId: 8, title: '노동·고용',          tagIds: [29,30,31,32] },
-  { catId: 9, title: '행정·조세',          tagIds: [33,34,35,36] },
-  { catId:10, title: '의료·생명·개인정보',    tagIds: [37,38,39,40] },
-  { catId:11, title: '환경·공공',          tagIds: [41,42,43] },
-  { catId:12, title: '금융·증권·기업',      tagIds: [44,45,46,47,48] },
+  { catId: 1, title: '형사 분야', tagIds: [1, 2, 3, 4, 5, 6, 49, 50] },
+  { catId: 2, title: '교통·사고·보험', tagIds: [7, 8, 9] },
+  { catId: 3, title: '가사·가족', tagIds: [10, 11, 12, 13, 14] },
+  { catId: 4, title: '민사·계약·채권', tagIds: [15, 16, 17, 18] },
+  { catId: 5, title: '파산·회생·채무조정', tagIds: [19, 20, 21] },
+  { catId: 6, title: '상속·증여', tagIds: [22, 23, 24] },
+  { catId: 7, title: '지식재산권', tagIds: [25, 26, 27, 28] },
+  { catId: 8, title: '노동·고용', tagIds: [29, 30, 31, 32] },
+  { catId: 9, title: '행정·조세', tagIds: [33, 34, 35, 36] },
+  { catId: 10, title: '의료·생명·개인정보', tagIds: [37, 38, 39, 40] },
+  { catId: 11, title: '환경·공공', tagIds: [41, 42, 43] },
+  { catId: 12, title: '금융·증권·기업', tagIds: [44, 45, 46, 47, 48, 49] },
 ]
 
 const activeCatId = ref(CATEGORY_MAP[0].catId)
 
 /* 계산된 소분류 */
-const tagsOfActiveCategory = computed(()=>{
-  const ids=CATEGORY_MAP.find(c=>c.catId===activeCatId.value)?.tagIds||[]
-  return TAG_MAP.filter(t=>ids.includes(t.id))
+const tagsOfActiveCategory = computed(() => {
+  const ids = CATEGORY_MAP.find(c => c.catId === activeCatId.value)?.tagIds || []
+  return TAG_MAP.filter(t => ids.includes(t.id))
 })
 
 /* ───── 함수들 ───── */
-const getTagName = (id)=>TAG_MAP.find(t=>t.id===id)?.name||''
+const getTagName = (id) => TAG_MAP.find(t => t.id === id)?.name || ''
 
-const selectCategory = (id)=>{ activeCatId.value=id }
+const selectCategory = (id) => { activeCatId.value = id }
 
-const toggleTag = (id)=>{
+const toggleTag = (id) => {
   selectedTags.value.includes(id)
-    ?selectedTags.value=selectedTags.value.filter(t=>t!==id)
-    :selectedTags.value.push(id)
+    ? selectedTags.value = selectedTags.value.filter(t => t !== id)
+    : selectedTags.value.push(id)
   applyFilters(false)
 }
 
-const clearAll = ()=>{ selectedTags.value=[]; searchQuery.value=''; applyFilters(false) }
+const clearAll = () => {
+  selectedTags.value = []
+  searchQuery.value = ''
+  applyFilters(false)
+}
 
-const applyFilters = async (shouldScroll = true) =>{
-  try{
-    const params=new URLSearchParams()
-    selectedTags.value.forEach(id=>params.append('tags',id))
-    if(searchQuery.value.trim()) params.append('search',searchQuery.value.trim())
-    if(sortOption.value) params.append('sort',sortOption.value)
+const applyFilters = async (shouldScroll = true) => {
+  try {
+    const params = new URLSearchParams()
+    selectedTags.value.forEach(id => params.append('tags', id))
+    if (searchQuery.value.trim()) params.append('search', searchQuery.value.trim())
+    if (sortOption.value) params.append('sort', sortOption.value)
 
     const { data } = await axios.get(`/api/lawyers/list?${params.toString()}`)
-    lawyers.value=data.map(l=>({...l,id:String(l.lawyerId)}))
+    lawyers.value = data.map(l => ({
+      ...l,
+      id: String(l.lawyerId),
+    }))
 
     if (shouldScroll) {
       const resultsElement = document.getElementById('lawyer-results')
@@ -165,59 +176,89 @@ const applyFilters = async (shouldScroll = true) =>{
         resultsElement.scrollIntoView({ behavior: 'smooth' })
       }
     }
-  }catch(e){ console.error('변호사 조회 실패',e) }
+  } catch (e) {
+    console.error('변호사 조회 실패', e)
+  }
 }
 
-onMounted(()=>{ applyFilters(false);
-  window.scrollTo(0, 0);})
+onMounted(() => {
+  applyFilters(false);
+  window.scrollTo(0, 0);
+})
 
 /* 카드 관련 */
 const expandedCards = ref([])
-const isLawyer = localStorage.getItem('userType')==='LAWYER'
+const isLawyer = localStorage.getItem('userType') === 'LAWYER'
 const toggleShowTags = id => expandedCards.value.includes(id)
-  ? expandedCards.value=expandedCards.value.filter(i=>i!==id)
+  ? expandedCards.value = expandedCards.value.filter(i => i !== id)
   : expandedCards.value.push(id)
-const goToReservation = lawyer =>{
-  if(!localStorage.getItem('userType')){
+const goToReservation = lawyer => {
+  if (!localStorage.getItem('userType')) {
     alert('로그인이 필요한 기능입니다.');
     router.push('/login')
     return
   }
-  router.push({ name:'DetailReservation', params:{ id: lawyer.id } })
+  router.push({ name: 'DetailReservation', params: { id: lawyer.id } })
 }
 </script>
 
 <style scoped>
 /* ── Universal Layout ─────────────────────────── */
 .lawyer-page-container {
-  padding: 0px 0px 20px;
+  font-family: 'Noto Sans KR', sans-serif;
+  padding: 0 0 20px;
   max-width: 1200px;
   margin: 60px auto;
+  color: #333333
 }
 
 /* ── Filter & Search Section ─────────────────────────── */
 .filter-wrapper {
-  border: 1px solid #e5e5e5;
+  border: 1px solid #cfcfcf;
+  border-radius: 8px;
   font-size: 15px;
   margin-top: -100px;
   padding-top: -100px;
-  /* 반응형 레이아웃을 위한 Grid 설정 */
   display: grid;
-  grid-template-columns: 2fr 1fr; /* 2열: 남은공간 | 자동너비 */
+  grid-template-columns: 2fr auto 1.2fr;
   grid-template-areas:
-    "header search"
-    "content content";
+    "header divider search"
+    "content content content";
   align-items: center;
 }
 
-.filter-header { grid-area: header; display: flex; align-items: center; padding: 20px 20px; }
-.search-box { grid-area: search; display: flex; align-items: center; padding: 10 30px; gap:10px; }
-.filter-content { grid-area: content; border-top: 1px solid #e5e5e5;}
+.filter-header {
+  grid-area: header;
+  display: flex;
+  align-items: center;
+  padding: 20px;
+}
 
-.header-title { font-weight: 400; color:#888}
+.search-divider {
+  width: 1px;
+  height: 48px;
+  background-color: #f1f1f1;
+  flex-shrink: 0;
+}
+.search-box {
+  grid-area: search;
+  display: flex;
+  align-items: center;
+  padding: 10 30px;
+  gap: 10px;
+}
+.filter-content {
+  grid-area: content;
+  border-top: 1px solid #888;
+}
+
+.header-title {
+  font-weight: 400;
+  color: #888;
+}
 
 .toggle-btn {
-  background: transparent; /* 배경을 투명하게 변경 */
+  background: transparent;
   border: none;
   cursor: pointer;
   display: flex;
@@ -229,53 +270,70 @@ const goToReservation = lawyer =>{
 .chevron-icon {
   width: 22px;
   height: 22px;
-  color: #5d5d5d;
+  color: #888;
   transition: transform 0.25s;
 }
-.chevron-icon.rotated { transform: rotate(180deg); }
+.chevron-icon.rotated {
+  transform: rotate(180deg);
+}
 
-.search-icon { width: 21px; color: #888; }
+.search-icon {
+  width: 21px;
+  color: #888;
+  margin-left: 10px;
+}
 .search-box input {
   border: none;
-  border-bottom: 1px solid #ccc;
+  /* border-bottom: 1px solid #888; */
   outline: none;
   width: 100%;
   min-width: 200px;
-  font-size: 15px;
+  font-weight: 400;
   padding: 8px 4px;
-  margin: 0 12px;
-  writing-mode: initial;
+  margin: 0 4px;
 }
-.search-box input:focus { border-bottom-color: #1d2b50; }
+.search-box input:focus {
+  border-bottom-color: #1d2b50;
+}
 .search-btn {
   background: #1d2b50;
   color: #fff;
   border: none;
-  padding: 10px 20px;
-  border-radius: 4px;
+  border-radius: 8px;
+  padding: 8px 12px;
   font-weight: 400;
   cursor: pointer;
   display: flex;
   justify-content: center;
   align-items: center;
-  writing-mode: horizontal-tb;
   white-space: nowrap;
   margin-right: 10px;
 }
-.search-btn:hover { background-color: #394b85; }
+.search-btn:hover {
+  background-color: #6c9bcf;
+}
 
 /* ── Filter Content (Table & Tags) ──────────────────────── */
-.fade-enter-active, .fade-leave-active { transition: all 0.25s ease; }
-.fade-enter-from, .fade-leave-to { opacity: 0; transform: translateY(-8px); }
+.fade-enter-active, .fade-leave-active {
+  transition: all 0.25s ease;
+}
+.fade-enter-from, .fade-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
+}
 
-.filter-table { display: flex; }
-.filter-col { flex: 1; }
+.filter-table {
+  display: flex;
+}
+.filter-col {
+  flex: 1;
+}
 .big-col {
-  flex: 0 0 300px; /* 컬럼이 늘어나거나 줄어들지 않고, 기본 너비를 220px로 고정 */
+  flex: 0 0 350px;
   border-right: 1px solid #e5e5e5;
 }
 .sub-col {
-  flex: 0 0 350px; /* 소분류는 조금 더 넓게 260px로 고정 */
+  flex: 0 0 400px;
 }
 
 .list {
@@ -290,35 +348,48 @@ const goToReservation = lawyer =>{
   border-bottom: 1px solid #e5e5e5;
   cursor: pointer;
   transition: background 0.15s;
-  color: #333;
-  position: relative; /* 화살표를 이 요소 기준으로 위치시키기 위해 추가 */
+  color: #888;
+  position: relative;
   display: flex;
-  justify-content: space-between; /* 텍스트와 화살표를 양쪽으로 분리 */
+  justify-content: space-between;
   align-items: center;
 }
 
 .arrow-icon {
-  width: 18px; /* 아이콘 크기 */
+  width: 18px;
   height: 18px;
-  color: #ccc; /* 기본 회색 */
-  transition: transform 0.25s, color 0.25s; /* 부드러운 전환 효과 */
+  color: #888;
+  transition: transform 0.25s, color 0.25s;
 }
 
-/* hover 상태일 때 스타일 */
 .list-item:hover .arrow-icon {
-  color: #fff; /* 호버 시 흰색으로 변경 */
-  transform: rotate(0); /* (선택사항) 호버 시에도 오른쪽을 가리키도록 원래대로 */
+  color: #fff;
 }
 
+.list-item:hover {
+  background: #f1f1f1;
+}
+.list-item:last-child {
+  border-bottom: none;
+}
+.list-item.active {
+  background: #1d2b50;
+  color: #fff;
+  font-weight: 600;
+}
+.list-item.selected {
+  background: #33416c;
+  color: #fff;
+  font-weight: 600;
+}
 
-
-.list-item:hover { background: #f1f1f1; }
-.list-item:last-child { border-bottom: none; }
-.list-item.active { background: #1d2b50; color: #fff; font-weight: 600; }
-.list-item.selected { background: #33416c; color: #fff; font-weight: 600; }
-
-.list::-webkit-scrollbar { width: 6px; }
-.list::-webkit-scrollbar-thumb { background: #9a9a9a; border-radius: 3px; }
+.list::-webkit-scrollbar {
+  width: 6px;
+}
+.list::-webkit-scrollbar-thumb {
+  background: #9a9a9a;
+  border-radius: 3px;
+}
 
 /* 선택된 태그 칩 */
 .selected-tags {
@@ -340,47 +411,51 @@ const goToReservation = lawyer =>{
   cursor: pointer;
   font-size: 14px;
 }
-.remove-icon { width: 12px; }
+.remove-icon {
+  width: 12px;
+}
 .reset-btn {
   margin-left: auto;
   background-color: transparent;
-  border: 1px solid #b4c3d1;
+  border: 1px solid #cfcfcf;
   border-radius: 15px;
   padding: 6px 12px;
-  font-size: 13px;
-  color: #333;
+  font-size: 12px;
+  color: #888;
   cursor: pointer;
   transition: background-color 0.2s ease;
 }
-.reset-btn:hover { background-color: #e9e9e9; }
+.reset-btn:hover {
+  background-color: #e9e9e9;
+}
 
 
 /* ── Result & Sort Section ─────────────────────────── */
-.sort-dropdown-wrapper {
+.result-options-wrapper {
   display: flex;
-  justify-content: flex-end;
-  margin: 20px 0 10px;
+  justify-content: space-between;
+  align-items: center; /* 세로 정렬 */
+  margin: 20px 0 10px; /* 기존 상단 마진 */
 }
+
+
 .sort-dropdown {
   appearance: none;
   height: 30px;
   padding: 0 2.5rem 0 1rem;
-  border: 1px solid #b4c3d1;
+  border: 1px solid #cfcfcf;;
   border-radius: 15px;
   font-size: 12px;
-  color: #333;
-  background-image: url("data:image/svg+xml,%3Csvg fill='black' height='16' viewBox='0 0 24 24' width='16' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+  color: #888;;
+  background-image: url("data:image/svg+xml,%3Csvg fill='gray' height='16' viewBox='0 0 24 24' width='16' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 1rem center;
   background-size: 12px;
 }
 
 .search-summary {
-  text-align: right;
   font-size: 14px;
-  color: #666;
-  margin-bottom: 10px;
-  padding-right: 10px;
+  color: #888;
 }
 
 /* ── Lawyer Card List ─────────────────────────────── */
@@ -389,18 +464,42 @@ const goToReservation = lawyer =>{
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 30px;
   margin-top: 20px;
+  align-items: start;
 }
 .lawyer-card {
   background-color: white;
-  border: 1px solid #e0e0e0;
-  border-radius: 12px;
+  border: 1px solid #cfcfcf;
   padding: 20px;
   text-align: center;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08),
+              0 1px 3px rgba(0, 0, 0, 0.04);
+  border-radius: 8px; /* 모서리 둥글게 */
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
   display: flex;
   flex-direction: column;
-  height: 100%;
-  min-height: 360px;
+  /* height: 100%;  신규 삭제*/
+  min-height: 260px;
+  align-self: start; /* 신규 추가 */
+}
+.lawyer-card:hover {
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12),
+              0 4px 8px rgba(0, 0, 0, 0.06);
+  transform: translateY(-4px); /* 살짝 떠오르는 효과 */
+}
+
+.lawyer-profile-img {
+  width: 200px;
+  height: 250px;
+  object-fit: cover;
+  margin: 0 auto 7px;
+  border-radius: 12px;
+
+  /* 경계 흐림 효과 */
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+
+  /* 색감 부드럽게 (살짝 밝게 + 채도 낮춤) */
+  filter: brightness(1.05) saturate(0.9);
+  transition: filter 0.2s ease, box-shadow 0.2s ease;
 }
 .lawyer-bottom {
   margin-top: auto;
@@ -408,11 +507,68 @@ const goToReservation = lawyer =>{
   flex-direction: column;
   align-items: center;
 }
-.lawyer-name { font-weight: bold; font-size: 16px; margin-bottom: 10px; }
-.lawyer-tags { margin-bottom: 15px; }
+.lawyer-name {
+  font-weight: bold;
+  font-size: 18px;
+  margin-top: 8px;
+  margin-bottom: 8px;
+}
+.check-badge-icon {
+  width: 18px; /* 아이콘 크기 조절 */
+  height: 18px;
+  margin-left: 4px; /* 이름과 아이콘 사이 간격 */
+  /* 필요에 따라 추가적인 스타일을 지정할 수 있습니다. */
+}
+.badge-wrapper{
+  position: relative;        /* ✅ tooltip의 기준 */
+  display: inline-block;
+}
+
+/* 기존 .tooltip 유지 + 보정 */
+.tooltip {
+  font-family: 'Noto Sans KR', sans-serif;
+  visibility: hidden; /* 툴팁을 숨김 */
+  opacity: 0;        /* 투명도 0으로 설정 */
+  position: absolute;
+  bottom: 130%;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #fff;
+  color: #072D45;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  white-space: nowrap;
+  font-size: 0.85rem;
+  z-index: 10;
+  line-height: 1.4;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  transition: visibility 0.3s, opacity 0.3s; /* 애니메이션 효과를 위해 유지 */
+}
+
+
+.tooltip::after{
+  content:'';
+  position:absolute;
+  top:100%;
+  left:50%; margin-left:-5px;
+  border-width:5px;
+  border-style:solid ;
+  border-color: transparent transparent transparent transparent;
+}
+
+/* ✅ hover 타깃을 래퍼로 변경 */
+.badge-wrapper:hover .tooltip{
+  visibility: visible;
+  opacity: 0.8;
+}
+
+.lawyer-tags {
+  margin-bottom: 10px;
+}
 .tag {
   background-color: #f1f1f1;
-  color: #333;
+  color: #333333;
   padding: 4px 8px;
   border-radius: 12px;
   font-size: 12px;
@@ -420,14 +576,15 @@ const goToReservation = lawyer =>{
   display: inline-block;
 }
 .more-btn {
-  background: none;
-  border: none;
-  color: #007bff;
+  background-color: #ffffff;
+  color: #888;
+  padding: 4px 8px;
+  border-radius: 12px;
   font-size: 12px;
   cursor: pointer;
   margin-left: 4px;
-  padding: 0;
-  text-decoration: underline;
+  border: none;
+  text-decoration: none;
 }
 .reserve-btn {
   background-color: #1d2b50;
@@ -440,12 +597,13 @@ const goToReservation = lawyer =>{
   width: 100%;
   transition: background-color 0.2s ease;
 }
-.reserve-btn:hover { background-color: #394b85; }
+.reserve-btn:hover {
+  background-color: #6c9bcf;
+}
 
 /* ── Responsive Layout (Mobile) ─────────────────── */
 @media (max-width: 768px) {
   .filter-wrapper {
-    /* Grid 레이아웃을 1열로 변경하고, search를 맨 아래로 보냅니다. */
     grid-template-columns: 1fr;
     grid-template-areas:
       "header"
@@ -458,7 +616,7 @@ const goToReservation = lawyer =>{
   }
 
   .filter-content {
-    border-top: none; /* 모바일에서는 헤더의 border-bottom으로 대체 */
+    border-top: none;
   }
 
   .filter-table {
@@ -468,5 +626,4 @@ const goToReservation = lawyer =>{
     border-right: none;
   }
 }
-
 </style>

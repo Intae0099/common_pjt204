@@ -1,6 +1,6 @@
 <template>
   <div v-if="user && appointments !== null" class="mypage-container">
-    <!-- ✅ 프로필 영역 -->
+    <h1 class="mypage-title">마이페이지</h1>
     <section class="profile-section">
       <div class="profile-box">
         <div class="profile-left">
@@ -18,12 +18,11 @@
       </div>
     </section>
 
-    <!-- ✅ 예약 일정 -->
     <section class="appointment-section">
       <h4>예약된 상담</h4>
-      <ul v-if="filteredAppointments.length > 0" class="appointment-list">
+      <ul v-if="confirmedAppointments.length > 0" class="appointment-list">
         <li
-          v-for="appt in filteredAppointments"
+          v-for="appt in confirmedAppointments"
           :key="appt.appointmentId"
           class="appointment-item"
         >
@@ -31,6 +30,24 @@
             <div>
               <p class="lawyer-name">{{ lawyerMap[String(appt.lawyerId)] || '알 수 없음' }} 변호사</p>
               <p class="appt-time">{{ formatDateTime(appt.startTime) }}</p>
+              <span
+                @click="openDetailModal(appt.applicationId)"
+                class="view-application-link"
+              >
+                상담신청서 보기
+              </span>
+            </div>
+            <div class="status-group">
+              <p :class="statusClass(appt.appointmentStatus)" class="appointment-status">
+                {{ statusText(appt.appointmentStatus) }}
+              </p>
+              <button
+                v-if="isVideocallEnabled(appt.startTime) && appt.appointmentStatus === 'CONFIRMED'"
+                @click="goToVideocall(appt.appointmentId)"
+                class="videocall-btn"
+              >
+                화상 상담 입장
+              </button>
             </div>
           </div>
         </li>
@@ -38,15 +55,49 @@
       <p v-else class="no-appt">예약된 일정이 없습니다.</p>
     </section>
 
-    <!-- ✅ 상담신청서 보관함 -->
+    <section class="appointment-section">
+      <h4>예약 요청한 상담</h4>
+      <ul v-if="requestedAppointments.length > 0" class="appointment-list">
+        <li
+          v-for="appt in requestedAppointments"
+          :key="appt.appointmentId"
+          class="appointment-item"
+        >
+          <button
+            class="cancel-x-btn"
+            @click.stop="cancelAppointment(appt)"
+          >×</button>
+
+          <div class="appt-info">
+            <div>
+              <p class="lawyer-name">{{ lawyerMap[String(appt.lawyerId)] || '알 수 없음' }} 변호사</p>
+              <p class="appt-time">{{ formatDateTime(appt.startTime) }}</p>
+              <span
+                @click="openDetailModal(appt.applicationId)"
+                class="view-application-link"
+              >
+                상담신청서 보기
+              </span>
+            </div>
+            <div class="status-group">
+              <p :class="statusClass(appt.appointmentStatus)" class="appointment-status">
+                {{ statusText(appt.appointmentStatus) }}
+              </p>
+            </div>
+          </div>
+        </li>
+      </ul>
+      <p v-else class="no-appt">예약 요청한 상담이 없습니다.</p>
+    </section>
+
     <section class="application-section">
       <h4 @click="goToAllApplications" class="section-title-link">
         상담신청서 보관함
         <span class="arrow">›</span>
       </h4>
-      <ul v-if="applications.length > 0" class="application-list">
+      <ul v-if="recentApplications.length > 0" class="application-list">
         <li
-          v-for="form in applications"
+          v-for="form in recentApplications"
           :key="form.applicationId"
           class="appointment-item"
           @click="openDetailModal(form.applicationId)"
@@ -62,11 +113,9 @@
       </ul>
       <p v-else class="no-appt">상담신청서가 없습니다.</p>
     </section>
-
-    <!-- ✅ 기타 메뉴 -->
     <section class="menu-section">
-      <div class="menu-item" @click="$router.push('/consult-history')">
-        상담내역 보기
+      <div class="menu-item" @click="$router.push('/user/consult-history')">
+        상담내역
         <span class="arrow">›</span>
       </div>
       <div class="menu-item" @click="handleWithdraw">
@@ -101,10 +150,34 @@ const applications = ref([])
 const isDetailModalOpen = ref(false)
 const selectedApplication = ref(null)
 
-const filteredAppointments = computed(() => {
-  const now = new Date()
-  return appointments.value.filter(appt => new Date(appt.startTime) > now)
+const confirmedAppointments = computed(() => {
+  return appointments.value
+    .filter(a => a.appointmentStatus === 'CONFIRMED')
+    // 필요하면 ‘다가올 일정만’으로 제한하려면 아래 줄 주석 해제
+    // .filter(a => new Date(a.startTime) > new Date())
 })
+
+const requestedAppointments = computed(() => {
+  return appointments.value.filter(a =>
+    ['PENDING', 'REJECTED', 'CANCELLED'].includes(a.appointmentStatus)
+  )
+})
+
+const cancelAppointment = async (appt) => {
+  if (!confirm('상담 예약을 취소하시겠습니까?')) return
+  try {
+    // 백엔드 명세에 맞춰 cancel 엔드포인트 호출 (POST가 일반적)
+    await axios.post(`/api/appointments/${appt.appointmentId}/cancel`)
+    // 낙관적 업데이트: 상태를 CANCELLED로 갱신하여 목록에서 즉시 반영
+    appt.appointmentStatus = 'CANCELLED'
+    alert('예약이 취소되었습니다.')
+  } catch (err) {
+    console.error('예약 취소 실패:', err)
+    alert('취소 중 오류가 발생했습니다. 다시 시도해주세요.')
+  }
+}
+
+
 
 const formatDateTime = (dateStr) => {
   const date = new Date(dateStr)
@@ -117,34 +190,39 @@ const formatDateTime = (dateStr) => {
   })
 }
 
-onMounted(async () => {
-  try {
-    const [userRes, appointmentRes, formRes, lawyerListRes] = await Promise.all([
-      axios.get('/api/clients/me'),
-      axios.get('/api/appointments/me'),
-      axios.get('/api/applications/me'),
-      axios.get('/api/lawyers/list'),
-    ])
-    user.value = userRes.data
-    appointments.value = appointmentRes.data
-    applications.value = formRes.data.data.applicationList
-
-    console.log(appointmentRes)
-    console.log(formRes)
-
-    const map = {}
-    lawyerListRes.data.forEach(lawyer => {
-      map[String(lawyer.lawyerId)] = lawyer.name
-    })
-    lawyerMap.value = map
-
-  } catch (err) {
-    console.error('마이페이지 데이터 로딩 실패:', err)
-    user.value = {} // 로딩 상태를 해제하기 위해 빈 객체 할당
-    appointments.value = []
-    applications.value = []
+// ✅ 상담 상태 텍스트를 반환하는 함수 추가
+const statusText = (status) => {
+  switch (status) {
+    case 'PENDING': return '대기중';
+    case 'CONFIRMED': return '상담확정';
+    case 'REJECTED': return '거절됨';
+    case 'CANCELLED': return '취소됨';
+    case 'ENDED': return '상담종료';
+    default: return '알 수 없음';
   }
-})
+}
+
+// ✅ 상담 상태별 스타일 클래스를 반환하는 함수 추가
+const statusClass = (status) => {
+  return `status-${status.toLowerCase()}`;
+};
+
+// ✅ 화상 상담 버튼 활성화 조건을 확인하는 함수 추가
+const isVideocallEnabled = (startTime) => {
+  const now = new Date();
+  const appointmentTime = new Date(startTime);
+  const timeDifferenceInMinutes = (appointmentTime - now) / (1000 * 60);
+
+  // 상담 시작 30분 전부터 시작 시간까지 활성화
+  return timeDifferenceInMinutes <= 30 && timeDifferenceInMinutes >= 0;
+};
+
+// ✅ 화상 상담 페이지로 이동하는 함수 추가
+const goToVideocall = (appointmentId) => {
+  router.push(`/videocall/${appointmentId}`);
+};
+
+
 
 const openDetailModal = async (applicationId) => {
   try {
@@ -153,7 +231,6 @@ const openDetailModal = async (applicationId) => {
       // API 응답 데이터 구조에 맞게 selectedApplication에 할당
       selectedApplication.value = res.data.data.application
       isDetailModalOpen.value = true // 데이터 로딩 성공 시 모달 열기
-      console.log(res)
     } else {
       throw new Error(res.data.message)
     }
@@ -163,17 +240,18 @@ const openDetailModal = async (applicationId) => {
   }
 }
 
+// ✅ 최근 상담신청서 2개를 반환하는 계산 속성
+const recentApplications = computed(() => {
+  if (!applications.value) return [];
+  // 최신순으로 정렬 (가장 최근에 생성된 순)
+  const sorted = [...applications.value].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  // 상위 2개만 잘라내기
+  return sorted.slice(0, 2);
+})
+
 const goToAllApplications = () => {
-  // 상담신청서 목록이 비어있지 않은 경우에만 페이지 이동
-  if (applications.value && applications.value.length > 0) {
-    // 목록의 가장 첫 번째 항목의 ID를 가져옵니다.
-    const firstApplicationId = applications.value[0].applicationId
-    // 해당 ID를 파라미터로 하여 상세 뷰 페이지로 이동합니다.
-    router.push(`/user/applications/${firstApplicationId}`)
-  } else {
-    // 신청서가 없을 경우 사용자에게 알림을 줄 수 있습니다 (선택 사항).
-    alert('보관된 상담신청서가 없습니다.')
-  }
+  // ✅ ID 파라미터 없이 목록 페이지 라우트('ApplicationList')로 이동합니다.
+  router.push({ name: 'ApplicationList' });
 }
 
 const handleWithdraw = async () => {
@@ -195,6 +273,33 @@ const handleWithdraw = async () => {
   }
 }
 
+onMounted(async () => {
+  try {
+    const [userRes, appointmentRes, formRes, lawyerListRes] = await Promise.all([
+      axios.get('/api/clients/me'),
+      axios.get('/api/appointments/me'),
+       axios.get('/api/applications/me', { params: { isCompleted: true } }),
+      axios.get('/api/lawyers/list'),
+    ])
+    user.value = userRes.data
+    appointments.value = appointmentRes.data
+    applications.value = formRes.data.data.applicationList
+
+
+    const map = {}
+    lawyerListRes.data.forEach(lawyer => {
+      map[String(lawyer.lawyerId)] = lawyer.name
+    })
+    lawyerMap.value = map
+
+  } catch (err) {
+    console.error('마이페이지 데이터 로딩 실패:', err)
+    user.value = {} // 로딩 상태를 해제하기 위해 빈 객체 할당
+    appointments.value = []
+    applications.value = []
+  }
+})
+
 </script>
 
 <style scoped>
@@ -205,14 +310,26 @@ const handleWithdraw = async () => {
   align-items: center;
 }
 .section-title-link:hover {
-  color: #007bff; /* 호버 시 색상 변경 (예시) */
+  color: #6c9bcf; /* 호버 시 색상 변경 (예시) */
 }
 .mypage-container {
   max-width: 700px;
   margin: 0 auto;
   padding: 100px 20px;
   font-family: 'Noto Sans KR', sans-serif;
+  color: #333333
 }
+.mypage-container h1 {
+  text-align: center;
+  margin-top: 15px;
+  margin-bottom: 5px;
+}
+.mypage-title {
+  font-size: 24px;
+  margin-bottom: 40px;
+  font-weight: bold;
+}
+
 
 /* 프로필 */
 .profile-section {
@@ -226,7 +343,7 @@ const handleWithdraw = async () => {
   display: flex;
   align-items: center;
   background: #fff;
-  border: 1px solid #e0e0e0;
+  border: 1px solid #cfcfcf;
   border-radius: 12px;
   padding: 20px;
   width: 100%;
@@ -245,6 +362,7 @@ const handleWithdraw = async () => {
   border-radius: 50%;
   object-fit: cover;
   margin-right: 20px;
+  margin-bottom: 15px;
 }
 .profile-info {
   display: flex;
@@ -257,7 +375,7 @@ const handleWithdraw = async () => {
   margin-bottom: 4px;
 }
 .email {
-  color: #999;
+  color: #888;
   font-size: 0.9rem;
 }
 .setting-btn {
@@ -288,21 +406,55 @@ h4 {
   margin: 0;
 }
 .appointment-item {
-  border: 1px solid #e0e0e0;
-  background: #f9f9f9;
+  color: #333;
+  border: 1px solid #cfcfcf;
+  background: #ffffff;
   border-radius: 10px;
   padding: 16px;
   margin-bottom: 12px;
+  position: relative;
 }
+.appointment-item:hover {
+  background: #f4f7fb;
+  border-color: #6c9bcf;
+  transform: translateY(-1px);;
+}
+
+
+/* X 버튼 */
+.cancel-x-btn {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  z-index: 2;                    /* appt-info 위로 */
+  background: transparent;              /* 카드 배경과 동일 */
+  border-radius: 6px;
+  border: none;
+  padding: 1px 8px;
+  height: auto;
+  width: auto;                   /* "취소" 글자 안 잘리게 */
+  line-height: normal;
+  font-size: 0.85rem;
+  color: #888;
+  /* transition: transform 0.12s ease, border-color 0.15s ease; */
+}
+.cancel-x-btn:hover {
+  color: #6c9bcf; /* 밝은 파랑(사용 중인 포커스 컬러) */
+}
+
+
 .appt-info {
   display: flex;
+  flex-grow: 1; /* ✅ 추가 */
   justify-content: space-between;
   align-items: center;
+  width: 100%;
 }
 .lawyer-name,
 .form-title {
   font-size: 1rem;
   font-weight: bold;
+  margin-bottom: 4px;
 }
 .appt-time {
   font-size: 0.95rem;
@@ -314,17 +466,56 @@ h4 {
   color: #888;
   text-align: center;
 }
+.view-application-link {
+  font-size: 0.85rem;
+  color: #888;
+  cursor: pointer;
+  margin-top: 4px;
+}
+.view-application-link:hover {
+  text-decoration: underline;
+}
+
+.status-group {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px; /* 상태와 버튼 사이 간격 */
+}
+
+/* ✅ 상담 상태 스타일 추가 */
+.appointment-status {
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+.status-pending {
+  background: #FFBF66;
+  color: white;
+}
+.status-confirmed {
+  background: #6c9bcf;
+  color: white;
+}
+.status-rejected, .status-cancelled {
+  background: #B3261E;
+  color: white;
+}
+.status-ended {
+  color: #888;
+}
 
 /* 메뉴 */
 .menu-section {
-  border-top: 1px solid #e0e0e0;
+  border-top: 1px solid #cfcfcf;
 }
 .menu-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 16px 0;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid #cfcfcf;
   font-size: 1rem;
   cursor: pointer;
 }

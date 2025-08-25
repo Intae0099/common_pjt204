@@ -1,8 +1,9 @@
+#PreviewUserView.vue
 <template>
   <div class="preview-page">
     <div class="preview-left">
       <h2>화면 미리보기</h2>
-      <PreviewCamera />
+      <PreviewCamera ref="cameraComponentRef"/>
       <div class="before-consult-msg">
         <p class="title">
           <Smile class="smile-icon" />
@@ -46,24 +47,47 @@
                   <strong class="name-bold">{{ appointment.lawyerName }}</strong>
                   <span class="name-medium"> 변호사</span>
                 </p>
+
                 <div class="tags">
                   <span
                     class="tag"
-                    v-for="tagId in appointment.tags"
+                    v-for="tagId in appointment.tags.slice(0, 3)"
                     :key="tagId"
                   >
                     #{{ tagMap[tagId] || '기타' }}
                   </span>
+
+                  <button
+                    v-if="appointment.tags.length > 3"
+                    class="more-tags-btn"
+                    @click.stop="toggleTags(appointment.appointmentId)"
+                  >
+                    <ChevronUp v-if="expandedCards.has(appointment.appointmentId)" class="more-tags-icon" />
+                    <ChevronDown v-else class="more-tags-icon" />
+                  </button>
+
+                  <template v-if="expandedCards.has(appointment.appointmentId)">
+                    <span
+                      class="tag"
+                      v-for="tagId in appointment.tags.slice(3)"
+                      :key="tagId"
+                    >
+                      #{{ tagMap[tagId] || '기타' }}
+                    </span>
+                  </template>
                 </div>
+
+                <button class="view-btn" @click.stop="goToApplication(appointment.applicationId)">
+                  상담신청서 확인하기
+                </button>
               </div>
-              <button class="view-btn" @click.stop="goToApplication(appointment.applicationId)">상담신청서 확인하기</button>
             </div>
           </div>
         </div>
 
         <div v-else class="no-appointments">
           <img src="@/assets/bot-no-consult.png" class="no-img" />
-          <p class="no-msg">앗! 상담 일정이 없어요!</p>
+          <p class="no-msg">앗! 오늘 상담 일정이 없어요!</p>
           <div class="links">
             <router-link to="/lawyers">변호사 조회</router-link> |
             <router-link to="/ai-consult">AI 상담받기</router-link>
@@ -74,11 +98,14 @@
       <div class="enter-btn-wrapper">
         <button
           class="enter-btn"
-          :disabled="!selectedAppointment || !canEnterMeeting(selectedAppointment.startTime, selectedAppointment.endTime)"
+
+          :disabled="!selectedAppointment"
+
           @click="enterMeeting(selectedAppointmentId)"
         >
           화상상담 입장하기
         </button>
+
       </div>
     </div>
     <ApplicationDetail
@@ -91,27 +118,81 @@
 
 <script setup>
 import PreviewCamera from '../components/PreviewCamera.vue';
-import { ref, onMounted, computed } from 'vue'; // computed 추가
-import { useRouter } from 'vue-router';
+import { ref, onMounted, computed, onUnmounted } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 import axios from '@/lib/axios';
 import ApplicationDetail from '@/features/profile/user/ApplicationDetail.vue';
-import { Smile, MoveRight } from 'lucide-vue-next';
+import { Smile, MoveRight, ChevronDown, ChevronUp } from 'lucide-vue-next';
 import { TAG_MAP as tagList } from '@/constants/lawyerTags';
+
+const cameraComponentRef = ref(null);
 
 const appointments = ref([]);
 const defaultImage = '/default-profile.png';
 const router = useRouter();
+const route = useRoute();
 const showDetailModal = ref(false);
 const selectedApplicationData = ref(null);
+const selectedAppointmentId = ref(null);
+const expandedCards = ref(new Set());
 
-const selectedAppointmentId = ref(null); // ✅ 2. 선택된 상담 ID를 저장할 ref 추가
+
+
+// let isNavigatingToMeeting = false;
+
+const enterMeeting = async (appointmentId) => {
+  if (!appointmentId) {
+    alert('입장할 상담을 선택해주세요.');
+    return;
+  }
+
+  // isNavigatingToMeeting = true;
+
+  // if (cameraComponentRef.value) {
+  //   cameraComponentRef.value.cleanup();
+  // }
+
+  try {
+    const res = await axios.post(`/api/rooms/${appointmentId}`);
+    const token = res.data.data.openviduToken;
+    router.push({ name: 'MeetingRoom', query: { token, appointmentId } });
+  } catch (err) {
+    if (err.response?.status === 409) {
+      try {
+        const res = await axios.post(`/api/rooms/${appointmentId}/participants`);
+        const token = res.data.data.openviduToken;
+        router.push({ name: 'MeetingRoom', query: { token, appointmentId } });
+      } catch (err2) {
+        console.error('방 참가 실패:', err2);
+        alert('화상상담 입장에 실패했습니다.');
+      }
+    } else {
+      console.error('방 생성 실패:', err);
+      alert('화상상담 방 생성에 실패했습니다.');
+    }
+    // isNavigatingToMeeting = false;
+  }
+};
+
+onUnmounted(() => {
+    if (cameraComponentRef.value) {
+        cameraComponentRef.value.cleanup();
+    }
+});
 
 const tagMap = tagList.reduce((map, tag) => {
   map[tag.id] = tag.name;
   return map;
 }, {});
 
-// ✅ 3. 선택된 상담 객체를 찾아내는 computed 속성 추가
+const toggleTags = (appointmentId) => {
+  if (expandedCards.value.has(appointmentId)) {
+    expandedCards.value.delete(appointmentId);
+  } else {
+    expandedCards.value.add(appointmentId);
+  }
+};
+
 const selectedAppointment = computed(() => {
   if (!selectedAppointmentId.value) return null;
   return appointments.value.find(
@@ -119,12 +200,11 @@ const selectedAppointment = computed(() => {
   );
 });
 
-// ✅ 3. 상담 카드를 선택하는 함수 추가
 const selectAppointment = (id) => {
   if (selectedAppointmentId.value === id) {
-    selectedAppointmentId.value = null; // 이미 선택된 항목을 다시 클릭하면 선택 해제
+    selectedAppointmentId.value = null;
   } else {
-    selectedAppointmentId.value = id; // 새로운 항목 선택
+    selectedAppointmentId.value = id;
   }
 };
 
@@ -157,7 +237,7 @@ const getTimeDifference = (startTime) => {
   const diffMs = start - now;
   const diffMinutes = Math.floor(diffMs / (1000 * 60));
 
-  if (diffMinutes < 0) return '이미 시작됨';
+  if (diffMinutes < 0) return '진행중';
   if (diffMinutes < 60) return `${diffMinutes}분 후`;
 
   const hours = Math.floor(diffMinutes / 60);
@@ -166,26 +246,47 @@ const getTimeDifference = (startTime) => {
 };
 
 const canEnterMeeting = (startTime, endTime) => {
-  // const now = new Date();
-  // const start = new Date(startTime);
-  // const end = new Date(endTime);
+  const now = new Date();
+  const start = new Date(startTime);
+  const end = new Date(endTime);
 
-  // return now >= new Date(start.getTime() - 10 * 60 * 1000) && now < end;
-
-  return true
+  return now >= new Date(start.getTime() - 10 * 60 * 1000) && now < end;
 };
 
 onMounted(async () => {
   try {
-    const { data: appointmentData } = await axios.get('/api/appointments/me');
+    // API 호출 시 params를 추가하여 승인된 상담만 가져오도록
+    // const { data: appointmentData } = await axios.get('/api/appointments/me', {
+    //   params: { status: 'CONFIRMED' },
+    // });
+
+    const confirmedPromise = axios.get('/api/appointments/me', {
+      params: { status: 'CONFIRMED' },
+    });
+    const inProgressPromise = axios.get('/api/appointments/me', {
+      params: { status: 'IN_PROGRESS' },
+    });
+
+    // 2. 두 요청을 동시에 보내고 결과를 기다림
+    const [confirmedResponse, inProgressResponse] = await Promise.all([
+      confirmedPromise,
+      inProgressPromise,
+    ]);
+
+    // 3. 각 응답에서 데이터를 추출하고 하나의 배열로 합침
+    const confirmedData = confirmedResponse.data || [];
+    const inProgressData = inProgressResponse.data || [];
+    const appointmentData = [...confirmedData, ...inProgressData];
+
     const appointmentsWithLawyerInfo = await Promise.all(
       appointmentData.map(async (appointment) => {
         try {
           const { data: lawyer } = await axios.get(`/api/lawyers/${appointment.lawyerId}`);
+          const imageUrl = lawyer.photo ? `data:image/jpeg;base64,${lawyer.photo}` : null;
           return {
             ...appointment,
             lawyerName: lawyer.name,
-            profileImage: lawyer.photo,
+            profileImage: imageUrl,
             tags: lawyer.tags,
           };
         } catch (e) {
@@ -195,7 +296,33 @@ onMounted(async () => {
       })
     );
 
+    //실제코드. 나중에 주석 해제해야함
+    // 오늘 날짜의, 아직 끝나지 않은 예약만 필터링합니다.
+    // const now = new Date();
+    // const todaysAppointments = appointmentsWithLawyerInfo.filter(
+    //   (appointment) => {
+    //     const startTime = new Date(appointment.startTime);
+    //     const endTime = new Date(appointment.endTime);
+
+        // 조건 1: 상담 시작일이 오늘인지 확인 (연, 월, 일 비교)
+        // const isToday =
+        //   startTime.getFullYear() === now.getFullYear() &&
+        //   startTime.getMonth() === now.getMonth() &&
+        //   startTime.getDate() === now.getDate();
+
+        // 조건 2: 상담 종료 시간이 현재 시간 이후인지 확인
+    //     const hasNotEnded = endTime > now;
+
+    //     return isToday && hasNotEnded;
+    //   }
+    // );
+    // appointments.value = todaysAppointments;
+    //여기까지 실제코드
+
+    // [개발용] 모든 예약 목록을 표시하도록 수정
     appointments.value = appointmentsWithLawyerInfo;
+    //여기까지 개발용
+
   } catch (e) {
     console.error('상담 일정 불러오기 실패:', e);
   }
@@ -203,49 +330,42 @@ onMounted(async () => {
 
 const goToApplication = async (applicationId) => {
   try {
-    const { data } = await axios.get(`/api/applications/${applicationId}`);
-    const questions = Object.values(data.recommendedQuestion || {});
+    // API 응답에서 data 필드를 responseData라는 변수명으로 받습니다.
+    const { data: responseData } = await axios.get(`/api/applications/${applicationId}`);
 
-    selectedApplicationData.value = {
-      ...data,
-      recommendedQuestions: questions,
-    };
-    showDetailModal.value = true;
+    // API 요청이 성공했고, 응답 데이터 안에 application 객체가 있는지 확인합니다.
+    if (responseData.success && responseData.data.application) {
+      // 실제 신청서 데이터인 application 객체를 추출합니다.
+      const applicationDetails = responseData.data.application;
+      const questions = Object.values(applicationDetails.recommendedQuestion || {});
+
+      // 추출한 실제 데이터를 selectedApplicationData에 할당합니다.
+      selectedApplicationData.value = {
+        ...applicationDetails,
+        recommendedQuestions: questions,
+      };
+
+      showDetailModal.value = true;
+    } else {
+      // API는 성공했지만 데이터가 없는 경우 등 예외처리
+      alert(responseData.message || '상담신청서 내용을 불러오는 데 실패했습니다.');
+    }
   } catch (err) {
     console.error('상담신청서 상세 조회 실패:', err);
-    alert('상담신청서를 불러오는 데 실패했습니다.');
+    // API 호출 자체가 실패했을 때 사용자에게 에러 메시지를 보여줍니다.
+    const errorMessage = err.response?.data?.message || '상담신청서를 불러오는 데 실패했습니다.';
+    alert(errorMessage);
   }
 };
 
-const enterMeeting = async (appointmentId) => {
-  if (!appointmentId) {
-    alert('입장할 상담을 선택해주세요.');
-    return;
-  }
-  try {
-    const res = await axios.post(`/api/rooms/${appointmentId}`);
-    const token = res.data.data.openviduToken;
-    router.push({ name: 'MeetingRoom', query: { token, appointmentId } });
-  } catch (err) {
-    if (err.response?.status === 409) {
-      try {
-        const res = await axios.post(`/api/rooms/${appointmentId}/participants`);
-        const token = res.data.data.openviduToken;
-        router.push({ name: 'MeetingRoom', query: { token, appointmentId } });
-      } catch (err2) {
-        console.error('방 참가 실패:', err2);
-        alert('화상상담 입장에 실패했습니다.');
-      }
-    } else {
-      console.error('방 생성 실패:', err);
-      alert('화상상담 방 생성에 실패했습니다.');
-    }
-  }
-};
 </script>
 
 <style scoped>
-/* CSS는 변경할 필요가 없습니다. 기존 스타일이 그대로 적용됩니다. */
+/* 💡 [수정] 카메라 좌우 반전을 위한 CSS 추가 */
+.preview-left :deep(video) {
+  transform: scaleX(-1);
+}
+
 * {
   font-family: 'Noto Sans KR', sans-serif;
 }
@@ -355,7 +475,6 @@ const enterMeeting = async (appointmentId) => {
 
 .card-body {
   display: flex;
-  justify-content: space-between;
   gap: 1rem;
 }
 
@@ -365,10 +484,13 @@ const enterMeeting = async (appointmentId) => {
   border-radius: 12px;
   object-fit: cover;
   border: 1px solid #e0e7ed;
+  flex-shrink: 0;
 }
 
 .card-info {
   flex-grow: 1;
+  display: flex;
+  flex-direction: column;
 }
 .card-time {
   color: #072d45;
@@ -377,17 +499,18 @@ const enterMeeting = async (appointmentId) => {
   margin-bottom: 10px;
 }
 .lawyer-name .name-bold {
-  font-weight: 700; /* 또는 bold */
+  font-weight: bold;
 }
 
 .lawyer-name .name-medium {
-  font-weight: 500; /* medium (보통 500 정도) */
+  font-weight: medium;
 }
 
 .tags {
   display: flex;
   flex-wrap: wrap;
   gap: 0.3rem;
+  align-items: center;
 }
 
 .tag {
@@ -399,7 +522,9 @@ const enterMeeting = async (appointmentId) => {
 }
 
 .view-btn {
-  margin-top: 75px;
+  margin-top: auto;
+  align-self: flex-end;
+  padding-top: 8px;
   font-size: 0.8rem;
   background-color: transparent;
   color: #b9d0df;
@@ -407,6 +532,24 @@ const enterMeeting = async (appointmentId) => {
   cursor: pointer;
   white-space: nowrap;
   border: none;
+}
+.more-tags-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+}
+
+.more-tags-icon {
+  width: 16px;
+  height: 16px;
+  color: #516f90;
 }
 .no-appointments {
   text-align: center;

@@ -1,7 +1,5 @@
-<!-- src/components/layout/CaseLayout.vue -->
 <template>
   <div>
-    <!-- 배너 영역 -->
     <div class="banner">
       <img src="@/assets/banner-bg.png" alt="배경" class="banner-bg" />
       <img src="@/assets/banner-character.png" alt="캐릭터" class="banner-character" />
@@ -10,7 +8,6 @@
       </div>
     </div>
 
-    <!-- 하위 콘텐츠 슬롯 -->
     <div class="content-wrapper">
       <slot />
     </div>
@@ -24,7 +21,7 @@
 <style scoped>
 .banner {
   position: relative;
-  width: 100vw;
+  width: 99vw;
   height: 250px;
   margin-left: calc(-50vw + 50%);
   overflow: hidden;
@@ -41,6 +38,7 @@
 }
 
 .banner-text {
+  font-family: 'Noto Sans KR', sans-serif;
   position: absolute;
   top: 55%;
   left: 35%;

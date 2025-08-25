@@ -3,18 +3,10 @@
     <div class="container">
       <div>
         <div class="wrapper">
-          <!-- 왼쪽: 사용자 입력창 -->
-          <ChatInputBox
-            :disabled="isLoading || isFindingVerdict"
-            @submit="handleUserInput"
-          />
-
-          <div v-if="isLoading || isFindingVerdict" class="loading-dots-wrapper">
-            <LoadingDots />
-          </div>
 
           <AiBox
             ref="aiBoxRef"
+            :messages="messages"
             :isLoading="isLoading"
             :isFindingVerdict="isFindingVerdict"
             :response="aiResponse"
@@ -24,16 +16,19 @@
             @open-modal="handleOpenSaveModal"
             @predict="handlePredictVerdict"
           />
+
+          <ChatInputBox
+            :disabled="isInputLocked"
+            @submit="handleUserInput"
+          />
         </div>
 
-        <!-- 하단 버튼 영역 -->
         <BottomActionBar
           v-if="aiResponse && !isFindingVerdict && !verdictResult && !showRecommendList"
           @predict="handlePredictVerdict"
           @quick-consult="showModal = true"
         />
 
-        <!-- '바로 상담하기' 모달 -->
         <SuggestModal
           v-if="showModal"
           @close="showModal = false"
@@ -47,12 +42,10 @@
         />
 
         <div v-if="verdictResult && canShowRecommendBtn && !showRecommendList" class="recommend-button-wrapper">
-          <button class="recommend-button" @click="showLawyers">
+          <button class="action-button" @click="showLawyers">
             변호사 추천받기
-            <span class="arrow">→</span>
           </button>
         </div>
-        <!-- 변호사 추천 리스트 -->
         <LawyerRecommendList v-if="showRecommendList" :lawyers="lawyers" />
       </div>
     </div>
@@ -60,7 +53,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 
 import ChatInputBox from './components/ChatInputBox.vue'
@@ -71,14 +64,16 @@ import SaveModal from './components/SaveModal.vue'
 import LawyerRecommendList from './components/LawyerRecommendList.vue'
 // import axios from 'axios'
 import { fastapiApiClient } from '@/lib/axios';
-import LoadingDots from './components/LoadingDots.vue'
+import { TAG_MAP } from '@/constants/lawyerTags'
 
 const aiBoxRef = ref(null)
 const showSaveModal = ref(false)
 
 const userInput = ref('')
 const aiResponse = ref(null)
+const messages = ref([])
 const isLoading = ref(false)
+const isInputLocked = ref(false)
 const showModal = ref(false)
 const isFindingVerdict = ref(false)
 const verdictResult = ref(null)            // 판례 예측 결과
@@ -87,10 +82,17 @@ const lawyers = ref([])                    // 추천 변호사 목록
 const showRecommendList = ref(false)       // 변호사 추천 리스트 보여줄지 여부
 
 
+const pushAndScroll = async (msg) => {
+  messages.value.push(msg)
+  await nextTick()
+  aiBoxRef.value?.scrollToBottom?.()
+}
+
 const handleUserInput = async (text) => {
   userInput.value = text
   aiResponse.value = null
   verdictResult.value = null
+  isInputLocked.value = true
   isLoading.value = true
 
   try {
@@ -100,6 +102,7 @@ const handleUserInput = async (text) => {
 
     if (data.success) {
       aiResponse.value = data.data.case // aiResponse에는 case 객체가 할당됩니다.
+      await pushAndScroll({ role: 'assistant', type: 'summary', payload: { case: data.data.case } })
     } else {
       console.error('API 응답 오류:', data.error.message)
       alert(data.error.message)
@@ -112,6 +115,10 @@ const handleUserInput = async (text) => {
 }
 
 const handleOpenSaveModal = () => {
+  const token = localStorage.getItem('access_token');
+  if (!token) {
+    return; // 함수 실행 중단
+  }
   showSaveModal.value = true;
 }
 
@@ -124,12 +131,12 @@ const handleConfirmSave = () => {
 }
 
 const handlePredictVerdict = async () => {
-  // const token = localStorage.getItem('access_token') // 또는 적절한 로그인 상태 체크 방식
-  // if (!token) {
-  //   alert('로그인이 필요합니다. 로그인 페이지로 이동합니다.')
-  //   router.push('/login') // 실제 로그인 경로에 맞게 수정
-  //   return
-  // }
+  const token = localStorage.getItem('access_token') // 또는 적절한 로그인 상태 체크 방식
+  if (!token) {
+    alert('로그인이 필요합니다. 로그인 페이지로 이동합니다.')
+    router.push('/login') // 실제 로그인 경로에 맞게 수정
+    return
+  }
 
   if (!aiResponse.value) {
     alert('먼저 사건 내용을 입력하고 분석을 받아야 합니다.')
@@ -139,14 +146,36 @@ const handlePredictVerdict = async () => {
   isFindingVerdict.value = true
   try {
     const { data } = await fastapiApiClient.post('/analysis', {
-      case: aiResponse.value // 첫 번째 API의 결과를 요청 본문에 담아 보냄
+      case: aiResponse.value
     })
 
     if (data.success) {
-      // API 응답에 맞춰 state 업데이트
       verdictResult.value = data.data.report
-      lawyers.value = data.data.report.recommendedLawyers
+
+      // --- 2. 태그 ID를 이름으로 변환하는 로직 ---
+      // 성능 향상을 위해 TAG_MAP을 Map 객체로 변환 (ID로 이름을 바로 찾기 위함)
+      const tagIdToNameMap = new Map(TAG_MAP.map(tag => [tag.id, tag.name]));
+
+      // 추천 변호사 목록을 순회하며 태그를 변환
+      const processedLawyers = data.data.report.recommendedLawyers.map(lawyer => {
+        // 각 변호사의 tags 배열(ID 목록)을 이름 목록으로 변환
+        const tagNames = lawyer.tags
+          .map(tagId => tagIdToNameMap.get(tagId)) // Map에서 ID에 해당하는 이름을 찾음
+          .filter(Boolean); // 혹시 모를 null이나 undefined 값을 제거
+
+        // 기존 변호사 정보에 변환된 태그(이름 배열)를 포함하여 새로운 객체 반환
+        return {
+          ...lawyer,
+          tags: tagNames
+        };
+      });
+
+      // 변환된 변호사 목록을 state에 저장
+      lawyers.value = processedLawyers;
+      // --- 로직 종료 ---
+
       canShowRecommendBtn.value = true
+      await pushAndScroll({ role: 'assistant', type: 'verdict', payload: { verdict: data.data.report } })
     } else {
       console.error('판례 분석 API 오류:', data.error.message)
       alert(data.error.message)
@@ -182,7 +211,7 @@ const handleModalRoute = (target) => {
 }
 .layout-background {
   position: relative;
-  width: 100vw;
+  width: 99vw;
   left: 50%;
   right: 50%;
   margin-left: -50vw;
@@ -193,33 +222,29 @@ const handleModalRoute = (target) => {
   background-position: center;
   min-height: 100vh;
   background-color: #F7FCFF;
+  z-index: 0;
 }
 .container{
   padding: 100px 16px;
   display: flex;
   justify-content: center;
-  align-items: flex-start;
+  align-items: center;
   min-height: 100vh; /* 화면 전체 가운데 정렬을 위한 높이 */
 }
 .wrapper {
-  position: relative;
   display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  gap: 50px;
-  max-width: 1200px;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+  max-width: 920px;
   width: 100%;
   margin: 0 auto;
-  padding-top: 40px;
 }
 .loading-dots-wrapper {
-  position: absolute;
-  /* 상단에서부터의 위치. 필요시 px 값을 조정하세요. */
-  top: 150px;
-  /* 수평 중앙 정렬 */
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 10; /* 다른 요소들 위에 오도록 설정 */
+  position: static;         /* ⬅︎ absolute → static */
+  margin-top: -6px;        /* ⬅︎ 살짝 붙여줌(취향) */
+  display: flex;
+  justify-content: center;
 }
 /* 화면이 768px보다 좁아질 때 세로로 배치되도록 수정합니다. */
 @media (max-width: 768px) {
@@ -231,27 +256,23 @@ const handleModalRoute = (target) => {
 .recommend-button-wrapper {
   display: flex;
   justify-content: center;
-  margin-top: 100px;
+  margin-top: 50px;
 }
 
-.recommend-button {
-  background-color: #F7FCFF;
-  color: #82A0B3;
-  font-weight: 500;
-  border: 1.8px solid #e4ebf0;
-  border-radius: 12px;
-  padding: 10px 20px;
-  font-size: 0.95rem;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  transition: all 0.2s ease-in-out;
-  box-shadow: 0px 2px 4px rgba(77, 130, 200, 0.081);
-}
-
-.recommend-button:hover {
-  background-color: #f3f9fd;
+.action-button {
+  background-color: #0F2C59;
+  color: white;
+  font-size: 14px;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-weight: medium;
   cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.action-button:hover {
+  background-color: #1c3d78;
 }
 
 .arrow {

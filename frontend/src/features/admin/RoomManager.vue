@@ -4,7 +4,7 @@
     <div class="form-section">
       <label for="appointment-id">상담 ID (appointmentId):</label>
       <input type="number" id="appointment-id" v-model.number="appointmentId" placeholder="종료할 상담의 ID를 입력하세요" />
-      <button @click="terminateRoom" :disabled="loading || !appointmentId">
+      <button class="cancel-btn" @click="terminateRoom" :disabled="loading || !appointmentId">
         {{ loading ? '종료 중...' : '상담방 강제 종료' }}
       </button>
     </div>
@@ -12,11 +12,10 @@
       {{ message }}
     </div>
     <div class="notes">
-      <p><strong>참고:</strong></p>
+      <p><strong>경고:</strong></p>
       <ul>
         <li>이 요청은 지정된 상담의 화상상담방을 즉시 종료시킵니다.</li>
-        <li>성공적으로 종료되면, 해당 상담방에 접속해 있던 사용자(클라이언트, 변호사)들에게 <code>sessionDestroyed</code> 이벤트가 발생합니다.</li>
-        <li>프론트엔드에서는 이 이벤트에 대한 핸들러를 구현하여 "관리자에 의해 상담이 종료되었습니다."와 같은 안내 메시지를 표시해야 합니다.</li>
+        <li>사용자에게는 <strong>"관리자에 의해 상담이 종료되었습니다."</strong>와 같은 안내 메시지가 표시됩니다.</li>
       </ul>
     </div>
   </div>
@@ -49,7 +48,6 @@ const terminateRoom = async () => {
     await instance.delete(`/api/admin/rooms/${appointmentId.value}`);
     message.value = `상담(ID: ${appointmentId.value})의 화상상담방이 성공적으로 종료되었습니다.`;
     messageType.value = 'success';
-    console.log(`상담방(ID: ${appointmentId.value}) 강제 종료 성공`);
     appointmentId.value = null; // 성공 후 입력 필드 초기화
   } catch (err) {
     console.error(`상담방(ID: ${appointmentId.value}) 강제 종료 실패:`, err);
@@ -63,8 +61,25 @@ const terminateRoom = async () => {
 
 <style scoped>
 .container {
+  font-family: 'Noto Sans KR', sans-serif;
   padding: 20px;
 }
+h1 {
+  font-size: 1.8rem;
+  margin-bottom: 16px;
+  font-weight: bold;
+}
+
+.cancel-btn {
+  background-color: #f9e3df;
+  color: #333333;
+  padding: 4px 8px;
+  border: 1px solid #d32f2f;
+  border-radius: 15px;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
 .form-section {
   margin-bottom: 20px;
   display: flex;
@@ -83,13 +98,23 @@ const terminateRoom = async () => {
 }
 .message.error {
   background-color: #f8d7da;
-  color: #721c24;
+  color: #d32f2f;
   border: 1px solid #f5c6cb;
 }
 .notes {
   margin-top: 25px;
   padding: 15px;
-  background-color: #f8f9fa;
-  border-left: 4px solid #6c757d;
+  background-color:#f8f9fa;
+  border-left: 4px solid #d32f2f;
+  list-style-type: none;
+}
+.notes p {
+  font-weight: bold;
+  color:#d32f2f;
+}
+.notes ul {
+  list-style-type: none;
+  margin-top: 10px;
+  padding-left: 20px;
 }
 </style>
