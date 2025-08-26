@@ -18,18 +18,21 @@ class BM25Service:
     초기화 시 캐시된 모델을 로드하며, 캐시가 없을 경우 자동으로 생성합니다.
     """
     _instance = None
-    CACHE_PATH = "F:/S13P11B204/ai/data/preprocessed/bm25_cache.pkl"
+    CACHE_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "preprocessed", "bm25_cache.pkl")
 
     def __new__(cls, *args, **kwargs):
         if not cls._instance:
             cls._instance = super(BM25Service, cls).__new__(cls)
         return cls._instance
 
-    def __init__(self, data_dir="F:/S13P11B204/ai/data/preprocessed"):
+    def __init__(self, data_dir=None):
         if hasattr(self, '_initialized'):
             return
         
-        self.data_dir = data_dir
+        if data_dir is None:
+            self.data_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "preprocessed")
+        else:
+            self.data_dir = data_dir
         self.bm25 = None
         self.cases = []
 

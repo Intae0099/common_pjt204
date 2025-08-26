@@ -72,6 +72,9 @@ tokenizer_config.json
 
 # Data files
 data/
+# Allow pickle cache files for BM25
+!data/*.pkl
+!data/preprocessed/*.pkl
 
 # GitLab Runner artifacts
 config.toml
