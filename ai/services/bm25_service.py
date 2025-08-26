@@ -54,7 +54,12 @@ class BM25Service:
 
     def _build_and_save_cache(self):
         """판례 데이터를 로드하여 BM25 모델을 만들고 캐시 파일로 저장합니다."""
-        tokenizer = Kiwi()
+        try:
+            tokenizer = Kiwi()
+        except Exception as e:
+            logger.error(f"Kiwi 형태소 분석기 초기화 실패: {e}")
+            logger.warning("형태소 분석기 없이 단순 분리 방식으로 fallback합니다.")
+            tokenizer = None
         
         json_files = glob.glob(os.path.join(self.data_dir, "*.json"))
         if not json_files:
@@ -82,17 +87,42 @@ class BM25Service:
         logger.info(f"총 {len(corpus)}개의 판례로 BM25 모델을 학습합니다.")
         
         def tokenize_fn(text):
-            text = re.sub(r'[^\w\s]', '', text)
-            tokens = tokenizer.tokenize(text)
-            return [token.form for token in tokens if token.tag in ['NNG', 'NNP']]
+            try:
+                if tokenizer is None:
+                    # 형태소 분석기가 없을 경우 단순 분리
+                    text = re.sub(r'[^\w\s]', '', text)
+                    return [word for word in text.split() if len(word.strip()) > 1]
+                
+                text = re.sub(r'[^\w\s]', '', text)
+                tokens = tokenizer.tokenize(text)
+                return [token.form for token in tokens if token.tag in ['NNG', 'NNP']]
+            except Exception as e:
+                logger.warning(f"토큰화 실패 (fallback to simple split): {e}")
+                # 형태소 분석 실패 시 단순 공백 분리로 fallback
+                text = re.sub(r'[^\w\s]', '', text)
+                return [word for word in text.split() if len(word.strip()) > 1]
 
-        tokenized_corpus = [tokenize_fn(doc) for doc in tqdm(corpus, desc="Corpus 토큰화")]
-        bm25_model = BM25Okapi(tokenized_corpus)
+        try:
+            tokenized_corpus = []
+            for i, doc in enumerate(tqdm(corpus, desc="Corpus 토큰화")):
+                try:
+                    tokens = tokenize_fn(doc)
+                    tokenized_corpus.append(tokens)
+                except Exception as e:
+                    logger.warning(f"문서 {i} 토큰화 실패: {e}, 빈 토큰 리스트로 대체")
+                    tokenized_corpus.append([])
+            
+            bm25_model = BM25Okapi(tokenized_corpus)
 
-        # 캐시 데이터 저장
-        with open(self.CACHE_PATH, 'wb') as f:
-            pickle.dump({'bm25': bm25_model, 'cases': cases_data}, f)
-        logger.info(f"BM25 캐시 파일이 {self.CACHE_PATH}에 저장되었습니다.")
+            # 캐시 데이터 저장
+            with open(self.CACHE_PATH, 'wb') as f:
+                pickle.dump({'bm25': bm25_model, 'cases': cases_data}, f)
+            logger.info(f"BM25 캐시 파일이 {self.CACHE_PATH}에 저장되었습니다.")
+            
+        except Exception as e:
+            logger.error(f"BM25 모델 생성 중 심각한 오류 발생: {e}")
+            logger.error("캐시 생성을 중단합니다.")
+            raise
 
     def search(self, query: str, top_n: int = 10) -> list[dict]:
         """
@@ -104,24 +134,44 @@ class BM25Service:
             
         logger.debug(f"BM25 검색 수행: query='{query}', top_n={top_n}")
         
-        # 토크나이저를 search 시점에 즉시 생성하지 않고, 클래스 레벨에서 관리
-        # 단, 캐시 빌드와 동일한 로직을 보장하기 위해 내부 함수로 정의
-        tokenizer = Kiwi()
+        # 토크나이저 안전한 초기화
+        try:
+            tokenizer = Kiwi()
+        except Exception as e:
+            logger.warning(f"Kiwi 형태소 분석기 초기화 실패: {e}, 단순 분리 방식 사용")
+            tokenizer = None
+            
         def tokenize_fn(text):
-            text = re.sub(r'[^\w\s]', '', text)
-            tokens = tokenizer.tokenize(text)
-            return [token.form for token in tokens if token.tag in ['NNG', 'NNP']]
+            try:
+                if tokenizer is None:
+                    # 형태소 분석기가 없을 경우 단순 분리
+                    text = re.sub(r'[^\w\s]', '', text)
+                    return [word for word in text.split() if len(word.strip()) > 1]
+                
+                text = re.sub(r'[^\w\s]', '', text)
+                tokens = tokenizer.tokenize(text)
+                return [token.form for token in tokens if token.tag in ['NNG', 'NNP']]
+            except Exception as e:
+                logger.warning(f"토큰화 실패 (fallback to simple split): {e}")
+                # 형태소 분석 실패 시 단순 공백 분리로 fallback
+                text = re.sub(r'[^\w\s]', '', text)
+                return [word for word in text.split() if len(word.strip()) > 1]
 
-        tokenized_query = tokenize_fn(query)
-        
-        doc_scores = self.bm25.get_scores(tokenized_query)
-        
-        scored_indices = sorted(enumerate(doc_scores), key=lambda x: x[1], reverse=True)
-        
-        top_indices = [idx for idx, score in scored_indices[:top_n] if score > 0]
-        
-        results = [self.cases[i] for i in top_indices]
-        logger.debug(f"{len(results)}개의 검색 결과를 반환합니다.")
-        
-        return results
+        try:
+            tokenized_query = tokenize_fn(query)
+            
+            doc_scores = self.bm25.get_scores(tokenized_query)
+            
+            scored_indices = sorted(enumerate(doc_scores), key=lambda x: x[1], reverse=True)
+            
+            top_indices = [idx for idx, score in scored_indices[:top_n] if score > 0]
+            
+            results = [self.cases[i] for i in top_indices]
+            logger.debug(f"{len(results)}개의 검색 결과를 반환합니다.")
+            
+            return results
+            
+        except Exception as e:
+            logger.error(f"BM25 검색 중 오류 발생: {e}")
+            return []
 

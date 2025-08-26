@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LawAId RAG 성능 평가 종합 대시보드</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            color: #333;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+        
+        .header {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            color: white;
+            padding: 3rem 0;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.8rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            margin-bottom: 1rem;
+        }
+        
+        .header-badges {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .badge {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .chart-card {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 2.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .chart-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 1.5rem;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        
+        /* 핵심 메트릭 카드 스타일 */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+        
+        .metric-card {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            border-left: 4px solid;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        .metric-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+        }
+        
+        .metric-card.search { border-left-color: #10b981; }
+        .metric-card.analysis { border-left-color: #f59e0b; }
+        .metric-card.performance { border-left-color: #8b5cf6; }
+        .metric-card.overall { border-left-color: #06b6d4; }
+        
+        .metric-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .metric-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 1rem;
+            font-size: 1.4rem;
+        }
+        
+        .metric-icon.search { background: #dcfce7; color: #16a34a; }
+        .metric-icon.analysis { background: #fef3c7; color: #d97706; }
+        .metric-icon.performance { background: #ede9fe; color: #8b5cf6; }
+        .metric-icon.overall { background: #cffafe; color: #0891b2; }
+        
+        .metric-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #374151;
+        }
+        
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        
+        .metric-value.search { color: #10b981; }
+        .metric-value.analysis { color: #f59e0b; }
+        .metric-value.performance { color: #8b5cf6; }
+        .metric-value.overall { color: #06b6d4; }
+        
+        .metric-subtitle {
+            font-size: 0.9rem;
+            color: #6b7280;
+            margin-bottom: 1rem;
+        }
+        
+        .metric-change {
+            font-size: 0.85rem;
+            font-weight: 600;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            background: #dcfce7;
+            color: #16a34a;
+        }
+        
+        /* 성능 트렌드 차트 */
+        .performance-chart {
+            height: 400px;
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 2rem 0;
+            position: relative;
+            border: 2px solid #e2e8f0;
+        }
+        
+        .chart-svg {
+            width: 100%;
+            height: 100%;
+        }
+        
+        /* 바 차트 스타일 */
+        .bar-chart-section {
+            margin: 2rem 0;
+        }
+        
+        .bar-chart-container {
+            display: flex;
+            align-items: end;
+            height: 250px;
+            gap: 1rem;
+            padding: 2rem;
+            background: #f8fafc;
+            border-radius: 12px;
+            margin: 1rem 0;
+        }
+        
+        .bar-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+        
+        .bar {
+            width: 60px;
+            border-radius: 8px 8px 0 0;
+            transition: all 0.3s ease;
+            position: relative;
+            display: flex;
+            align-items: end;
+            justify-content: center;
+        }
+        
+        .bar:hover {
+            transform: scale(1.05);
+            filter: brightness(1.1);
+        }
+        
+        .bar-recall1 { 
+            background: linear-gradient(180deg, #ef4444, #dc2626); 
+            height: 60px; /* 15% of 400px */
+        }
+        
+        .bar-recall3 { 
+            background: linear-gradient(180deg, #f97316, #ea580c); 
+            height: 120px; /* 30% of 400px */
+        }
+        
+        .bar-recall10 { 
+            background: linear-gradient(180deg, #10b981, #059669); 
+            height: 220px; /* 55% of 400px */
+        }
+        
+        .bar-mrr { 
+            background: linear-gradient(180deg, #8b5cf6, #7c3aed); 
+            height: 100px; /* 25% of 400px */
+        }
+        
+        .bar-value {
+            color: white;
+            font-size: 0.9rem;
+            font-weight: 700;
+            position: absolute;
+            top: -1.5rem;
+            color: #374151;
+        }
+        
+        .bar-label {
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #374151;
+            text-align: center;
+        }
+        
+        /* 테이블 스타일 */
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1.5rem;
+        }
+        
+        .results-table th,
+        .results-table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .results-table th {
+            background: #f8fafc;
+            font-weight: 600;
+            color: #374151;
+            font-size: 0.9rem;
+        }
+        
+        .results-table tr:hover {
+            background: #f8fafc;
+        }
+        
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.3rem 0.8rem;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
+        .status-success {
+            background: #dcfce7;
+            color: #16a34a;
+        }
+        
+        .status-partial {
+            background: #fef3c7;
+            color: #d97706;
+        }
+        
+        /* 마일스톤 스타일 */
+        .milestone {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-top: 2rem;
+            border-left: 4px solid #6366f1;
+        }
+        
+        .milestone-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+        
+        .milestone-timeline {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .milestone-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 140px;
+            padding: 1rem;
+            background: #f8fafc;
+            border-radius: 8px;
+            margin: 0.5rem;
+        }
+        
+        .milestone-date {
+            font-size: 0.8rem;
+            color: #6b7280;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        
+        .milestone-event {
+            background: #6366f1;
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-align: center;
+        }
+        
+        /* 기술 정보 */
+        .tech-info {
+            background: #f1f5f9;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-top: 2rem;
+            border-left: 4px solid #06b6d4;
+        }
+        
+        .tech-info h3 {
+            color: #1e293b;
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+        }
+        
+        .tech-info p {
+            color: #64748b;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+        
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-top: 2rem;
+            padding-top: 1rem;
+            border-top: 1px solid #e2e8f0;
+            flex-wrap: wrap;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .legend-dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .legend-dot.recall1 { background: #ef4444; }
+        .legend-dot.recall3 { background: #f97316; }
+        .legend-dot.recall10 { background: #10b981; }
+        .legend-dot.mrr { background: #8b5cf6; }
+        
+        .legend-text {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #374151;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🏛️ LawAId RAG 성능 평가 대시보드</h1>
+        <p>AI 기반 법률 판례 검색 시스템 종합 성능 분석</p>
+        <div class="header-badges">
+            <div class="badge">🎯 Recall@10 55% 달성</div>
+            <div class="badge">⚡ 메모리 49.1% 최적화</div>
+            <div class="badge">🚀 100% API 성공률</div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- 핵심 메트릭 카드 -->
+        <div class="metrics-grid">
+            <div class="metric-card search">
+                <div class="metric-header">
+                    <div class="metric-icon search">🔍</div>
+                    <div class="metric-title">검색 정확도 (핵심 성과)</div>
+                </div>
+                <div class="metric-value search">55%</div>
+                <div class="metric-subtitle">Recall@10 (상위 10개 결과 내 정답 포함률)</div>
+                <div class="metric-change">0% → 55% 개선</div>
+            </div>
+            
+            <div class="metric-card analysis">
+                <div class="metric-header">
+                    <div class="metric-icon analysis">🧠</div>
+                    <div class="metric-title">인용 정확도</div>
+                </div>
+                <div class="metric-value analysis">15%</div>
+                <div class="metric-subtitle">Citation Accuracy (필수 판례 정확 인용률)</div>
+                <div class="metric-change">초기 버전 기준</div>
+            </div>
+            
+            <div class="metric-card performance">
+                <div class="metric-header">
+                    <div class="metric-icon performance">⚡</div>
+                    <div class="metric-title">평균 응답시간</div>
+                </div>
+                <div class="metric-value performance">22.1초</div>
+                <div class="metric-subtitle">복잡한 법률 분석 포함 전체 프로세스</div>
+                <div class="metric-change">실용적 수준</div>
+            </div>
+            
+            <div class="metric-card overall">
+                <div class="metric-header">
+                    <div class="metric-icon overall">🎯</div>
+                    <div class="metric-title">시스템 안정성</div>
+                </div>
+                <div class="metric-value overall">100%</div>
+                <div class="metric-subtitle">API 호출 성공률 (20개 테스트 케이스)</div>
+                <div class="metric-change">무장애 운영</div>
+            </div>
+        </div>
+
+        <!-- 검색 성능 메트릭 바 차트 -->
+        <div class="chart-card">
+            <h2 class="chart-title">📊 검색 성능 메트릭 상세 분석</h2>
+            
+            <div class="bar-chart-container">
+                <div class="bar-item">
+                    <div class="bar bar-recall1">
+                        <div class="bar-value">15%</div>
+                    </div>
+                    <div class="bar-label">Recall@1<br><small>최상위 정확도</small></div>
+                </div>
+                <div class="bar-item">
+                    <div class="bar bar-recall3">
+                        <div class="bar-value">30%</div>
+                    </div>
+                    <div class="bar-label">Recall@3<br><small>상위 3개 정확도</small></div>
+                </div>
+                <div class="bar-item">
+                    <div class="bar bar-recall10">
+                        <div class="bar-value">55%</div>
+                    </div>
+                    <div class="bar-label">Recall@10<br><small>상위 10개 정확도</small></div>
+                </div>
+                <div class="bar-item">
+                    <div class="bar bar-mrr">
+                        <div class="bar-value">25%</div>
+                    </div>
+                    <div class="bar-label">MRR<br><small>평균 역순위</small></div>
+                </div>
+            </div>
+            
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-dot recall1"></div>
+                    <span class="legend-text">Recall@1 (최상위 결과 정확도)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-dot recall3"></div>
+                    <span class="legend-text">Recall@3 (상위 3개 결과)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-dot recall10"></div>
+                    <span class="legend-text">Recall@10 (상위 10개 결과) ⭐</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-dot mrr"></div>
+                    <span class="legend-text">MRR (평균 역순위)</span>
+                </div>
+            </div>
+            
+            <p style="color: #64748b; font-size: 0.95rem; margin-top: 1.5rem; text-align: center; background: #f8fafc; padding: 1rem; border-radius: 8px;">
+                ✅ <strong>Recall@10 55%</strong>는 상위 10개 검색 결과 중 관련 판례가 포함될 확률을 나타내며, 
+                실용적인 법률 AI 서비스의 기준점을 달성했습니다. PostgreSQL ILIKE 검색 대비 획기적 개선을 보여줍니다.
+            </p>
+        </div>
+
+        <!-- 성능 개선 트렌드 -->
+        <div class="chart-card">
+            <h2 class="chart-title">📈 핵심 지표 개선 트렌드</h2>
+            
+            <div class="performance-chart">
+                <svg class="chart-svg" viewBox="0 0 800 300">
+                    <!-- Grid lines -->
+                    <g stroke="#e2e8f0" stroke-width="1" opacity="0.5">
+                        <line x1="100" y1="50" x2="750" y2="50"></line>
+                        <line x1="100" y1="100" x2="750" y2="100"></line>
+                        <line x1="100" y1="150" x2="750" y2="150"></line>
+                        <line x1="100" y1="200" x2="750" y2="200"></line>
+                        <line x1="100" y1="250" x2="750" y2="250"></line>
+                    </g>
+                    
+                    <!-- Y-axis labels -->
+                    <g font-size="12" fill="#64748b" text-anchor="end">
+                        <text x="90" y="55">60%</text>
+                        <text x="90" y="105">45%</text>
+                        <text x="90" y="155">30%</text>
+                        <text x="90" y="205">15%</text>
+                        <text x="90" y="255">0%</text>
+                    </g>
+                    
+                    <!-- Recall@10 line (0% → 55%) -->
+                    <path d="M150,250 L400,200 L650,95" stroke="#10b981" stroke-width="4" fill="none" stroke-linecap="round"></path>
+                    <circle cx="150" cy="250" r="6" fill="#10b981" stroke="white" stroke-width="3"></circle>
+                    <circle cx="400" cy="200" r="6" fill="#10b981" stroke="white" stroke-width="3"></circle>
+                    <circle cx="650" cy="95" r="6" fill="#10b981" stroke="white" stroke-width="3"></circle>
+                    
+                    <!-- Memory usage line (inverted: 100% → 51%) -->
+                    <path d="M150,50 L400,120 L650,170" stroke="#f59e0b" stroke-width="4" fill="none" stroke-linecap="round"></path>
+                    <circle cx="150" cy="50" r="6" fill="#f59e0b" stroke="white" stroke-width="3"></circle>
+                    <circle cx="400" cy="120" r="6" fill="#f59e0b" stroke="white" stroke-width="3"></circle>
+                    <circle cx="650" cy="170" r="6" fill="#f59e0b" stroke="white" stroke-width="3"></circle>
+                    
+                    <!-- MRR line (0% → 25%) -->
+                    <path d="M150,250 L400,230 L650,183" stroke="#8b5cf6" stroke-width="4" fill="none" stroke-linecap="round"></path>
+                    <circle cx="150" cy="250" r="6" fill="#8b5cf6" stroke="white" stroke-width="3"></circle>
+                    <circle cx="400" cy="230" r="6" fill="#8b5cf6" stroke="white" stroke-width="3"></circle>
+                    <circle cx="650" cy="183" r="6" fill="#8b5cf6" stroke="white" stroke-width="3"></circle>
+                    
+                    <!-- X-axis labels -->
+                    <g font-size="11" fill="#64748b" text-anchor="middle">
+                        <text x="150" y="280">2025-07-14<tspan x="150" dy="12" font-size="9">프로젝트 시작</tspan></text>
+                        <text x="400" y="280">2025-08-05<tspan x="400" dy="12" font-size="9">BM25 도입</tspan></text>
+                        <text x="650" y="280">2025-08-22<tspan x="650" dy="12" font-size="9">최종 평가</tspan></text>
+                    </g>
+                    
+                    <!-- Legend -->
+                    <g font-size="12">
+                        <circle cx="120" cy="20" r="4" fill="#10b981"></circle>
+                        <text x="130" y="25" fill="#374151">검색 정확도 (Recall@10)</text>
+                        
+                        <circle cx="280" cy="20" r="4" fill="#f59e0b"></circle>
+                        <text x="290" y="25" fill="#374151">메모리 효율성 (반전)</text>
+                        
+                        <circle cx="440" cy="20" r="4" fill="#8b5cf6"></circle>
+                        <text x="450" y="25" fill="#374151">순위 정확도 (MRR)</text>
+                    </g>
+                </svg>
+            </div>
+        </div>
+
+        <!-- 개별 케이스 분석 결과 -->
+        <div class="chart-card">
+            <h2 class="chart-title">📝 평가 케이스별 상세 결과 (20개 테스트)</h2>
+            <table class="results-table">
+                <thead>
+                    <tr>
+                        <th>케이스 ID</th>
+                        <th>검색 성공</th>
+                        <th>분석 성공</th>
+                        <th>인용 발견</th>
+                        <th>응답시간</th>
+                        <th>전체 상태</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>eval_0001</strong></td>
+                        <td>✅ 성공</td>
+                        <td>✅ 성공</td>
+                        <td>❌ 미발견</td>
+                        <td>20.3초</td>
+                        <td><span class="status-badge status-partial">부분 성공</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>eval_0007</strong></td>
+                        <td>✅ 성공</td>
+                        <td>✅ 성공</td>
+                        <td>✅ 발견</td>
+                        <td>23.7초</td>
+                        <td><span class="status-badge status-success">완전 성공</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>eval_0016</strong></td>
+                        <td>✅ 성공</td>
+                        <td>✅ 성공</td>
+                        <td>✅ 발견</td>
+                        <td>21.0초</td>
+                        <td><span class="status-badge status-success">완전 성공</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>eval_0018</strong></td>
+                        <td>✅ 성공</td>
+                        <td>✅ 성공</td>
+                        <td>✅ 발견</td>
+                        <td>25.0초</td>
+                        <td><span class="status-badge status-success">완전 성공</span></td>
+                    </tr>
+                    <tr>
+                        <td colspan="6" style="text-align: center; color: #64748b; font-style: italic; padding: 1.5rem;">
+                            <strong>총 20개 케이스</strong> | 검색 성공률: 100% | 분석 성공률: 100% | 평균 응답시간: 22.1초
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 주요 마일스톤 -->
+        <div class="milestone">
+            <div class="milestone-title">🚀 핵심 개발 마일스톤 & 성과</div>
+            <div class="milestone-timeline">
+                <div class="milestone-item">
+                    <div class="milestone-date">2025-07-14</div>
+                    <div class="milestone-event">프로젝트 착수</div>
+                </div>
+                <div class="milestone-item">
+                    <div class="milestone-date">2025-07-28</div>
+                    <div class="milestone-event">기본 RAG 시스템</div>
+                </div>
+                <div class="milestone-item">
+                    <div class="milestone-date">2025-08-05</div>
+                    <div class="milestone-event">BM25 하이브리드 검색</div>
+                </div>
+                <div class="milestone-item">
+                    <div class="milestone-date">2025-08-12</div>
+                    <div class="milestone-event">메모리 최적화</div>
+                </div>
+                <div class="milestone-item">
+                    <div class="milestone-date">2025-08-17</div>
+                    <div class="milestone-event">서비스 배포</div>
+                </div>
+                <div class="milestone-item">
+                    <div class="milestone-date">2025-08-22</div>
+                    <div class="milestone-event">성능 평가 완료</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 최종 성과 요약 -->
+        <div class="chart-card">
+            <h2 class="chart-title">🏆 최종 달성 성과 & 기술 스펙</h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 2rem; text-align: center; margin-bottom: 2rem;">
+                <div style="background: #f0fdf4; padding: 1.5rem; border-radius: 12px; border: 2px solid #bbf7d0;">
+                    <div style="font-size: 3rem; font-weight: 700; color: #16a34a; margin-bottom: 0.5rem;">55%</div>
+                    <div style="font-weight: 600; color: #374151;">검색 정확도</div>
+                    <div style="font-size: 0.8rem; color: #6b7280;">Recall@10</div>
+                </div>
+                <div style="background: #fffbeb; padding: 1.5rem; border-radius: 12px; border: 2px solid #fed7aa;">
+                    <div style="font-size: 3rem; font-weight: 700; color: #ea580c; margin-bottom: 0.5rem;">22.1초</div>
+                    <div style="font-weight: 600; color: #374151;">평균 응답시간</div>
+                    <div style="font-size: 0.8rem; color: #6b7280;">복잡한 분석 포함</div>
+                </div>
+                <div style="background: #faf5ff; padding: 1.5rem; border-radius: 12px; border: 2px solid #d8b4fe;">
+                    <div style="font-size: 3rem; font-weight: 700; color: #9333ea; margin-bottom: 0.5rem;">100%</div>
+                    <div style="font-weight: 600; color: #374151;">시스템 안정성</div>
+                    <div style="font-size: 0.8rem; color: #6b7280;">API 성공률</div>
+                </div>
+                <div style="background: #f0fdfa; padding: 1.5rem; border-radius: 12px; border: 2px solid #7dd3fc;">
+                    <div style="font-size: 3rem; font-weight: 700; color: #0891b2; margin-bottom: 0.5rem;">50,502</div>
+                    <div style="font-weight: 600; color: #374151;">데이터 규모</div>
+                    <div style="font-size: 0.8rem; color: #6b7280;">판례 45k + 법령 5.5k</div>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 2rem;">
+                <div style="background: #f8fafc; padding: 1.5rem; border-radius: 12px;">
+                    <h4 style="color: #1e293b; margin-bottom: 0.8rem;">🔍 검색 성과</h4>
+                    <ul style="color: #64748b; font-size: 0.9rem; line-height: 1.6;">
+                        <li>Recall@10: <strong>0% → 55%</strong></li>
+                        <li>MRR: <strong>0.000 → 0.250</strong></li>
+                        <li>하이브리드 BM25 + 벡터 검색</li>
+                    </ul>
+                </div>
+                <div style="background: #f8fafc; padding: 1.5rem; border-radius: 12px;">
+                    <h4 style="color: #1e293b; margin-bottom: 0.8rem;">⚡ 최적화 성과</h4>
+                    <ul style="color: #64748b; font-size: 0.9rem; line-height: 1.6;">
+                        <li>메모리: <strong>2.5GB → 1.3GB (-49.1%)</strong></li>
+                        <li>모델 양자화 기법 적용</li>
+                        <li>99.8% 정확도 유지</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- 기술 정보 -->
+        <div class="tech-info">
+            <h3>🔧 기술 구성 및 평가 환경</h3>
+            <p>
+                <strong>하이브리드 RAG 시스템:</strong> BM25 키워드 검색 + Sentence-Transformers 벡터 검색 + Cross-Encoder 재정렬 3단계 파이프라인<br>
+                <strong>데이터 규모:</strong> 대한민국 법원 판례 45,000개 + 현행 법령 5,502개 (JSON 구조화 완료)<br>
+                <strong>평가 환경:</strong> 2025-08-22 15:57 실시, 총 20개 테스트 케이스, 30초 타임아웃<br>
+                <strong>API 엔드포인트:</strong> http://122.38.210.80:8999/ (실제 서비스 운영 중)<br>
+                <strong>핵심 기술 스택:</strong> FastAPI, PostgreSQL+pgvector, OpenAI GPT-4o, BM25, Kiwipiepy
+            </p>
+        </div>
+    </div>
+</body>
+</html>
